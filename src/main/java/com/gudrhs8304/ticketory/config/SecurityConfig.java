@@ -56,7 +56,7 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/api-docs/**").permitAll()
 
                         // 회원가입/로그인/로그아웃 공개 (메서드 명확화)
-                        .requestMatchers(HttpMethod.POST, "/api/members").permitAll()          // 회원가입
+                        .requestMatchers(HttpMethod.POST, "/api/members/**").permitAll()          // 회원가입
                         .requestMatchers(HttpMethod.POST, "/api/members/login").permitAll()    // 로그인
                         .requestMatchers(HttpMethod.POST, "/api/members/logout").permitAll()   // 로그아웃(블랙리스트 방식)
 
