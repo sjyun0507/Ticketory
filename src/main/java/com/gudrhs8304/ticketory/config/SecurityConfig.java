@@ -67,6 +67,7 @@ public class SecurityConfig {
 
                         // 관리자 전용
                         .requestMatchers("/api/admin/**", "/login/admin/**").hasRole("ADMIN")
+                        .requestMatchers("api/members/*").authenticated()
 
                         // 그 외는 인증만 요구
                         .anyRequest().authenticated()

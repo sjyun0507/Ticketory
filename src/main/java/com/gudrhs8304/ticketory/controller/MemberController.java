@@ -48,7 +48,7 @@ public class MemberController {
         return ResponseEntity.noContent().build();
     }
 
-    // 마이페이지/회원 정보 조회 — 본인 또는 관리자만
+    @Operation(summary = "마이페이지/회원 정보 조회 — 본인 또는 관리자만", security = {})
     @GetMapping("/{memberId}")
     public ResponseEntity<MemberResponseDTO> getMember(@PathVariable Long memberId) {
         Long me = SecurityUtil.currentMemberId();
