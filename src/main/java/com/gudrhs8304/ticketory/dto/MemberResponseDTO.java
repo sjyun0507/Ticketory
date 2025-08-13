@@ -1,6 +1,8 @@
 package com.gudrhs8304.ticketory.dto;
 
 import com.gudrhs8304.ticketory.domain.BaseTimeEntity;
+import com.gudrhs8304.ticketory.domain.Member;
+import com.gudrhs8304.ticketory.util.PhoneUtil;
 import lombok.*;
 /**
  * DTO는 데이터 전송을 위한 객체입니다.
@@ -40,4 +42,16 @@ public class MemberResponseDTO extends BaseTimeEntity {
 
     /** 권한 (예: ROLE_USER, ROLE_ADMIN) */
     private String role;
+
+    public static MemberResponseDTO from(Member m) {
+        return MemberResponseDTO.builder()
+                .memberId(m.getMemberId())
+                .email(m.getEmail())
+                .loginId(m.getLoginId())
+                .name(m.getName())
+                .nickname(m.getNickname())
+                .phone(PhoneUtil.format(m.getPhone())) // ← 여기서만 하이픈 붙임
+                .role(m.getRole().name())
+                .build();
+    }
 }

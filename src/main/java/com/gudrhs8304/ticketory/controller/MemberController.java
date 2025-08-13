@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -58,5 +59,21 @@ public class MemberController {
             throw new AccessDeniedException("본인 또는 관리자만 접근할 수 있습니다.");
         }
         return ResponseEntity.ok(memberService.getMemberById(memberId));
+    }
+
+    @PutMapping("/{memberId}")
+    public ResponseEntity<MemberResponseDTO> updateMember(
+            @PathVariable Long memberId,
+            @Valid @RequestBody MemberUpdateRequestDTO req,
+            Authentication authentication
+    ) {
+        // JwtTokenProvider에서 setSubject(memberId) 했으므로
+        // authentication.getName() == "memberId"
+        Long authId = Long.valueOf(authentication.getName());
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+        MemberResponseDTO res = memberService.updateMember(memberId, req, authId, isAdmin);
+        return ResponseEntity.ok(res);
     }
 }

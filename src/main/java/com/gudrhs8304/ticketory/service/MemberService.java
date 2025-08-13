@@ -4,12 +4,9 @@ import com.gudrhs8304.ticketory.config.JwtTokenProvider;
 import com.gudrhs8304.ticketory.domain.Member;
 import com.gudrhs8304.ticketory.domain.enums.RoleType;
 import com.gudrhs8304.ticketory.domain.enums.SignupType;
-import com.gudrhs8304.ticketory.dto.GuestLoginRequestDTO;
-import com.gudrhs8304.ticketory.dto.JwtResponseDTO;
-import com.gudrhs8304.ticketory.dto.MemberLoginRequestDTO;
-import com.gudrhs8304.ticketory.dto.MemberResponseDTO;
-import com.gudrhs8304.ticketory.dto.MemberSignupRequestDTO;
+import com.gudrhs8304.ticketory.dto.*;
 import com.gudrhs8304.ticketory.repository.MemberRepository;
+import com.gudrhs8304.ticketory.util.PhoneUtil;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +27,6 @@ public class MemberService {
     private final JwtTokenProvider jwtTokenProvider;
 
     public MemberResponseDTO signUp(MemberSignupRequestDTO req) {
-        // 중복 체크 (로그인 아이디 = 이메일 정책)
         if (memberRepository.existsByLoginId(req.getLoginId())) {
             throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
         }
@@ -41,7 +37,7 @@ public class MemberService {
                 .name(req.getName())
                 .nickname(req.getNickname())
                 .password(passwordEncoder.encode(req.getPassword()))
-                .phone(req.getPhone())
+                .phone(PhoneUtil.normalize(req.getPhone())) // DB에는 숫자만 저장
                 .role(RoleType.USER)
                 .signupType(SignupType.LOCAL)
                 .pointBalance(0)
@@ -55,7 +51,7 @@ public class MemberService {
                 .name(saved.getName())
                 .email(saved.getEmail())
                 .nickname(saved.getNickname())
-                .phone(saved.getPhone())
+                .phone(PhoneUtil.format(saved.getPhone())) // 응답 시 하이픈 추가
                 .role(saved.getRole().name())
                 .build();
     }
@@ -79,32 +75,28 @@ public class MemberService {
 
         return memberRepository.findByEmail(email)
                 .map(existing -> {
-                    // 1) 소셜(카카오) 계정이면 이메일 탈취 방지
                     if (existing.getSignupType() == SignupType.KAKAO) {
                         throw new IllegalStateException("해당 이메일은 카카오 가입 계정입니다. 카카오 로그인을 이용하세요.");
                     }
-                    // 2) LOCAL이면 비밀번호 검증
                     if (existing.getPassword() == null ||
                             !passwordEncoder.matches(req.getPassword(), existing.getPassword())) {
                         throw new IllegalArgumentException("이메일 또는 비밀번호가 올바르지 않습니다.");
                     }
-                    // 3) JWT 발급
                     String token = jwtTokenProvider.createToken(existing.getMemberId(), existing.getRole());
                     return new JwtResponseDTO(token, "Bearer");
                 })
                 .orElseGet(() -> {
-                    // 4) 신규 게스트 생성
                     String nickname = (req.getNickname() != null && !req.getNickname().isBlank())
                             ? req.getNickname().trim()
                             : "Guest-" + UUID.randomUUID().toString().substring(0, 8);
 
                     Member guest = Member.builder()
-                            .loginId(email)                 // 로그인 아이디 = 이메일
+                            .loginId(email)
                             .email(email)
                             .password(passwordEncoder.encode(req.getPassword()))
                             .name("Guest")
                             .nickname(nickname)
-                            .phone(req.getPhone())
+                            .phone(PhoneUtil.normalize(req.getPhone()))
                             .signupType(SignupType.LOCAL)
                             .role(RoleType.USER)
                             .pointBalance(0)
@@ -129,7 +121,7 @@ public class MemberService {
                 .name(saved.getName())
                 .email(saved.getEmail())
                 .nickname(saved.getNickname())
-                .phone(saved.getPhone())
+                .phone(PhoneUtil.format(saved.getPhone()))
                 .role(saved.getRole().name())
                 .build();
     }
@@ -145,8 +137,58 @@ public class MemberService {
                 .name(m.getName())
                 .email(m.getEmail())
                 .nickname(m.getNickname())
-                .phone(m.getPhone())
+                .phone(PhoneUtil.format(m.getPhone()))
                 .role(m.getRole().name())
+                .build();
+    }
+
+    @Transactional
+    public MemberResponseDTO updateMember(Long targetMemberId,
+                                          MemberUpdateRequestDTO req,
+                                          Long authMemberId,
+                                          boolean isAdmin) {
+        if (!isAdmin && !targetMemberId.equals(authMemberId)) {
+            throw new SecurityException("본인만 수정할 수 있습니다.");
+        }
+
+        Member m = memberRepository.findById(targetMemberId)
+                .orElseThrow(() -> new IllegalArgumentException("회원이 존재하지 않습니다."));
+
+        if (req.getNickname() != null && !req.getNickname().isBlank()) {
+            m.setNickname(req.getNickname().trim());
+        }
+        if (req.getPhone() != null && !req.getPhone().isBlank()) {
+            m.setPhone(PhoneUtil.normalize(req.getPhone())); // DB 저장용
+        }
+        if (req.getProfileImageUrl() != null) {
+            m.setProfileImageUrl(req.getProfileImageUrl());
+        }
+
+        boolean wantsPwChange = (req.getNewPassword() != null && !req.getNewPassword().isBlank());
+        if (wantsPwChange) {
+            if (isAdmin && !targetMemberId.equals(authMemberId)) {
+                m.setPassword(passwordEncoder.encode(req.getNewPassword()));
+            } else {
+                if (req.getCurrentPassword() == null || req.getCurrentPassword().isBlank()) {
+                    throw new IllegalArgumentException("현재 비밀번호가 필요합니다.");
+                }
+                if (m.getPassword() == null || !passwordEncoder.matches(req.getCurrentPassword(), m.getPassword())) {
+                    throw new IllegalArgumentException("현재 비밀번호가 일치하지 않습니다.");
+                }
+                m.setPassword(passwordEncoder.encode(req.getNewPassword()));
+            }
+        }
+
+        Member saved = memberRepository.save(m);
+
+        return MemberResponseDTO.builder()
+                .memberId(saved.getMemberId())
+                .loginId(saved.getLoginId())
+                .name(saved.getName())
+                .email(saved.getEmail())
+                .nickname(saved.getNickname())
+                .phone(PhoneUtil.format(saved.getPhone())) // 응답 시 하이픈 추가
+                .role(saved.getRole().name())
                 .build();
     }
 }

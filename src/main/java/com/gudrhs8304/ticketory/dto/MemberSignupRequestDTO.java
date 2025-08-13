@@ -1,6 +1,7 @@
 package com.gudrhs8304.ticketory.dto;
 
 import com.gudrhs8304.ticketory.domain.BaseTimeEntity;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
@@ -37,6 +38,11 @@ public class MemberSignupRequestDTO extends BaseTimeEntity {
 
 
     /** 핸드폰 */
+    @Schema(example = "010-1234-5678")
+    @Pattern(
+            regexp = "^(01[016789])(?:\\d{7,8}|-\\d{3,4}-\\d{4})$",
+            message = "휴대폰 번호 형식이 올바르지 않습니다. 예: 010-1234-5678"
+    )
     private String phone;
 
 

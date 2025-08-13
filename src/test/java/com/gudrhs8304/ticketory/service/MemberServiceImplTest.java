@@ -16,7 +16,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
-@Transactional
 @Log4j2
 class MemberServiceImplTest {
 
@@ -37,6 +36,7 @@ class MemberServiceImplTest {
         MemberSignupRequestDTO req = new MemberSignupRequestDTO();
         log.info("[TEST] signupReq: email={}, name={}, nickname={} ", email, name, nickname);
         req.setEmail(email);
+        req.setLoginId(email);
         req.setName(name);
         req.setPassword(pw);
         req.setNickname(nickname);
@@ -48,7 +48,7 @@ class MemberServiceImplTest {
     void signUp_success() {
         log.info("[TEST] START signUp_success");
         // given
-        String email = "test@example.com";
+        String email = "test2@example.com";
         String rawPw = "Pass1234!";
         MemberSignupRequestDTO req = signupReq(email, "홍길동", rawPw, "길동이");
 
