@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -38,38 +39,39 @@ public class SecurityConfig {
                         .authenticationEntryPoint((req, res, e) -> {
                             log.debug("[401] {}", e.getMessage());
                             res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                            res.setContentType("application/json");
+                            res.setContentType("application/json;charset=UTF-8");
                             res.getWriter().write("{\"error\":\"unauthorized\"}");
                         })
                         .accessDeniedHandler((req, res, e) -> {
                             log.debug("[403] {}", e.getMessage());
                             res.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                            res.setContentType("application/json");
+                            res.setContentType("application/json;charset=UTF-8");
                             res.getWriter().write("{\"error\":\"forbidden\"}");
                         })
                 )
 
                 // 접근 제어
                 .authorizeHttpRequests(auth -> auth
-                        // Swagger/OpenAPI
+                        // Swagger/OpenAPI 공개
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/api-docs/**").permitAll()
 
-                        // 회원가입/로그인/로그아웃 (백엔드 처리용 엔드포인트는 공개)
+                        // 회원가입/로그인/로그아웃 공개 (메서드 명확화)
+                        .requestMatchers(HttpMethod.POST, "/api/members").permitAll()          // 회원가입
+                        .requestMatchers(HttpMethod.POST, "/api/members/login").permitAll()    // 로그인
+                        .requestMatchers(HttpMethod.POST, "/api/members/logout").permitAll()   // 로그아웃(블랙리스트 방식)
+
+                        // OAuth2(Kakao) 흐름 공개
                         .requestMatchers(
-                                "/api/members",               // POST 회원가입
-                                "/api/members/login",         // POST 로그인 (JWT 발급)
-                                "/api/members/logout",        // POST 로그아웃 (블랙리스트 방식일 때 토큰만 필요)
-                                "/api/members/kakao",         // OAuth2 authorizationEndpoint baseUri
+                                "/api/members/kakao",
                                 "/oauth2/authorization/**",
                                 "/login/oauth2/code/**",
-                                "/login/success", "/login"    // 로그인 결과 페이지들
+                                "/login/success", "/login"
                         ).permitAll()
 
                         // 관리자 전용
                         .requestMatchers("/api/admin/**", "/login/admin/**").hasRole("ADMIN")
-                        .requestMatchers("api/members/*").authenticated()
 
-                        // 그 외는 인증만 요구
+                        // 나머지는 인증 필요
                         .anyRequest().authenticated()
                 )
 
