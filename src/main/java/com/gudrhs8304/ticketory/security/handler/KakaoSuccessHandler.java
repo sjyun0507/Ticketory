@@ -1,6 +1,8 @@
 package com.gudrhs8304.ticketory.security.handler;
 
-import com.gudrhs8304.ticketory.security.jwt.JwtIssuer;
+import com.gudrhs8304.ticketory.config.JwtTokenProvider;
+import com.gudrhs8304.ticketory.domain.Member;
+import com.gudrhs8304.ticketory.repository.MemberRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -20,8 +22,9 @@ import java.util.Map;
 @Component
 @RequiredArgsConstructor
 public class KakaoSuccessHandler implements AuthenticationSuccessHandler {
+    private final MemberRepository memberRepository;
 
-    private final JwtIssuer jwtIssuer; // email/subject로 JWT 만드는 컴포넌트
+    private final JwtTokenProvider jwtTokenProvider; // email/subject로 JWT 만드는 컴포넌트
     @Value("${app.frontend.callback}") String feCallback; // ex) http://localhost:3000/auth/callback
 
     @Override
@@ -30,8 +33,9 @@ public class KakaoSuccessHandler implements AuthenticationSuccessHandler {
         OAuth2User oAuth2User = ((OAuth2AuthenticationToken) authentication).getPrincipal();
         String email = (String) ((Map<?,?>)oAuth2User.getAttributes()
                 .get("kakao_account")).get("email");
-
-        String jwt = jwtIssuer.issue(email, List.of("ROLE_USER"));
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("회원 정보가 없습니다."));
+        String jwt = jwtTokenProvider.createToken(member.getMemberId(), member.getRole());
 
         // (A) 프론트로 리다이렉트하며 토큰 전달 (URL fragment 권장)
         String redirect = feCallback + "#token=" + URLEncoder.encode(jwt, StandardCharsets.UTF_8);

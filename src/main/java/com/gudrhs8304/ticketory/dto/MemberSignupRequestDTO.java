@@ -20,18 +20,21 @@ import lombok.*;
 public class MemberSignupRequestDTO extends BaseTimeEntity {
     /** 회원 이메일 (로그인 ID로 사용) */
     @NotBlank @Email
+    private String loginId;
+
     private String email;
 
     /** 회원 이름 */
     @NotBlank
     private String name;
 
+    /** 닉네임 (선택) */
+    private String nickname;
+
     /** 비밀번호 (BCrypt 인코딩 전 원문) */
     @NotBlank @Size(min=8, max=64)
     private String password;
 
-    /** 닉네임 (선택) */
-    private String nickname;
 
     /** 핸드폰 */
     private String phone;
