@@ -27,14 +27,11 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // 기본 설정 끄기
                 .csrf(csrf -> csrf.disable())
                 .formLogin(f -> f.disable())
                 .httpBasic(h -> h.disable())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .cors(Customizer.withDefaults())
-
-                // 401/403을 리다이렉트 대신 JSON으로
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((req, res, e) -> {
                             log.debug("[401] {}", e.getMessage());
@@ -49,18 +46,23 @@ public class SecurityConfig {
                             res.getWriter().write("{\"error\":\"forbidden\"}");
                         })
                 )
-
-                // 접근 제어
                 .authorizeHttpRequests(auth -> auth
-                        // Swagger/OpenAPI 공개
+                        // CORS preflight
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // Swagger/OpenAPI
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/api-docs/**").permitAll()
 
-                        // 회원가입/로그인/로그아웃 공개 (메서드 명확화)
-                        .requestMatchers(HttpMethod.POST, "/api/members/**").permitAll()          // 회원가입
-                        .requestMatchers(HttpMethod.POST, "/api/members/login").permitAll()    // 로그인
-                        .requestMatchers(HttpMethod.POST, "/api/members/logout").permitAll()   // 로그아웃(블랙리스트 방식)
+                        // ===== 공개 엔드포인트 =====
+                        // 회원가입 (끝 슬래시/쿼리스트링 포함 전부 허용)
+                        // 🔴 회원가입 전면 허용(패턴 3개: /api/members, /api/members/, /api/members/**)
+                        .requestMatchers("/api/members").permitAll()
+                        .requestMatchers("/api/members/").permitAll()
+                        .requestMatchers("/api/members/**").permitAll()
+                        // 로그인/게스트 로그인/로그아웃
+                        .requestMatchers(HttpMethod.POST, "/api/members/login", "/api/members/guest-login", "/api/members/logout").permitAll()
 
-                        // OAuth2(Kakao) 흐름 공개
+                        // OAuth2(Kakao)
                         .requestMatchers(
                                 "/api/members/kakao",
                                 "/oauth2/authorization/**",
@@ -71,11 +73,14 @@ public class SecurityConfig {
                         // 관리자 전용
                         .requestMatchers("/api/admin/**", "/login/admin/**").hasRole("ADMIN")
 
-                        // 나머지는 인증 필요
+                        // ===== 인증 필요 엔드포인트 =====
+                        .requestMatchers(HttpMethod.GET, "/api/members/**").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/members/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/members/**").authenticated()
+
+                        // 그 외
                         .anyRequest().authenticated()
                 )
-
-                // OAuth2 로그인(카카오)
                 .oauth2Login(o -> o
                         .authorizationEndpoint(ep -> ep.baseUri("/api/members/kakao"))
                         .userInfoEndpoint(u -> u.userService(customOAuth2UserService))
@@ -86,11 +91,10 @@ public class SecurityConfig {
                                 String code = (exception instanceof org.springframework.security.oauth2.core.OAuth2AuthenticationException e)
                                         ? e.getError().getErrorCode() : "unknown";
                                 response.sendRedirect("/login?oauth2_error=" + code);
-                            } catch (Exception ignored) {}
+                            } catch (Exception ignored) {
+                            }
                         })
                 )
-
-                // JWT 필터 연결 (UsernamePasswordAuthenticationFilter 앞)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

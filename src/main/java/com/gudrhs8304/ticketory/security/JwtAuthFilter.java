@@ -13,22 +13,20 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Service;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
 
-@Service
+@Component
+@RequiredArgsConstructor
 @Log4j2
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
-
-    public JwtAuthFilter(JwtTokenProvider jwtTokenProvider) {
-        this.jwtTokenProvider = jwtTokenProvider;
-    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -36,28 +34,43 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        String header = request.getHeader("Authorization");
-        if (StringUtils.hasText(header) && header.startsWith("Bearer ")) {
-            String token = header.substring(7);
+        String token = resolveToken(request);
 
-            if (jwtTokenProvider.validate(token)) {
-                Jws<Claims> jws = jwtTokenProvider.parseClaims(token);
-                Claims claims = jws.getPayload();
+        if (token != null) {
+            try {
+                if (jwtTokenProvider.validate(token)) {
+                    Jws<Claims> jws = jwtTokenProvider.parseClaims(token);
+                    Claims claims = jws.getPayload();
 
-                String memberId = claims.getSubject();
-                String role = claims.get("role", String.class); // 예: "ADMIN" / "USER"
+                    String memberId = claims.getSubject();            // stringified memberId
+                    String role = claims.get("role", String.class);   // "ADMIN" / "USER" ...
 
-                // 스프링 규칙: ROLE_ 접두어 부여
-                List<GrantedAuthority> authorities =
-                        List.of(new SimpleGrantedAuthority("ROLE_" + role));
+                    List<GrantedAuthority> authorities =
+                            List.of(new SimpleGrantedAuthority("ROLE_" + role));
 
-                UsernamePasswordAuthenticationToken auth =
-                        new UsernamePasswordAuthenticationToken(memberId, null, authorities);
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(memberId, null, authorities);
+                    authentication.setDetails(
+                            new WebAuthenticationDetailsSource().buildDetails(request)
+                    );
 
-                SecurityContextHolder.getContext().setAuthentication(auth);
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
+            } catch (Exception e) {
+                // 토큰 문제는 인증만 없애고 요청은 그대로 진행
+                SecurityContextHolder.clearContext();
+                log.debug("[JWT] invalid token: {}", e.getMessage());
             }
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private String resolveToken(HttpServletRequest request) {
+        String header = request.getHeader("Authorization");
+        if (StringUtils.hasText(header) && header.startsWith("Bearer ")) {
+            return header.substring(7);
+        }
+        return null;
     }
 }

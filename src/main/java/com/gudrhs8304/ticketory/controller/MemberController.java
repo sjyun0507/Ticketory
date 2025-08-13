@@ -22,6 +22,7 @@ public class MemberController {
 
     @Operation(summary = "회원 가입", description = "일반(LOCAL) 회원 가입 처리", security = {})
     @PostMapping("/")
+    @ResponseBody
     public MemberResponseDTO signup(@Valid @RequestBody MemberSignupRequestDTO req) {
         return memberService.signUp(req);
     }
