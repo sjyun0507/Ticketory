@@ -5,14 +5,15 @@ import com.gudrhs8304.ticketory.domain.Member;
 import com.gudrhs8304.ticketory.domain.enums.RoleType;
 import com.gudrhs8304.ticketory.domain.enums.SignupType;
 import com.gudrhs8304.ticketory.dto.*;
+import com.gudrhs8304.ticketory.exception.DuplicateLoginIdException;
 import com.gudrhs8304.ticketory.repository.MemberRepository;
 import com.gudrhs8304.ticketory.util.PhoneUtil;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.UUID;
@@ -27,6 +28,16 @@ public class MemberService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
 
+    @Transactional(readOnly = true)
+    public boolean isLoginIdAvailable(String loginId) {
+        if (loginId == null || loginId.isBlank()) return false;
+        return !memberRepository.existsByLoginId(loginId.trim());
+    }
+
+
+
+
+
     public MemberResponseDTO signUp(MemberSignupRequestDTO req) {
 
         final String loginId = req.getLoginId().trim().toLowerCase();
@@ -35,14 +46,13 @@ public class MemberService {
         final String email = StringUtils.hasText(req.getEmail()) ? req.getEmail().trim().toLowerCase() : null;
 
         if (memberRepository.existsByLoginId(req.getLoginId())) {
-            throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
+            throw new DuplicateLoginIdException("이미 사용 중인 이메일입니다.");
         }
 
         Member member = Member.builder()
                 .loginId(loginId)
                 .email(email)
                 .name(req.getName())
-                .nickname(req.getNickname())
                 .password(passwordEncoder.encode(req.getPassword()))
                 .phone(PhoneUtil.normalize(req.getPhone())) // DB에는 숫자만 저장
                 .role(RoleType.USER)

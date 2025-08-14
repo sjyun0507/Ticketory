@@ -29,8 +29,6 @@ public class MemberSignupRequestDTO extends BaseTimeEntity {
     @NotBlank
     private String name;
 
-    /** 닉네임 (선택) */
-    private String nickname;
 
     /** 비밀번호 (BCrypt 인코딩 전 원문) */
     @NotBlank @Size(min=8, max=64)

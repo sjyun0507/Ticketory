@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -24,7 +25,7 @@ public class MemberController {
     @Operation(summary = "회원 가입", description = "일반(LOCAL) 회원 가입 처리", security = {})
     @PostMapping("/")
     @ResponseBody
-    public MemberResponseDTO signup(@Valid @RequestBody MemberSignupRequestDTO req) {
+    public MemberResponseDTO signup(@Valid @ModelAttribute  MemberSignupRequestDTO req) {
         return memberService.signUp(req);
     }
 
@@ -32,6 +33,15 @@ public class MemberController {
     @PostMapping("/login")
     public JwtResponseDTO login(@Valid @RequestBody MemberLoginRequestDTO req) {
         return memberService.login(req);
+    }
+
+    @Operation(summary = "아이디 중복 확인")
+    @GetMapping(value = "/exists", produces = MediaType.APPLICATION_JSON_VALUE)
+    public AvailabilityResponse checkLoginId(@RequestParam String loginId) {
+        boolean available = memberService.isLoginIdAvailable(loginId);
+        return available
+                ? new AvailabilityResponse(true, "사용 가능한 아이디입니다.")
+                : new AvailabilityResponse(false, "이미 사용 중인 아이디입니다.");
     }
 
     @Operation(summary = "비회원(게스트) 이메일 로그인", description = """
