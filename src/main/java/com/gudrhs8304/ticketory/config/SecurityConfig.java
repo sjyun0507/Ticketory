@@ -55,9 +55,8 @@ public class SecurityConfig {
 
                         // ===== 공개 엔드포인트 =====
                         // 회원가입 (끝 슬래시/쿼리스트링 포함 전부 허용)
-                        // 🔴 회원가입 전면 허용(패턴 3개: /api/members, /api/members/, /api/members/**)
-                        .requestMatchers("/api/members").permitAll()
-                        .requestMatchers("/api/members/").permitAll()
+
+                        .requestMatchers("/api/members/signup").permitAll()
                         .requestMatchers("/api/members/**").permitAll()
                         // 로그인/게스트 로그인/로그아웃
                         .requestMatchers(HttpMethod.POST, "/api/members/login", "/api/members/guest-login", "/api/members/logout").permitAll()

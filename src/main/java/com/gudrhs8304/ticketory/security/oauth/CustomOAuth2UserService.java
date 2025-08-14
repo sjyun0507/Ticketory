@@ -56,7 +56,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                     .loginId(safeLoginId)
                     .email(email)                 // null 허용
                     .name(safeName)
-                    .nickname(safeNickname)       // NOT NULL 보장
                     .role(RoleType.USER)
                     .signupType(SignupType.KAKAO)
                     .socialId(kakaoId != null ? kakaoId.toString() : null)

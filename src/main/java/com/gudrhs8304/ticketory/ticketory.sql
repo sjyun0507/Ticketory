@@ -79,7 +79,6 @@ CREATE TABLE member
 (
     member_id                BIGINT PRIMARY KEY AUTO_INCREMENT,         -- 사용자 고유 ID
     name              VARCHAR(100)           NOT NULL,           -- 사용자 이름
-    nickname          VARCHAR(100)           NOT NULL,           -- 사용자 닉네임(중복 허용)
     login_id          VARCHAR(150)           NOT NULL UNIQUE,    -- 로그인 아이디(이메일 또는 카카오 계정 id)
     email             VARCHAR(150)           NULL,               -- 이메일 주소(선택)
     password     VARCHAR(255)           NULL,                    -- 해시 비밀번호(LOCAL 전용)

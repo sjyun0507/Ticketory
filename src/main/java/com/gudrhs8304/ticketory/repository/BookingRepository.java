@@ -12,30 +12,45 @@ import java.util.List;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
 
-    // 예매 요약 페이지
-    @Query("""
-            select new (
+    // (1) 예매 요약 페이지 (JPQL DTO 프로젝션)
+    @Query(
+            value = """
+        select new com.gudrhs8304.ticketory.dto.BookingSummaryDTO(
             b.bookingId,
             m.title,
             sc.startAt,
             sc.endAt,
+            s.name,
+            s.location,
             b.totalPrice,
             b.paymentStatus
         )
         from Booking b
           join b.screening sc
           join sc.movie m
+          join sc.screen s
         where b.member.memberId = :memberId
-        """)
-    Page<BookingSummaryDTO> findSummaryPageByMemberId(@Param("memberId") Long memberId, Pageable pageable);
+        order by b.createdAt desc
+        """,
+            countQuery = """
+        select count(b)
+        from Booking b
+        where b.member.memberId = :memberId
+        """
+    )
+    Page<BookingSummaryDTO> findSummaryPageByMemberId(@Param("memberId") Long memberId,
+                                                      Pageable pageable);
 
-    // (2) 좌석 라벨 일괄 조회 (페이지에 포함된 bookingId들만)
+
+    // (2) 좌석 라벨 일괄 조회
+    //  - 파라미터 이름을 bookingIds 로 통일
+    //  - 숫자 컬럼 결합 시 JPQL concat 타입 캐스팅 문제 방지: function('concat', ...)
     @Query("""
         select bs.booking.bookingId,
-               concat(s.rowLabel, s.colNumber)
+               function('concat', s.rowLabel, s.colNumber)
         from BookingSeat bs
           join bs.seat s
-        where bs.booking.bookingId in :bookingId
+        where bs.booking.bookingId in :bookingIds
         """)
-    List<Object[]> findSeatLabelsByBookingIds(@Param("bookingId") List<Long> bookingIds);
+    List<Object[]> findSeatLabelsByBookingIds(@Param("bookingIds") List<Long> bookingIds);
 }

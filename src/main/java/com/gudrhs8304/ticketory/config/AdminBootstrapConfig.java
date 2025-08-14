@@ -28,8 +28,7 @@ public class AdminBootstrapConfig {
     @Value("${app.admin.password:}")
     private String password;
 
-    @Value("${app.admin.nickname:}")
-    private String nickname;
+
 
     @Bean
     public ApplicationRunner adminBootstrapRunner() {
@@ -53,7 +52,6 @@ public class AdminBootstrapConfig {
                         .loginId(email)
                         .email(email)
                         .name("Admin")
-                        .nickname(nickname)
                         .password(passwordEncoder.encode(password))
                         .signupType(SignupType.LOCAL)
                         .role(RoleType.ADMIN)

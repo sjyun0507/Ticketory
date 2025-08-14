@@ -34,8 +34,6 @@ public class MemberResponseDTO extends BaseTimeEntity {
     /** 이메일 */
     private String email;
 
-    /** 닉네임 */
-    private String nickname;
 
     /** 핸드폰 */
     private String phone;
@@ -49,7 +47,6 @@ public class MemberResponseDTO extends BaseTimeEntity {
                 .email(m.getEmail())
                 .loginId(m.getLoginId())
                 .name(m.getName())
-                .nickname(m.getNickname())
                 .phone(PhoneUtil.format(m.getPhone())) // ← 여기서만 하이픈 붙임
                 .role(m.getRole().name())
                 .build();

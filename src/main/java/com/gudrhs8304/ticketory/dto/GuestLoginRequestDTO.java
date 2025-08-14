@@ -22,8 +22,7 @@ public class GuestLoginRequestDTO {
     @NotBlank
     String password;
 
-    @Schema(description = "닉네임(신규 생성 시에만 사용)", example = "홍길동", requiredMode = Schema.RequiredMode.NOT_REQUIRED)
-    String nickname;
+
 
     @Schema(description = "전화번호", example = "010-7253-3804")
     String phone;

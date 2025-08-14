@@ -12,8 +12,7 @@ import lombok.*;
 @Builder
 public class MemberUpdateRequestDTO {
 
-    /** 변경할 닉네임 */
-    private String nickname;
+
 
     @Schema(example = "010-1234-5678")
     @Pattern(

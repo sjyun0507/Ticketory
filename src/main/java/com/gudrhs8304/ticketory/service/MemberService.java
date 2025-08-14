@@ -67,7 +67,6 @@ public class MemberService {
                 .loginId(saved.getLoginId())
                 .name(saved.getName())
                 .email(saved.getEmail())
-                .nickname(saved.getNickname())
                 .phone(PhoneUtil.format(saved.getPhone())) // 응답 시 하이픈 추가
                 .role(saved.getRole().name())
                 .build();
@@ -103,16 +102,12 @@ public class MemberService {
                     return new JwtResponseDTO(token, "Bearer");
                 })
                 .orElseGet(() -> {
-                    String nickname = (req.getNickname() != null && !req.getNickname().isBlank())
-                            ? req.getNickname().trim()
-                            : "Guest-" + UUID.randomUUID().toString().substring(0, 8);
 
                     Member guest = Member.builder()
                             .loginId(email)
                             .email(email)
                             .password(passwordEncoder.encode(req.getPassword()))
                             .name("Guest")
-                            .nickname(nickname)
                             .phone(PhoneUtil.normalize(req.getPhone()))
                             .signupType(SignupType.LOCAL)
                             .role(RoleType.USER)
@@ -137,7 +132,6 @@ public class MemberService {
                 .loginId(saved.getLoginId())
                 .name(saved.getName())
                 .email(saved.getEmail())
-                .nickname(saved.getNickname())
                 .phone(PhoneUtil.format(saved.getPhone()))
                 .role(saved.getRole().name())
                 .build();
@@ -153,7 +147,6 @@ public class MemberService {
                 .loginId(m.getLoginId())
                 .name(m.getName())
                 .email(m.getEmail())
-                .nickname(m.getNickname())
                 .phone(PhoneUtil.format(m.getPhone()))
                 .role(m.getRole().name())
                 .build();
@@ -171,9 +164,7 @@ public class MemberService {
         Member m = memberRepository.findById(targetMemberId)
                 .orElseThrow(() -> new IllegalArgumentException("회원이 존재하지 않습니다."));
 
-        if (req.getNickname() != null && !req.getNickname().isBlank()) {
-            m.setNickname(req.getNickname().trim());
-        }
+
         if (req.getPhone() != null && !req.getPhone().isBlank()) {
             m.setPhone(PhoneUtil.normalize(req.getPhone())); // DB 저장용
         }
@@ -203,7 +194,6 @@ public class MemberService {
                 .loginId(saved.getLoginId())
                 .name(saved.getName())
                 .email(saved.getEmail())
-                .nickname(saved.getNickname())
                 .phone(PhoneUtil.format(saved.getPhone())) // 응답 시 하이픈 추가
                 .role(saved.getRole().name())
                 .build();

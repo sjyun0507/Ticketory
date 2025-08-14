@@ -2,6 +2,7 @@ package com.gudrhs8304.ticketory.controller;
 
 import com.gudrhs8304.ticketory.dto.BookingSummaryDTO;
 import com.gudrhs8304.ticketory.service.BookingQueryService;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 public class BookingController {
     private final BookingQueryService bookingQueryService;
 
+    @Operation(summary = "예매내역")
     @GetMapping("/{memberId}/booking")
     public ResponseEntity<Page<BookingSummaryDTO>> getBookings(
             @PathVariable Long memberId,
