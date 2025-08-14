@@ -51,4 +51,6 @@ public class BookingQueryService {
         slice.forEach(dto -> dto.setSeats(seatMap.getOrDefault(dto.getBookingId(), List.of())));
         return slice;
     }
+
+
 }

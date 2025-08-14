@@ -5,6 +5,7 @@ import com.gudrhs8304.ticketory.dto.BookingSummaryDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -53,4 +54,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
         where bs.booking.bookingId in :bookingIds
         """)
     List<Object[]> findSeatLabelsByBookingIds(@Param("bookingIds") List<Long> bookingIds);
+
+    @Modifying
+    @Query("update Booking b set b.member = null where b.member.memberId = :memberId")
+    int clearMemberByMemberId(@Param("memberId") Long memberId);
 }

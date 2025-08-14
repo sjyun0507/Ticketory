@@ -1,6 +1,7 @@
 package com.gudrhs8304.ticketory.controller;
 
 import com.gudrhs8304.ticketory.dto.*;
+import com.gudrhs8304.ticketory.repository.MemberRepository;
 import com.gudrhs8304.ticketory.security.SecurityUtil;
 import com.gudrhs8304.ticketory.service.MemberService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,7 +12,10 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+
+import java.security.Principal;
 
 @RestController
 @RequestMapping("/api/members")
@@ -21,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 public class MemberController {
 
     private final MemberService memberService;
+    private final MemberRepository memberRepository;
 
     @Operation(summary = "회원 가입", description = "일반(LOCAL) 회원 가입 처리", security = {})
     @PostMapping("/signup")
@@ -85,5 +90,39 @@ public class MemberController {
 
         MemberResponseDTO res = memberService.updateMember(memberId, req, authId, isAdmin);
         return ResponseEntity.ok(res);
+    }
+
+    // 본인 탈퇴
+    @Operation(summary = "회원탈퇴(본인)")
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> deleteMe(Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            return ResponseEntity.status(401).build();
+        }
+
+        String name = auth.getName(); // JWT 필터가 넣어준 값 (memberId 또는 loginId일 수 있음)
+        Long authMemberId = null;
+
+        // 1) name이 숫자면 memberId로 간주
+        try {
+            authMemberId = Long.valueOf(name);
+        } catch (NumberFormatException ignore) { /* 숫자가 아니면 아래로 */ }
+
+        if (authMemberId == null) {
+            // 2) 숫자가 아니면 loginId(이메일)로 조회
+            authMemberId = memberRepository.findIdByLoginId(name)
+                    .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 계정입니다."));
+        }
+
+        memberService.deleteMember(authMemberId, authMemberId, false);
+        return ResponseEntity.noContent().build(); // 204
+    }
+
+    @Operation(summary = "회원탈퇴(관리자)")
+    @DeleteMapping("/admin/members/{memberId}")
+    public ResponseEntity<Void> deleteByAdmin(@PathVariable Long id) {
+        // 관리자니까 isAdmin=true
+        memberService.deleteMember(id, null, true);
+        return ResponseEntity.noContent().build();
     }
 }

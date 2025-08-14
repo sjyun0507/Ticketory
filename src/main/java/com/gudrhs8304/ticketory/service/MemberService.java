@@ -6,6 +6,7 @@ import com.gudrhs8304.ticketory.domain.enums.RoleType;
 import com.gudrhs8304.ticketory.domain.enums.SignupType;
 import com.gudrhs8304.ticketory.dto.*;
 import com.gudrhs8304.ticketory.exception.DuplicateLoginIdException;
+import com.gudrhs8304.ticketory.repository.BookingRepository;
 import com.gudrhs8304.ticketory.repository.MemberRepository;
 import com.gudrhs8304.ticketory.util.PhoneUtil;
 import jakarta.persistence.EntityNotFoundException;
@@ -27,6 +28,7 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final BookingRepository bookingRepository;
 
     @Transactional(readOnly = true)
     public boolean isLoginIdAvailable(String loginId) {
@@ -197,5 +199,20 @@ public class MemberService {
                 .phone(PhoneUtil.format(saved.getPhone())) // 응답 시 하이픈 추가
                 .role(saved.getRole().name())
                 .build();
+    }
+
+
+    @Transactional
+    public void deleteMember(Long targetMemberId, Long authMemberId, boolean isAdmin) {
+        if (!isAdmin && !targetMemberId.equals(authMemberId)) {
+            throw new SecurityException("본인만 탈퇴할 수 있습니다.");
+        }
+
+        // (선택) 연관 데이터 정리 필요 시 여기서 처리 (예: 예약/좌석 홀드 등)
+        // bookingSeatRepository.deleteByMemberId(targetMemberId);
+        // bookingRepository.deleteByMemberId(targetMemberId);
+        // ... DB 제약조건에 따라 정리
+
+        memberRepository.deleteById(targetMemberId);
     }
 }
