@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.UUID;
 
@@ -27,13 +28,19 @@ public class MemberService {
     private final JwtTokenProvider jwtTokenProvider;
 
     public MemberResponseDTO signUp(MemberSignupRequestDTO req) {
+
+        final String loginId = req.getLoginId().trim().toLowerCase();
+
+        // 이메일: 비어있으면 null, 있으면 소문저/trim
+        final String email = StringUtils.hasText(req.getEmail()) ? req.getEmail().trim().toLowerCase() : null;
+
         if (memberRepository.existsByLoginId(req.getLoginId())) {
             throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
         }
 
         Member member = Member.builder()
-                .loginId(req.getLoginId())
-                .email(req.getEmail())
+                .loginId(loginId)
+                .email(email)
                 .name(req.getName())
                 .nickname(req.getNickname())
                 .password(passwordEncoder.encode(req.getPassword()))

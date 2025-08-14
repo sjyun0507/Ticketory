@@ -19,7 +19,7 @@ public class Booking extends BaseTimeEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "booking_id")
-    private Long id;
+    private Long bookingId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
