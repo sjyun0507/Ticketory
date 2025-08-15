@@ -1,7 +1,7 @@
 package com.gudrhs8304.ticketory.repository;
 
 import com.gudrhs8304.ticketory.domain.Booking;
-import com.gudrhs8304.ticketory.dto.BookingSummaryDTO;
+import com.gudrhs8304.ticketory.dto.booking.BookingSummaryDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,7 +17,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     // (1) 예매 요약 페이지 (JPQL DTO 프로젝션)
     @Query(
             value = """
-        select new com.gudrhs8304.ticketory.dto.BookingSummaryDTO(
+        select new com.gudrhs8304.ticketory.dto.booking.BookingSummaryDTO(
             b.bookingId,
             m.title,
             sc.startAt,

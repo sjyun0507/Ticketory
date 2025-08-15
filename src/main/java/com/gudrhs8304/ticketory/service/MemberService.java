@@ -4,7 +4,8 @@ import com.gudrhs8304.ticketory.config.JwtTokenProvider;
 import com.gudrhs8304.ticketory.domain.Member;
 import com.gudrhs8304.ticketory.domain.enums.RoleType;
 import com.gudrhs8304.ticketory.domain.enums.SignupType;
-import com.gudrhs8304.ticketory.dto.*;
+import com.gudrhs8304.ticketory.dto.member.*;
+import com.gudrhs8304.ticketory.dto.payment.GuestLoginRequestDTO;
 import com.gudrhs8304.ticketory.exception.DuplicateLoginIdException;
 import com.gudrhs8304.ticketory.repository.BookingRepository;
 import com.gudrhs8304.ticketory.repository.MemberRepository;
@@ -16,8 +17,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor

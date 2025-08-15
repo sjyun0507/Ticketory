@@ -1,6 +1,8 @@
 package com.gudrhs8304.ticketory.controller;
 
-import com.gudrhs8304.ticketory.dto.*;
+import com.gudrhs8304.ticketory.dto.member.*;
+import com.gudrhs8304.ticketory.dto.payment.GuestLoginRequestDTO;
+import com.gudrhs8304.ticketory.dto.screening.AvailabilityResponse;
 import com.gudrhs8304.ticketory.repository.MemberRepository;
 import com.gudrhs8304.ticketory.security.SecurityUtil;
 import com.gudrhs8304.ticketory.service.MemberService;
@@ -12,10 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
-
-import java.security.Principal;
 
 @RestController
 @RequestMapping("/api/members")
@@ -30,7 +29,7 @@ public class MemberController {
     @Operation(summary = "회원 가입", description = "일반(LOCAL) 회원 가입 처리", security = {})
     @PostMapping("/signup")
     @ResponseBody
-    public MemberResponseDTO signup(@Valid @RequestBody  MemberSignupRequestDTO req) {
+    public MemberResponseDTO signup(@Valid @RequestBody MemberSignupRequestDTO req) {
         return memberService.signUp(req);
     }
 

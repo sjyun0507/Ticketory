@@ -1,6 +1,6 @@
 package com.gudrhs8304.ticketory.config;
 
-import com.gudrhs8304.ticketory.dto.ApiError;
+import com.gudrhs8304.ticketory.dto.error.ApiError;
 import com.gudrhs8304.ticketory.exception.DuplicateLoginIdException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

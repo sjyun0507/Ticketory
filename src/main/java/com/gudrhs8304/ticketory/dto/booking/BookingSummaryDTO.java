@@ -1,12 +1,10 @@
-package com.gudrhs8304.ticketory.dto;
+package com.gudrhs8304.ticketory.dto.booking;
 
 import com.gudrhs8304.ticketory.domain.enums.BookingPayStatus;
-import com.gudrhs8304.ticketory.domain.enums.PaymentStatus;
 import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
 
 

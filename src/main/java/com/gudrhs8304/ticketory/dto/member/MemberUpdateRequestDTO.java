@@ -1,4 +1,4 @@
-package com.gudrhs8304.ticketory.dto;
+package com.gudrhs8304.ticketory.dto.member;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Pattern;

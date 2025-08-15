@@ -2,9 +2,8 @@ package com.gudrhs8304.ticketory.controller;
 
 import com.gudrhs8304.ticketory.domain.Member;
 import com.gudrhs8304.ticketory.domain.enums.RoleType;
-import com.gudrhs8304.ticketory.dto.AdminUpdateRoleRequestDTO;
-import com.gudrhs8304.ticketory.dto.MemberResponseDTO;
-import com.gudrhs8304.ticketory.dto.MemberRoleResponseDTO;
+import com.gudrhs8304.ticketory.dto.member.AdminUpdateRoleRequestDTO;
+import com.gudrhs8304.ticketory.dto.member.MemberRoleResponseDTO;
 import com.gudrhs8304.ticketory.security.auth.CustomUserPrincipal;
 import com.gudrhs8304.ticketory.service.AdminMemberService;
 import com.gudrhs8304.ticketory.service.MemberService;
@@ -13,7 +12,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 

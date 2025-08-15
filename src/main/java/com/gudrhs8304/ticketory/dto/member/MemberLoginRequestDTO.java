@@ -1,4 +1,4 @@
-package com.gudrhs8304.ticketory.dto;
+package com.gudrhs8304.ticketory.dto.member;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;

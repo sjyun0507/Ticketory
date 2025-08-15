@@ -1,6 +1,6 @@
 package com.gudrhs8304.ticketory.service;
 
-import com.gudrhs8304.ticketory.dto.BookingSummaryDTO;
+import com.gudrhs8304.ticketory.dto.booking.BookingSummaryDTO;
 import com.gudrhs8304.ticketory.repository.BookingRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;

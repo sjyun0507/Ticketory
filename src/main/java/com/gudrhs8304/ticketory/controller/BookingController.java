@@ -1,7 +1,7 @@
 package com.gudrhs8304.ticketory.controller;
 
 import com.gudrhs8304.ticketory.domain.Booking;
-import com.gudrhs8304.ticketory.dto.BookingSummaryDTO;
+import com.gudrhs8304.ticketory.dto.booking.BookingSummaryDTO;
 import com.gudrhs8304.ticketory.dto.booking.CancelBookingRequest;
 import com.gudrhs8304.ticketory.dto.booking.CreateBookingRequest;
 import com.gudrhs8304.ticketory.dto.booking.CreateBookingResponse;

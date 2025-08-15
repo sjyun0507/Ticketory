@@ -1,7 +1,6 @@
-package com.gudrhs8304.ticketory.dto;
+package com.gudrhs8304.ticketory.dto.member;
 
 import com.gudrhs8304.ticketory.domain.enums.RoleType;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class AdminUpdateRoleRequestDTO {
-    @NotNull
-    private RoleType role; // USER 또는 ADMIN
+public class MemberRoleResponseDTO {
+    private Long memberId;
+    private RoleType role;
 }

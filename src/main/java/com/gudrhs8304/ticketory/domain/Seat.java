@@ -1,18 +1,24 @@
 package com.gudrhs8304.ticketory.domain;
 
-import com.gudrhs8304.ticketory.domain.enums.SeatStatusType;
-import com.gudrhs8304.ticketory.domain.enums.SeatType;
+import com.gudrhs8304.ticketory.domain.enums.SeatStatusType; // AVAILABLE, PENDING, BOOKED
+import com.gudrhs8304.ticketory.domain.enums.SeatType;       // NORMAL, VIP
 import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "seat",
-        uniqueConstraints = @UniqueConstraint(name = "uk_seat_position", columnNames = {"screen_id","row_label","col_number"}))
+@Table(
+        name = "seat",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_seat_position",
+                columnNames = {"screen_id","row_label","col_number"}
+        )
+)
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor @Builder
 public class Seat extends BaseTimeEntity {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "seat_id")
     private Long seatId;
 
@@ -20,17 +26,38 @@ public class Seat extends BaseTimeEntity {
     @JoinColumn(name = "screen_id", nullable = false)
     private Screen screen;
 
+    // CHAR(1)
     @Column(name = "row_label", length = 1, nullable = false)
     private String rowLabel;
 
+    // INT NOT NULL
     @Column(name = "col_number", nullable = false)
     private Integer colNumber;
 
+    // ENUM('NORMAL','VIP') DEFAULT 'NORMAL'
     @Enumerated(EnumType.STRING)
-    @Column(name = "seat_type", length = 10, nullable = false)
+    @Column(
+            name = "seat_type",
+            length = 10,
+            nullable = false,
+            columnDefinition = "ENUM('NORMAL','VIP') DEFAULT 'NORMAL'"
+    )
     private SeatType seatType;
 
+    // ENUM('AVAILABLE','PENDING','BOOKED') DEFAULT 'AVAILABLE'
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", length = 10, nullable = false)
+    @Column(
+            name = "status",
+            length = 10,
+            nullable = false,
+            columnDefinition = "ENUM('AVAILABLE','PENDING','BOOKED') DEFAULT 'AVAILABLE'"
+    )
     private SeatStatusType status;
+
+    /** JPA로 null 넣을 때도 기본값 보장 */
+    @PrePersist
+    void applyDefaults() {
+        if (seatType == null) seatType = SeatType.NORMAL;
+        if (status == null) status = SeatStatusType.AVAILABLE;
+    }
 }
