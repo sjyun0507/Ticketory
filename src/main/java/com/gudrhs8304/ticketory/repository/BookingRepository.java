@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
 
@@ -58,4 +59,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Modifying
     @Query("update Booking b set b.member = null where b.member.memberId = :memberId")
     int clearMemberByMemberId(@Param("memberId") Long memberId);
+
+    Optional<Booking> findByBookingIdAndMember_MemberId(Long bookingId, Long memberId);
 }

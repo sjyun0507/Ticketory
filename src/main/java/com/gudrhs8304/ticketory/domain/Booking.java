@@ -1,5 +1,6 @@
 package com.gudrhs8304.ticketory.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.gudrhs8304.ticketory.domain.enums.BookingPayStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -41,4 +42,23 @@ public class Booking extends BaseTimeEntity {
 
     @Column(name = "qr_code_url", length = 255)
     private String qrCodeUrl;
+
+    @PrePersist
+    protected void onPrePersist() {
+        if (this.bookingTime == null) {
+            this.bookingTime = java.time.LocalDateTime.now();
+        }
+        if (this.paymentStatus == null) {
+            this.paymentStatus = com.gudrhs8304.ticketory.domain.enums.BookingPayStatus.PENDING;
+        }
+    }
+
+    @JsonIgnore
+    public Member getMember() {
+        return member;
+    }
+    @JsonIgnore
+    public Screening getScreening() {
+        return screening;
+    }
 }

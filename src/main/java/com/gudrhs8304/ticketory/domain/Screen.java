@@ -11,7 +11,7 @@ public class Screen extends BaseTimeEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "screen_id")
-    private Long id;
+    private Long screenId;
 
     @Column(length = 100, nullable = false)
     private String name;

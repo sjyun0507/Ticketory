@@ -1,5 +1,6 @@
 package com.gudrhs8304.ticketory.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.gudrhs8304.ticketory.domain.enums.RoleType;
 import com.gudrhs8304.ticketory.domain.enums.SignupType;
 import jakarta.persistence.*;
@@ -14,6 +15,7 @@ import lombok.*;
         })
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor @Builder
+
 public class Member extends BaseTimeEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -53,4 +55,11 @@ public class Member extends BaseTimeEntity {
 
     @Column(name = "point_balance", nullable = false)
     private Integer pointBalance;
+
+    public Member(Long memberId) {
+        this.memberId = memberId;
+    }
+
+
+
 }

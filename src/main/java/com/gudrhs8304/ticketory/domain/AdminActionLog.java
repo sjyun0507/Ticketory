@@ -15,7 +15,7 @@ public class AdminActionLog extends BaseTimeEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "admin_action_id")
-    private Long id;
+    private Long adminActionId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "admin_member_id", nullable = false)

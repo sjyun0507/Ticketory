@@ -14,7 +14,7 @@ public class Movie extends BaseTimeEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "movie_id")
-    private Long id;
+    private Long movieId;
 
     @Column(length = 100, nullable = false)
     private String title;
