@@ -18,6 +18,8 @@ import org.springframework.security.oauth2.client.web.DefaultOAuth2Authorization
 import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 
 @Configuration
 @EnableWebSecurity
@@ -73,10 +75,9 @@ public class SecurityConfig {
                         // CORS preflight
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // 정적 리소스 & 파비콘 허용 추가
+                        // 정적 리소스 & 파비콘 허용
                         .requestMatchers(
-                                "/",
-                                "/favicon.ico",
+                                "/", "/favicon.ico",
                                 "/assets/**", "/static/**", "/css/**", "/js/**", "/images/**", "/webjars/**"
                         ).permitAll()
 
@@ -89,13 +90,23 @@ public class SecurityConfig {
                         .requestMatchers("/api/members/signup").permitAll()
                         // 카카오 시작/로그아웃(둘 다 허용)
                         .requestMatchers("/api/members/kakao", "/kakao/logout", "/api/members/logout/kakao").permitAll()
+                        // ✅ 가입 단계에서 필요한 공개 GET 허용 (아이디/이메일 중복확인 등)
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/members/exists",
+                                "/api/members/check-id",
+                                "/api/members/check-email",
+                                "/api/members/availability"
+                        ).permitAll()
 
                         // 일반 로그인/ 게스트 로그인/ 로그아웃
-                        .requestMatchers(HttpMethod.POST, "/api/members/login", "/api/members/guest-login", "/api/members/logout").permitAll()
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/members/login",
+                                "/api/members/guest-login",
+                                "/api/members/logout"
+                        ).permitAll()
 
                         // 관리자 전용
                         .requestMatchers("/api/admin/**", "/login/admin/**").hasRole("ADMIN")
-
 
                         // ===== 인증 필요 엔드포인트 =====
                         .requestMatchers(HttpMethod.GET, "/api/members/**").authenticated()
@@ -116,8 +127,7 @@ public class SecurityConfig {
                                 String code = (exception instanceof org.springframework.security.oauth2.core.OAuth2AuthenticationException e)
                                         ? e.getError().getErrorCode() : "unknown";
                                 response.sendRedirect("/login?oauth2_error=" + code);
-                            } catch (Exception ignored) {
-                            }
+                            } catch (Exception ignored) {}
                         })
                 )
                 .addFilterBefore(jwtAuthFilter(), UsernamePasswordAuthenticationFilter.class);
@@ -128,8 +138,8 @@ public class SecurityConfig {
     @Bean
     public org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer webSecurityCustomizer() {
         return web -> web.ignoring().requestMatchers(
-                org.springframework.boot.autoconfigure.security.servlet.PathRequest.toStaticResources().atCommonLocations(),
-                new org.springframework.security.web.util.matcher.AntPathRequestMatcher("/favicon.ico")
+                PathRequest.toStaticResources().atCommonLocations(),
+                new AntPathRequestMatcher("/favicon.ico")
         );
     }
 }
