@@ -1,6 +1,7 @@
 package com.gudrhs8304.ticketory.repository;
 
 import com.gudrhs8304.ticketory.domain.Member;
+import com.gudrhs8304.ticketory.domain.enums.RoleType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,4 +17,6 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
 
     @Query("select m.memberId from Member m where m.loginId = :loginId")
     Optional<Long> findIdByLoginId(@Param("loginId") String loginId);
+
+    long countByRole(RoleType role);
 }

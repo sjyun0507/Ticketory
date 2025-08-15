@@ -215,4 +215,6 @@ public class MemberService {
 
         memberRepository.deleteById(targetMemberId);
     }
+
+
 }
