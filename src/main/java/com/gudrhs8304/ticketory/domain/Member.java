@@ -6,6 +6,8 @@ import com.gudrhs8304.ticketory.domain.enums.SignupType;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "member",
         indexes = {
@@ -55,6 +57,9 @@ public class Member extends BaseTimeEntity {
 
     @Column(name = "point_balance", nullable = false)
     private Integer pointBalance;
+
+    private Boolean active = true;            // 기본 true
+    private LocalDateTime deletedAt;
 
     public Member(Long memberId) {
         this.memberId = memberId;

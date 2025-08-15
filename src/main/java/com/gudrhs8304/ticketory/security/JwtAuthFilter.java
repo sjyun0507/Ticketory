@@ -60,11 +60,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                 : List.of(new SimpleGrantedAuthority("ROLE_" + role));
 
                 // [CHANGED] loginId/roles 같은 미존재 클레임 사용 제거
-                CustomUserPrincipal principal =
-                        new CustomUserPrincipal(memberId, null, null, authorities);
 
                 Authentication auth =
-                        new UsernamePasswordAuthenticationToken(principal, null, authorities);
+                        new UsernamePasswordAuthenticationToken(String.valueOf(memberId), null, authorities);
                 SecurityContextHolder.getContext().setAuthentication(auth);
             }
         }

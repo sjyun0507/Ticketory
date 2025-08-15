@@ -4,7 +4,6 @@ import com.gudrhs8304.ticketory.dto.member.*;
 import com.gudrhs8304.ticketory.dto.payment.GuestLoginRequestDTO;
 import com.gudrhs8304.ticketory.dto.screening.AvailabilityResponse;
 import com.gudrhs8304.ticketory.repository.MemberRepository;
-import com.gudrhs8304.ticketory.security.SecurityUtil;
 import com.gudrhs8304.ticketory.service.MemberService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -24,11 +23,10 @@ import org.springframework.web.bind.annotation.*;
 public class MemberController {
 
     private final MemberService memberService;
-    private final MemberRepository memberRepository;
+    private final MemberRepository memberRepository; // (현재 사용 안 하지만 남겨둬도 무방)
 
     @Operation(summary = "회원 가입", description = "일반(LOCAL) 회원 가입 처리", security = {})
     @PostMapping("/signup")
-    @ResponseBody
     public MemberResponseDTO signup(@Valid @RequestBody MemberSignupRequestDTO req) {
         return memberService.signUp(req);
     }
@@ -63,75 +61,70 @@ public class MemberController {
     public ResponseEntity<Void> logout(
             @RequestHeader(value = "Authorization", required = false) String authHeader
     ) {
-
-        // 클라이언트는 이 응답을 받으면 로컬스토리지/쿠키 등에서 토큰 제거
         return ResponseEntity.noContent().build(); // 204
-    }
-
-    // 선택 유틸
-    private String extractBearer(String h) {
-        if (h == null) return null;
-        return h.toLowerCase().startsWith("bearer ") ? h.substring(7) : null;
     }
 
     @Operation(summary = "마이페이지/회원 정보 조회 — 본인 또는 관리자만", security = {})
     @GetMapping("/{memberId}")
-    public ResponseEntity<MemberResponseDTO> getMember(@PathVariable Long memberId) {
-        Long me = SecurityUtil.currentMemberId();
-        if (me == null) throw new AccessDeniedException("로그인이 필요합니다.");
-        if (!SecurityUtil.isAdmin() && !memberId.equals(me)) {
-            throw new AccessDeniedException("본인 또는 관리자만 접근할 수 있습니다.");
-        }
+    public ResponseEntity<MemberResponseDTO> getMember(@PathVariable Long memberId, Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) throw new AccessDeniedException("로그인이 필요합니다.");
+        Long me = Long.valueOf(auth.getName()); // JwtAuthFilter에서 principal=memberId 문자열
+        boolean isAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        if (!isAdmin && !memberId.equals(me)) throw new AccessDeniedException("본인 또는 관리자만 접근할 수 있습니다.");
         return ResponseEntity.ok(memberService.getMemberById(memberId));
     }
 
+
+    @Operation(summary = "회원정보 수정(본인 또는 관리자)")
     @PutMapping("/{memberId}")
     public ResponseEntity<MemberResponseDTO> updateMember(
             @PathVariable Long memberId,
             @Valid @RequestBody MemberUpdateRequestDTO req,
-            Authentication authentication
+            Authentication auth
     ) {
-        // JwtTokenProvider에서 setSubject(memberId) 했으므로
-        // authentication.getName() == "memberId"
-        Long authId = Long.valueOf(authentication.getName());
-        boolean isAdmin = authentication.getAuthorities().stream()
+        if (auth == null || !auth.isAuthenticated()) return ResponseEntity.status(401).build();
+
+        Long authId = Long.valueOf(auth.getName()); // JwtAuthFilter 전제
+        boolean isAdmin = auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+        // 본인 또는 관리자만 허용
+        if (!isAdmin && !memberId.equals(authId)) {
+            throw new AccessDeniedException("본인 또는 관리자만 수정할 수 있습니다.");
+        }
 
         MemberResponseDTO res = memberService.updateMember(memberId, req, authId, isAdmin);
         return ResponseEntity.ok(res);
     }
 
-    // 본인 탈퇴
+    /** 회원탈퇴 — 본인 */
     @Operation(summary = "회원탈퇴(본인)")
-    @DeleteMapping("/me")
+    @DeleteMapping("/{memberId}")
     public ResponseEntity<Void> deleteMe(Authentication auth) {
-        if (auth == null || !auth.isAuthenticated()) {
-            return ResponseEntity.status(401).build();
-        }
+        if (auth == null || !auth.isAuthenticated()) return ResponseEntity.status(401).build();
 
-        String name = auth.getName(); // JWT 필터가 넣어준 값 (memberId 또는 loginId일 수 있음)
-        Long authMemberId = null;
-
-        // 1) name이 숫자면 memberId로 간주
+        // JwtAuthFilter가 principal을 String.valueOf(memberId)로 넣는 전제
+        Long authMemberId;
         try {
-            authMemberId = Long.valueOf(name);
-        } catch (NumberFormatException ignore) { /* 숫자가 아니면 아래로 */ }
-
-        if (authMemberId == null) {
-            // 2) 숫자가 아니면 loginId(이메일)로 조회
-            authMemberId = memberRepository.findIdByLoginId(name)
-                    .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 계정입니다."));
+            authMemberId = Long.valueOf(auth.getName());
+        } catch (NumberFormatException e) {
+            // 필터가 아직 교체 전이라면 숫자가 아닐 수 있음 → 401 처리
+            return ResponseEntity.status(401).build();
         }
 
         memberService.deleteMember(authMemberId, authMemberId, false);
         return ResponseEntity.noContent().build(); // 204
     }
 
+    /** 회원탈퇴 — 관리자 */
     @Operation(summary = "회원탈퇴(관리자)")
-    @DeleteMapping("/admin/members/{memberId}")
-    public ResponseEntity<Void> deleteByAdmin(@PathVariable Long id) {
-        // 관리자니까 isAdmin=true
-        memberService.deleteMember(id, null, true);
+    @DeleteMapping("/admin/{memberId}") // 경로 단순화 및 변수명 일치
+    public ResponseEntity<Void> deleteByAdmin(@PathVariable("memberId") Long memberId, Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) return ResponseEntity.status(401).build();
+        boolean isAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        if (!isAdmin) throw new AccessDeniedException("관리자만 삭제할 수 있습니다.");
+
+        memberService.deleteMember(memberId, null, true);
         return ResponseEntity.noContent().build();
     }
 }

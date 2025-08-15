@@ -13,10 +13,13 @@ import com.gudrhs8304.ticketory.util.PhoneUtil;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -202,17 +205,36 @@ public class MemberService {
 
 
     @Transactional
-    public void deleteMember(Long targetMemberId, Long authMemberId, boolean isAdmin) {
-        if (!isAdmin && !targetMemberId.equals(authMemberId)) {
-            throw new SecurityException("본인만 탈퇴할 수 있습니다.");
+    public void deleteMember(Long targetMemberId, Long requesterId, boolean isAdmin) {
+        Member m = memberRepository.findById(targetMemberId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원"));
+
+        // 권한 검증(필요시)
+        if (!isAdmin && (requesterId == null || !targetMemberId.equals(requesterId))) {
+            throw new AccessDeniedException("본인만 탈퇴할 수 있습니다.");
         }
 
-        // (선택) 연관 데이터 정리 필요 시 여기서 처리 (예: 예약/좌석 홀드 등)
-        // bookingSeatRepository.deleteByMemberId(targetMemberId);
-        // bookingRepository.deleteByMemberId(targetMemberId);
-        // ... DB 제약조건에 따라 정리
+        String tomb = "deleted_" + m.getMemberId();
 
-        memberRepository.deleteById(targetMemberId);
+        m.setActive(false);
+        m.setDeletedAt(LocalDateTime.now());
+
+        // 🔴 NOT NULL 컬럼은 NULL 금지 → placeholder로 대체
+        m.setName("탈퇴회원"); // ← name NOT NULL 대비
+        m.setEmail(tomb + "@ticketory.local"); // ← UNIQUE 충돌 방지
+        m.setLoginId(tomb);                    // ← UNIQUE 충돌 방지
+
+        // 비밀번호 컬럼이 NOT NULL이면 더미 값 세팅 (BCrypt 권장)
+        // 예) m.setPassword(passwordEncoder.encode("deleted:" + tomb));
+        m.setPassword("{noop}deleted"); // PasswordEncoder 안 쓰면 임시로 이렇게
+
+        // nullable 컬럼은 정리
+        m.setPhone(null);              // nullable 아니면 "" 로
+        m.setProfileImageUrl(null);
+        m.setSocialId(null);
+
+        // role / signupType 이 NOT NULL이면 값 유지(또는 최소 권한으로 축소)
+        // m.setRole(RoleType.USER);
     }
 
 
