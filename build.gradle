@@ -24,35 +24,41 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-    implementation 'org.springframework.boot:spring-boot-starter-security'
-    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'
-    implementation 'org.springframework.boot:spring-boot-starter-validation'
-    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
-    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-    implementation 'org.springframework.security:spring-security-crypto'
+    // === Spring Boot Starters (핵심 기능) ===
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'      // JPA/Hibernate, 트랜잭션, EntityManager 등
+    implementation 'org.springframework.boot:spring-boot-starter-security'       // 스프링 시큐리티(인증/인가)
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'      // 서버사이드 템플릿 엔진(관리/테스트 페이지 등)
+    implementation 'org.springframework.boot:spring-boot-starter-web'            // Spring MVC + Jackson(JSON 직렬화)
+    implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'       // Thymeleaf에서 시큐리티 태그/유틸 사용
+    implementation 'org.springframework.boot:spring-boot-starter-validation'     // Bean Validation(@Valid, @NotBlank 등)
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'  // OAuth2/OIDC 클라이언트(카카오 로그인 등)
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'     // Redis 연동(세션/캐시/락 등)
+    implementation 'org.springframework.security:spring-security-crypto'         // 비밀번호 해시(BCrypt) 등 암호 유틸
 
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
-    developmentOnly 'org.springframework.boot:spring-boot-devtools'
-    runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
+    // === 개발 편의/롬복/런타임 드라이버 ===
+    compileOnly 'org.projectlombok:lombok'               // 롬복(컴파일 전용)
+    annotationProcessor 'org.projectlombok:lombok'       // 롬복 애너테이션 처리기
+    developmentOnly 'org.springframework.boot:spring-boot-devtools' // 핫 리로드 등 개발 편의
+    runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'   // MariaDB JDBC 드라이버(런타임)
 
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.springframework.security:spring-security-test'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    testCompileOnly 'org.projectlombok:lombok'
-    testAnnotationProcessor 'org.projectlombok:lombok'
+    // === 테스트 ===
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'   // JUnit/Mockito 등 테스트 의존성 모음
+    testImplementation 'org.springframework.security:spring-security-test'   // 시큐리티 테스트 유틸(MockMvc 지원 등)
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'             // JUnit 플랫폼 런처(실행기)
+    testCompileOnly 'org.projectlombok:lombok'                               // 테스트 소스용 롬복
+    testAnnotationProcessor 'org.projectlombok:lombok'                       // 테스트 소스용 롬복 애너테이션 처리기
 
-    // JJWT: 0.12.5만 사용
-    implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
-    runtimeOnly    'io.jsonwebtoken:jjwt-impl:0.12.5'
-    runtimeOnly    'io.jsonwebtoken:jjwt-jackson:0.12.5'
+    // === JWT (JJWT) ===
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.5'     // JWT 생성/검증 API
+    runtimeOnly    'io.jsonwebtoken:jjwt-impl:0.12.5'    // JWT 구현체(런타임 필요)
+    runtimeOnly    'io.jsonwebtoken:jjwt-jackson:0.12.5' // Jackson 기반 직렬화/역직렬화(런타임 필요)
 
+    // === OpenAPI/Swagger UI ===
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0' // /swagger-ui, /v3/api-docs 제공
 
-    // https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-starter-webmvc-ui
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
+    // === QR 코드 ===
+    implementation 'com.google.zxing:core:3.5.3'    // ZXing 핵심 라이브러리(바코드/QR 인코딩)
+    implementation 'com.google.zxing:javase:3.5.3'  // ZXing JavaSE 지원(BufferedImage 등)
 }
 
 tasks.named('test') {

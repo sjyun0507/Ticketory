@@ -59,10 +59,20 @@ public class MemberController {
         return memberService.guestEmailLogin(req);
     }
 
-    @Operation(summary = "로그아웃", security = {})
+    @Operation(summary = "로그아웃(일반)", description = "클라이언트에서 저장한 액세스 토큰을 삭제하세요.", security = {})
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout() {
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<Void> logout(
+            @RequestHeader(value = "Authorization", required = false) String authHeader
+    ) {
+
+        // 클라이언트는 이 응답을 받으면 로컬스토리지/쿠키 등에서 토큰 제거
+        return ResponseEntity.noContent().build(); // 204
+    }
+
+    // 선택 유틸
+    private String extractBearer(String h) {
+        if (h == null) return null;
+        return h.toLowerCase().startsWith("bearer ") ? h.substring(7) : null;
     }
 
     @Operation(summary = "마이페이지/회원 정보 조회 — 본인 또는 관리자만", security = {})
