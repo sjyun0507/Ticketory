@@ -1,4 +1,3 @@
-// src/main/java/com/gudrhs8304/ticketory/security/SecurityUtil.java
 package com.gudrhs8304.ticketory.security;
 
 import org.springframework.security.core.Authentication;

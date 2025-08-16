@@ -1,14 +1,17 @@
 package com.gudrhs8304.ticketory.domain;
 
-import com.gudrhs8304.ticketory.domain.enums.MediaType;
+import com.gudrhs8304.ticketory.domain.enums.MovieMediaType;
 import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
 @Table(name = "movie_media",
         uniqueConstraints = @UniqueConstraint(name = "uk_movie_media_url", columnNames = {"movie_id","url"}))
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor @Builder
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class MovieMedia extends BaseTimeEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,7 +24,7 @@ public class MovieMedia extends BaseTimeEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "media_type", nullable = false, length = 20)
-    private MediaType mediaType;
+    private MovieMediaType movieMediaType;
 
     @Column(nullable = false, length = 255)
     private String url;

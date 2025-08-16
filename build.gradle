@@ -65,6 +65,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-json'
 
     implementation 'org.springframework.boot:spring-boot-starter-webflux' // WebClient
+
+    implementation 'commons-net:commons-net:3.10.0'
 }
 
 tasks.named('test') {

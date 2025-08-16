@@ -1,15 +1,26 @@
 package com.gudrhs8304.ticketory.config;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 @Configuration
 @RequiredArgsConstructor
 public class WebMvcConfig implements WebMvcConfigurer {
+
+    /**
+     * 업로드 베이스 디렉터리 (기본: 프로젝트 루트의 uploads/)
+     * application.properties에 app.upload.dir=/absolute/or/relative/path 로 변경 가능
+     */
+    @Value("${app.upload.dir:uploads}")
+    private String uploadDir;
 
     /**
      * CORS 설정
@@ -17,7 +28,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**") // 모든 엔드포인트 허용
-                .allowedOrigins("http://localhost:5137", "http://127.0.0.1:5137") // React 개발 서버
+                .allowedOrigins("http://localhost:5173", "http://127.0.0.1:5173") // React 개발 서버
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true) // 쿠키, 인증정보 허용
@@ -29,8 +40,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
      */
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/uploads/**")
-                .addResourceLocations("file:uploads/"); // 로컬 uploads 폴더 매핑
+        Path uploadRoot = Paths.get("uploads").toAbsolutePath().normalize();
+        registry.addResourceHandler("/files/**")
+                .addResourceLocations("file:" + uploadRoot.toString() + "/");
     }
 
     /**
