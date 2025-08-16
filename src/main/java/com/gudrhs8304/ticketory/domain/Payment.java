@@ -47,4 +47,7 @@ public class Payment extends BaseTimeEntity {
 
     @Column(name = "payment_key")
     private String paymentKey;
+
+    @Column(unique = true, nullable = false)
+    private String orderId;
 }

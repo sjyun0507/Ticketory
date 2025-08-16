@@ -59,6 +59,12 @@ dependencies {
     // === QR 코드 ===
     implementation 'com.google.zxing:core:3.5.3'    // ZXing 핵심 라이브러리(바코드/QR 인코딩)
     implementation 'com.google.zxing:javase:3.5.3'  // ZXing JavaSE 지원(BufferedImage 등)
+
+
+
+    implementation 'org.springframework.boot:spring-boot-starter-json'
+
+    implementation 'org.springframework.boot:spring-boot-starter-webflux' // WebClient
 }
 
 tasks.named('test') {

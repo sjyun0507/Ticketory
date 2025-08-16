@@ -78,7 +78,7 @@ public class SecurityConfig {
                         // 정적 리소스 & 파비콘 허용
                         .requestMatchers(
                                 "/", "/favicon.ico",
-                                "/assets/**", "/static/**", "/css/**", "/js/**", "/images/**", "/webjars/**"
+                                "/assets/**", "/static/**", "/css/**", "/js/**", "/images/**", "/webjars/**", "payments-test.html"
                         ).permitAll()
 
                         // Swagger/OpenAPI
