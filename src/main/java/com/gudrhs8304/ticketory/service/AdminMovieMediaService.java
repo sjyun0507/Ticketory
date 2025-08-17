@@ -24,10 +24,12 @@ public class AdminMovieMediaService {
     private final MovieMediaRepository mediaRepository;
     private final FileStorage storage;
 
-    @Value("${app.media.posters-dir:posters}")   private String postersDir;
-    @Value("${app.media.stillcuts-dir:stillcuts}") private String stillcutsDir;
-    @Value("${app.media.trailers-dir:trailers}") private String trailersDir;
-
+    @Value("${app.media.posters-dir:posters}")
+    private String postersDir;
+    @Value("${app.media.stillcuts-dir:stillcuts}")
+    private String stillcutsDir;
+    @Value("${app.media.trailers-dir:trailers}")
+    private String trailersDir;
 
 
     public MovieMedia uploadImage(Long movieId, MovieMediaType type, MultipartFile file, String description) {
@@ -41,8 +43,8 @@ public class AdminMovieMediaService {
         // 타입별 디렉토리 결정
         String base = switch (type) {
             case POSTER -> postersDir;
-            case STILL  -> stillcutsDir;
-            default     -> "others";
+            case STILL -> stillcutsDir;
+            default -> "others";
         };
 
         // (선택) 영화별 하위 폴더를 두고 싶으면 아래처럼:
@@ -53,6 +55,13 @@ public class AdminMovieMediaService {
 
         // 저장(FTP 또는 로컬) → 공개 URL 반환
         String url = storage.save(relPath, filename, file);
+
+
+        // ✅ 포스터일 때 Movie.posterUrl 자동 반영
+        if (type == MovieMediaType.POSTER) {
+            movie.setPosterUrl(url);
+            movieRepository.save(movie);
+        }
 
         MovieMedia media = new MovieMedia();
         media.setMovie(movie);

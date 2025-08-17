@@ -2,16 +2,22 @@ package com.gudrhs8304.ticketory.service;
 
 import com.gudrhs8304.ticketory.domain.*;
 import com.gudrhs8304.ticketory.domain.enums.BookingPayStatus;
+import com.gudrhs8304.ticketory.domain.enums.MovieMediaType;
 import com.gudrhs8304.ticketory.domain.enums.PaymentProvider;
 import com.gudrhs8304.ticketory.domain.enums.PaymentStatus;
+import com.gudrhs8304.ticketory.dto.movie.MovieDetailDTO;
+import com.gudrhs8304.ticketory.dto.movie.MovieDetailResponseDTO;
 import com.gudrhs8304.ticketory.dto.payment.ApprovePaymentRequest;
 import com.gudrhs8304.ticketory.repository.BookingRepository;
+import com.gudrhs8304.ticketory.repository.MovieMediaRepository;
+import com.gudrhs8304.ticketory.repository.MovieRepository;
 import com.gudrhs8304.ticketory.repository.PaymentRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -20,6 +26,8 @@ public class PaymentService {
 
     private final BookingRepository bookingRepository;
     private final PaymentRepository paymentRepository;
+    private final MovieRepository movieRepository;
+    private final MovieMediaRepository movieMediaRepository;
 
     @Transactional
     public Payment approve(Long memberId, ApprovePaymentRequest req) {
@@ -62,5 +70,17 @@ public class PaymentService {
         }
         booking.setPaymentStatus(BookingPayStatus.CANCELLED);
         // (선택) 환불/좌석 해제/로그 적재는 다음 단계에서
+    }
+
+    public MovieDetailDTO getMovieDetail(Long movieId) {
+        var movie = movieRepository.findByMovieIdAndDeletedAtIsNull(movieId)
+                .orElseThrow(() -> new IllegalArgumentException("영화를 찾을 수 없습니다: " + movieId));
+
+        var medias = movieMediaRepository.findByMovie_MovieIdAndMovieMediaTypeIn(
+                movieId, List.of(MovieMediaType.STILL, MovieMediaType.TRAILER)
+        );
+
+        // ✅ 서비스는 내부 DTO를 리턴
+        return MovieDetailDTO.of(movie, medias);
     }
 }

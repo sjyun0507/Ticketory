@@ -1,29 +1,34 @@
 package com.gudrhs8304.ticketory.domain;
 
-
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.Where;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "movie")
 @Getter
 @Setter
-@NoArgsConstructor @AllArgsConstructor
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
-@SQLDelete(sql = "UPDATE movie SET delete_at = now() WHERE movie_id = ?")
+@SQLDelete(sql = "UPDATE movie SET delete_at = NOW() WHERE movie_id = ?")
 @Where(clause = "delete_at IS NULL")
 public class Movie extends BaseTimeEntity {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "movie_id")
     private Long movieId;
 
     @Column(length = 100, nullable = false)
     private String title;
+
+    @Column(length = 255)
+    private String subtitle;
 
     @Lob
     private String summary;
@@ -50,6 +55,11 @@ public class Movie extends BaseTimeEntity {
     @Column(length = 100)
     private String director;
 
+    @Column(name = "poster_url", length = 500)
+    private String posterUrl;
+
     @Column(name = "delete_at")
-    private LocalDate deletedAt;
+    private LocalDateTime deletedAt;
+
+
 }
