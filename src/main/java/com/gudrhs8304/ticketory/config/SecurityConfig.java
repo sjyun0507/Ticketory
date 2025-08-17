@@ -6,12 +6,14 @@ import com.gudrhs8304.ticketory.security.oauth.OAuth2LoginSuccessHandler;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.DefaultOAuth2AuthorizationRequestResolver;
@@ -32,6 +34,9 @@ public class SecurityConfig {
     private final ClientRegistrationRepository clientRegistrationRepository;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 
+    @Value("${app.security.enabled:true}")                                       // ✅ (1) 프로퍼티 스위치
+    private boolean securityEnabled;
+
     @Bean
     public JwtAuthFilter jwtAuthFilter() {
         return new JwtAuthFilter(jwtTokenProvider);
@@ -51,11 +56,24 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        // ✅ (2) 개발용: security 끄면 전부 허용(스웨거/프론트 테스트 편하게)
+        if (!securityEnabled) {
+            http
+                    .csrf(csrf -> csrf.disable())
+                    .formLogin(f -> f.disable())
+                    .httpBasic(h -> h.disable())
+                    .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                    .cors(Customizer.withDefaults())
+                    .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+            return http.build();
+        }
+
+        // ✅ (3) 보안 ON 일 때 기존 설정 유지 + 공개 API만 허용
         http
                 .csrf(csrf -> csrf.disable())
                 .formLogin(f -> f.disable())
                 .httpBasic(h -> h.disable())
-                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // JWT면 stateless 권장
                 .cors(Customizer.withDefaults())
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((req, res, e) -> {
@@ -84,21 +102,21 @@ public class SecurityConfig {
                         // Swagger/OpenAPI
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/api-docs/**").permitAll()
 
+                        // ✅ (4) 프론트 개발용 공개 GET API (영화 목록/상세, 상영스케줄)
+                        .requestMatchers(HttpMethod.GET, "/api/movies/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/screenings/**").permitAll()
+
                         // ===== 공개 엔드포인트 =====
                         .requestMatchers("/login", "/login/success").permitAll()
                         .requestMatchers("/oauth2/authorization/**", "/login/oauth2/code/**").permitAll()
                         .requestMatchers("/api/members/signup").permitAll()
-                        // 카카오 시작/로그아웃(둘 다 허용)
                         .requestMatchers("/api/members/kakao", "/kakao/logout", "/api/members/logout/kakao").permitAll()
-                        // ✅ 가입 단계에서 필요한 공개 GET 허용 (아이디/이메일 중복확인 등)
                         .requestMatchers(HttpMethod.GET,
                                 "/api/members/exists",
                                 "/api/members/check-id",
                                 "/api/members/check-email",
                                 "/api/members/availability"
                         ).permitAll()
-
-                        // 일반 로그인/ 게스트 로그인/ 로그아웃
                         .requestMatchers(HttpMethod.POST,
                                 "/api/members/login",
                                 "/api/members/guest-login",
@@ -108,7 +126,7 @@ public class SecurityConfig {
                         // 관리자 전용
                         .requestMatchers("/api/admin/**", "/login/admin/**").hasRole("ADMIN")
 
-                        // ===== 인증 필요 엔드포인트 =====
+                        // 인증 필요 엔드포인트 (멤버 관련)
                         .requestMatchers(HttpMethod.GET, "/api/members/**").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/members/**").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/members/**").authenticated()
@@ -136,7 +154,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer webSecurityCustomizer() {
+    public WebSecurityCustomizer webSecurityCustomizer() {                        // ✅ (5) 타입 임포트 정리
         return web -> web.ignoring().requestMatchers(
                 PathRequest.toStaticResources().atCommonLocations(),
                 new AntPathRequestMatcher("/favicon.ico")
