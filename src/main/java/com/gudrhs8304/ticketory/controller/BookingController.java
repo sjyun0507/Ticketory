@@ -5,10 +5,8 @@ import com.gudrhs8304.ticketory.dto.booking.BookingSummaryDTO;
 import com.gudrhs8304.ticketory.dto.booking.CancelBookingRequest;
 import com.gudrhs8304.ticketory.dto.booking.CreateBookingRequest;
 import com.gudrhs8304.ticketory.dto.booking.CreateBookingResponse;
-import com.gudrhs8304.ticketory.security.auth.CustomUserPrincipal;
 import com.gudrhs8304.ticketory.service.BookingQueryService;
 import com.gudrhs8304.ticketory.service.BookingService;
-import com.gudrhs8304.ticketory.service.TicketService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -25,9 +23,9 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api")
 @RequiredArgsConstructor
 public class BookingController {
+
     private final BookingQueryService bookingQueryService;
     private final BookingService bookingService;
-    private final TicketService ticketService;
 
     @Operation(summary = "예매내역")
     @GetMapping("/{memberId}/booking")
@@ -35,24 +33,22 @@ public class BookingController {
             @PathVariable Long memberId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            // 예: ?sort=bookingTime,desc 혹은 여러개 sort 파라미터 가능
             @RequestParam(defaultValue = "bookingTime,desc") String sort,
             Authentication authentication
     ) {
-        // 인증 주체 파싱
         Long authMemberId = null;
         boolean isAdmin = false;
 
         if (authentication != null && authentication.isAuthenticated()) {
             try {
-                authMemberId = Long.valueOf(authentication.getName()); // JwtAuthFilter에서 subject=memberId 로 셋팅
+                // JwtAuthFilter에서 Authentication#setName(memberId)로 넣었다는 전제
+                authMemberId = Long.valueOf(authentication.getName());
             } catch (NumberFormatException ignore) {}
-            isAdmin = authentication.getAuthorities().contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
+            isAdmin = authentication.getAuthorities()
+                    .contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
         }
 
-        // 정렬 파라미터 파싱 (예: "bookingTime,desc")
         Sort sortObj = parseSort(sort);
-
         Page<BookingSummaryDTO> result =
                 bookingQueryService.getMemberBookings(memberId, authMemberId, isAdmin, page, size, sortObj);
 
@@ -60,27 +56,23 @@ public class BookingController {
     }
 
     private Sort parseSort(String sortParam) {
-        // 다중 정렬 지원: ?sort=bookingTime,desc&sort=createdAt,desc ...
-        // 단일 쿼리스트링 "bookingTime,desc"도 지원
         if (sortParam == null || sortParam.isBlank()) {
-            return Sort.by(Sort.Order.desc("bookingTime")); // TODO: Booking 엔티티의 필드명 확인
+            return Sort.by(Sort.Order.desc("bookingTime"));
         }
-
-        // 쉼표로만 넘어올 때
         if (!sortParam.contains("&") && !sortParam.contains(";")) {
             String[] parts = sortParam.split(",");
             String prop = parts[0].trim();
-            Sort.Direction dir = (parts.length > 1 && "asc".equalsIgnoreCase(parts[1])) ? Sort.Direction.ASC : Sort.Direction.DESC;
+            Sort.Direction dir = (parts.length > 1 && "asc".equalsIgnoreCase(parts[1]))
+                    ? Sort.Direction.ASC : Sort.Direction.DESC;
             return Sort.by(new Sort.Order(dir, prop));
         }
-
-        // 여러 개일 때(세미콜론 등으로 묶었다고 가정)
         Sort sort = Sort.unsorted();
         for (String token : sortParam.split("[;&]")) {
             String[] parts = token.split(",");
             if (parts.length == 0) continue;
             String prop = parts[0].trim();
-            Sort.Direction dir = (parts.length > 1 && "asc".equalsIgnoreCase(parts[1])) ? Sort.Direction.ASC : Sort.Direction.DESC;
+            Sort.Direction dir = (parts.length > 1 && "asc".equalsIgnoreCase(parts[1]))
+                    ? Sort.Direction.ASC : Sort.Direction.DESC;
             sort = sort.and(Sort.by(new Sort.Order(dir, prop)));
         }
         return sort.isUnsorted() ? Sort.by(Sort.Order.desc("bookingTime")) : sort;
@@ -88,33 +80,46 @@ public class BookingController {
 
     @Operation(summary = "예매 생성(결제 전)")
     @PostMapping("/bookings")
-    public ResponseEntity<CreateBookingResponse> createBooking(
-            @AuthenticationPrincipal CustomUserPrincipal principal,
+    public ResponseEntity<?> createBooking(
+            @AuthenticationPrincipal(expression = "memberId") Long memberId,
             @RequestBody CreateBookingRequest req
     ) {
-        Long memberId = principal.getMemberId();
-        return ResponseEntity.ok(bookingService.create(memberId, req));
+        if (memberId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body("{\"message\":\"로그인이 필요합니다.\"}");
+        }
+        CreateBookingResponse resp = bookingService.create(memberId, req);
+        return ResponseEntity.ok(resp);
     }
 
     @Operation(summary = "예매 상세(본인만)")
     @GetMapping("/bookings/{bookingId}")
-    public ResponseEntity<Booking> getBooking(
-            @AuthenticationPrincipal CustomUserPrincipal principal,
+    public ResponseEntity<?> getBooking(
+            @AuthenticationPrincipal(expression = "memberId") Long memberId,
             @PathVariable Long bookingId
     ) {
-        Long memberId = principal.getMemberId();
-        return ResponseEntity.ok(bookingService.getMyBooking(memberId, bookingId));
+        if (memberId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body("{\"message\":\"로그인이 필요합니다.\"}");
+        }
+        Booking booking = bookingService.getMyBooking(memberId, bookingId);
+        return ResponseEntity.ok(booking);
     }
-
 
     @Operation(summary = "예매 취소")
     @PostMapping("/bookings/{bookingId}/cancel")
-    public ResponseEntity<Void> cancel(
-            @AuthenticationPrincipal CustomUserPrincipal principal,
+    public ResponseEntity<?> cancel(
+            @AuthenticationPrincipal(expression = "memberId") Long memberId,
             @PathVariable Long bookingId,
             @RequestBody(required = false) CancelBookingRequest req
     ) {
-        Long memberId = (principal != null) ? principal.getMemberId() : null;
+        if (memberId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body("{\"message\":\"로그인이 필요합니다.\"}");
+        }
         bookingService.cancel(memberId, bookingId, req == null ? null : req.reason());
         return ResponseEntity.noContent().build();
     }
