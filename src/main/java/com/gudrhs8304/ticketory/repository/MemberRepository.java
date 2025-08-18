@@ -19,4 +19,6 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     Optional<Long> findIdByLoginId(@Param("loginId") String loginId);
 
     long countByRole(RoleType role);
+
+    boolean existsByEmailAndMemberIdNot(String email, Long memberId);
 }

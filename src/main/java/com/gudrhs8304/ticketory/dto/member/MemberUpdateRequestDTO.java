@@ -1,6 +1,7 @@
 package com.gudrhs8304.ticketory.dto.member;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.*;
@@ -12,7 +13,9 @@ import lombok.*;
 @Builder
 public class MemberUpdateRequestDTO {
 
-
+    @Schema(description = "이름", example = "홍길동")
+    @Size(min = 1, max = 50, message = "이름은 1~50자")
+    private String name;
 
     @Schema(example = "010-1234-5678")
     @Pattern(
@@ -20,6 +23,10 @@ public class MemberUpdateRequestDTO {
             message = "휴대폰 번호 형식이 올바르지 않습니다. 예: 010-1234-5678"
     )
     private String phone;
+
+    @Schema(description = "이메일", example = "user@example.com")
+    @Email(message = "이메일 형식이 올바르지 않습니다.")
+    private String email;
 
     private String profileImageUrl;
 

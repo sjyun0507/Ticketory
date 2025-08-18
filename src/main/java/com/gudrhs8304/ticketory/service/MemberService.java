@@ -168,9 +168,26 @@ public class MemberService {
         Member m = memberRepository.findById(targetMemberId)
                 .orElseThrow(() -> new IllegalArgumentException("회원이 존재하지 않습니다."));
 
-
+        // 이름
+        if (req.getName() != null && !req.getName().isBlank()) {
+            m.setName(req.getName().trim());
+        }
+        // 핸드폰
         if (req.getPhone() != null && !req.getPhone().isBlank()) {
             m.setPhone(PhoneUtil.normalize(req.getPhone())); // DB 저장용
+        }
+        // 이메일 (null 이면 무시, "" 이면 null 저장하여 제거, 값 있으면 중복 체크 후 저장)
+        if (req.getEmail() != null) {
+            String newEmail = req.getEmail().trim().toLowerCase();
+            if (newEmail.isBlank()) {
+                m.setEmail(null); // 이메일 제거
+            } else {
+                boolean exists = memberRepository.existsByEmailAndMemberIdNot(newEmail, targetMemberId);
+                if (exists) {
+                    throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
+                }
+                m.setEmail(newEmail);
+            }
         }
         if (req.getProfileImageUrl() != null) {
             m.setProfileImageUrl(req.getProfileImageUrl());
