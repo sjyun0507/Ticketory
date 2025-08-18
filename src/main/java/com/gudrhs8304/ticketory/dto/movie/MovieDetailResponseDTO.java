@@ -5,8 +5,9 @@ import lombok.Builder;
 import lombok.Value;
 
 import java.time.LocalDate;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
 
 import static com.gudrhs8304.ticketory.controller.ProxyController.proxify;
 
@@ -25,23 +26,36 @@ public class MovieDetailResponseDTO {
     Boolean status;
     String actors;
     String director;
+
+    /** 카드/상단에 쓸 대표 포스터 */
     String posterUrl;
 
+    /** 하단 갤러리(포스터 + 스틸컷) */
     @Schema(description = "갤러리(포스터+스틸컷) URL들")
     List<String> stillcutUrls;
+
+    /** 모든 포스터 URL (디버그/추가 활용용) */
+    @Schema(description = "모든 포스터 URL")
+    List<String> posterUrls;
 
     @Schema(description = "예고편 URL (없으면 null)")
     String trailerUrl;
 
     public static MovieDetailResponseDTO from(MovieDetailDTO dto) {
-
-        // 1) 대표 포스터 + 스틸컷 → 갤러리로 합치기 (중복 제거, 순서 유지)
-        LinkedHashSet<String> gallery = new LinkedHashSet<>();
-
+        // 1) 포스터 리스트(대표 + 다중) 수집
+        List<String> posters = new ArrayList<>();
+        if (dto.getPosterUrls() != null && !dto.getPosterUrls().isEmpty()) {
+            for (String u : dto.getPosterUrls()) {
+                if (u != null && !u.isBlank()) posters.add(proxify(u));
+            }
+        }
         if (dto.getPosterUrl() != null && !dto.getPosterUrl().isBlank()) {
-            gallery.add(proxify(dto.getPosterUrl()));
+            String p = proxify(dto.getPosterUrl());
+            if (!posters.contains(p)) posters.add(0, p); // 대표를 맨 앞에 보장
         }
 
+        // 2) 갤러리 구성: 포스터(여러 장) → 스틸컷(중복 제거, 순서 유지)
+        LinkedHashSet<String> gallery = new LinkedHashSet<>(posters);
         if (dto.getStillcutUrls() != null) {
             for (String u : dto.getStillcutUrls()) {
                 if (u == null || u.isBlank()) continue;
@@ -49,7 +63,14 @@ public class MovieDetailResponseDTO {
             }
         }
 
-        // 2) 응답 빌드
+        // 3) 대표 포스터 결정(없으면 포스터 리스트의 첫 항목)
+        String mainPoster = dto.getPosterUrl();
+        if (mainPoster == null || mainPoster.isBlank()) {
+            mainPoster = posters.isEmpty() ? null : posters.get(0);
+        } else {
+            mainPoster = proxify(mainPoster);
+        }
+
         return MovieDetailResponseDTO.builder()
                 .movieId(dto.getMovieId())
                 .title(dto.getTitle())
@@ -62,10 +83,9 @@ public class MovieDetailResponseDTO {
                 .status(dto.getStatus())
                 .actors(dto.getActors())
                 .director(dto.getDirector())
-                // 대표 포스터도 프록시로 정규화
-                .posterUrl(dto.getPosterUrl() == null ? null : proxify(dto.getPosterUrl()))
-                // 프론트 수정없이 갤러리로 쓰게 유지 (포스터+스틸컷)
+                .posterUrl(mainPoster)
                 .stillcutUrls(new ArrayList<>(gallery))
+                .posterUrls(posters) // ← 필요 시 프론트에서 개별 포스터 접근 가능
                 .trailerUrl(dto.getTrailerUrl())
                 .build();
     }
