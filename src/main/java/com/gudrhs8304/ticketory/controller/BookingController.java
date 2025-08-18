@@ -8,12 +8,13 @@ import com.gudrhs8304.ticketory.dto.booking.CreateBookingResponse;
 import com.gudrhs8304.ticketory.security.auth.CustomUserPrincipal;
 import com.gudrhs8304.ticketory.service.BookingQueryService;
 import com.gudrhs8304.ticketory.service.BookingService;
+import com.gudrhs8304.ticketory.service.TicketService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.*;
 public class BookingController {
     private final BookingQueryService bookingQueryService;
     private final BookingService bookingService;
+    private final TicketService ticketService;
 
     @Operation(summary = "예매내역")
     @GetMapping("/{memberId}/booking")
@@ -104,18 +106,6 @@ public class BookingController {
         return ResponseEntity.ok(bookingService.getMyBooking(memberId, bookingId));
     }
 
-    @Operation(summary = "QR 티켓 이미지 반환(data URL)")
-    @GetMapping("/bookings/{bookingId}/qr")
-    public ResponseEntity<String> getBookingQr(
-            @AuthenticationPrincipal CustomUserPrincipal principal,
-            @PathVariable Long bookingId
-    ) {
-        Long memberId = principal.getMemberId();
-        Booking b = bookingService.getMyBooking(memberId, bookingId);
-        String token = bookingService.buildTicketToken(b.getBookingId(), memberId, b.getScreening().getScreeningId());
-        String dataUrl = bookingService.buildQrPngDataUrl(token);
-        return ResponseEntity.ok(dataUrl);
-    }
 
     @Operation(summary = "예매 취소")
     @PostMapping("/bookings/{bookingId}/cancel")

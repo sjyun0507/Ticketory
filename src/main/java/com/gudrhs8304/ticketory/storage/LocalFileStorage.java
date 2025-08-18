@@ -47,4 +47,45 @@ public class LocalFileStorage implements FileStorage {
             throw new RuntimeException("파일 저장 실패", e);
         }
     }
+
+    @Override
+    public String saveBytes(String relPath, String filename, byte[] data) {
+        try {
+            Path base = Paths.get(uploadDir).toAbsolutePath().normalize();
+            Path target = base.resolve(relPath).resolve(filename).normalize();
+            if (!target.startsWith(base)) throw new SecurityException("잘못된 경로입니다.");
+            Files.createDirectories(target.getParent());
+            Files.write(target, data);
+            return toPublicUrl(base, target);
+        } catch (IOException e) {
+            throw new RuntimeException("파일 저장 실패", e);
+        }
+    }
+
+    @Override
+    public byte[] downloadAsBytes(String publicUrl) {
+        try {
+            Path base = Paths.get(uploadDir).toAbsolutePath().normalize();
+
+            // publicUrl → 로컬 파일 경로 매핑 (상대/절대 URL 모두 대응)
+            String pathPart = publicUrl;
+            // http(s)://host 제거
+            pathPart = pathPart.replaceFirst("^https?://[^/]+", "");
+            // baseUrl prefix 제거
+            pathPart = pathPart.replaceFirst("^" + java.util.regex.Pattern.quote(baseUrl), "");
+            if (pathPart.startsWith("/")) pathPart = pathPart.substring(1);
+
+            Path target = base.resolve(pathPart).normalize();
+            if (!target.startsWith(base)) throw new SecurityException("잘못된 경로입니다.");
+
+            return Files.readAllBytes(target);
+        } catch (IOException e) {
+            throw new RuntimeException("파일 다운로드 실패", e);
+        }
+    }
+
+    private String toPublicUrl(Path base, Path target) {
+        String urlPath = baseUrl + "/" + base.relativize(target).toString().replace("\\", "/");
+        return urlPath.replaceAll("//+", "/");
+    }
 }

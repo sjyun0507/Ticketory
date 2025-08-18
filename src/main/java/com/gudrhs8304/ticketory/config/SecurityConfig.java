@@ -105,7 +105,7 @@ public class SecurityConfig {
 
                         // 정적 리소스 & 파비콘 허용
                         .requestMatchers(
-                                "/", "/favicon.ico",
+                                "/", "/favicon.ico", "/files/**",
                                 "/assets/**", "/static/**", "/css/**", "/js/**", "/images/**", "/webjars/**", "/payments-test.html"
                         ).permitAll()
 
@@ -115,6 +115,7 @@ public class SecurityConfig {
                         // ✅ (4) 프론트 개발용 공개 GET API (영화 목록/상세, 상영스케줄)
                         .requestMatchers(HttpMethod.GET, "/api/movies/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/screenings/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/proxy/**").permitAll()
 
                         // ===== 공개 엔드포인트 =====
                         .requestMatchers("/login", "/login/success").permitAll()

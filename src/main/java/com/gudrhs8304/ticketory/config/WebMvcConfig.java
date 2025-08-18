@@ -22,18 +22,10 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Value("${app.upload.dir:uploads}")
     private String uploadDir;
 
-    /**
-     * CORS 설정
-     */
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**") // 모든 엔드포인트 허용
-                .allowedOrigins("http://localhost:5173", "http://127.0.0.1:5173") // React 개발 서버
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
-                .allowedHeaders("*")
-                .allowCredentials(true) // 쿠키, 인증정보 허용
-                .maxAge(3600);
-    }
+    @Value("${app.upload.base-url:/files}")
+    private String baseUrl;
+
+
 
     /**
      * 정적 리소스 매핑 (예: 업로드된 이미지)
