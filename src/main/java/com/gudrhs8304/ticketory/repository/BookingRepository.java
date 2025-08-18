@@ -52,4 +52,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     int clearMemberByMemberId(@Param("memberId") Long memberId);
 
     Optional<Booking> findByBookingIdAndMember_MemberId(Long bookingId, Long memberId);
+
+    boolean existsByScreening_ScreeningId(Long screeningId);
 }

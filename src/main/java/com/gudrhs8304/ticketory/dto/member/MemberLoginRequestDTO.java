@@ -1,5 +1,6 @@
 package com.gudrhs8304.ticketory.dto.member;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
@@ -15,11 +16,13 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 public class MemberLoginRequestDTO {
-    /** 로그인 ID (이메일 또는 소셜 ID) */
+    /** 로그인 ID (이메일) */
     @NotBlank
+    @Schema(example = "test2@test.com")
     private String loginId;
 
-    /** 비밀번호 (소셜 로그인 시 빈 값 가능) */
+    /** 비밀번호 */
     @NotBlank
+    @Schema(example = "12345678")
     private String password;
 }

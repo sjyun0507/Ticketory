@@ -30,4 +30,7 @@ public class Screen extends BaseTimeEntity {
 
     @Lob
     private String description;
+
+    @Column(name = "base_price")
+    private Integer basePrice;
 }

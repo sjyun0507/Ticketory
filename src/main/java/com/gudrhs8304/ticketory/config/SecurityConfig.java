@@ -67,9 +67,14 @@ public class SecurityConfig {
                     .csrf(csrf -> csrf.disable())
                     .formLogin(f -> f.disable())
                     .httpBasic(h -> h.disable())
-                    .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                    .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                     .cors(Customizer.withDefaults())
-                    .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
+                    .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                    .oauth2Login(o -> o
+                            .authorizationEndpoint(a -> a.authorizationRequestResolver(kakaoAuthRequestResolver()))
+                            .userInfoEndpoint(u -> u.userService(customOAuth2UserService))
+                            .successHandler(oAuth2LoginSuccessHandler)
+                    );
             return http.build();
         }
 
@@ -78,7 +83,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .formLogin(f -> f.disable())
                 .httpBasic(h -> h.disable())
-                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // JWT면 stateless 권장
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)) // JWT면 stateless 권장
                 .cors(Customizer.withDefaults())
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((req, res, e) -> {
@@ -150,7 +155,8 @@ public class SecurityConfig {
                                 String code = (exception instanceof org.springframework.security.oauth2.core.OAuth2AuthenticationException e)
                                         ? e.getError().getErrorCode() : "unknown";
                                 response.sendRedirect("/login?oauth2_error=" + code);
-                            } catch (Exception ignored) {}
+                            } catch (Exception ignored) {
+                            }
                         })
                 )
                 .addFilterBefore(jwtAuthFilter(), UsernamePasswordAuthenticationFilter.class);
@@ -170,9 +176,9 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration cfg = new CorsConfiguration();
         cfg.setAllowedOrigins(List.of("http://localhost:5173")); // 프론트 주소
-        cfg.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
-        cfg.setAllowedHeaders(List.of("Authorization","Content-Type","X-Requested-With"));
-        cfg.setExposedHeaders(List.of("Location","Content-Disposition"));
+        cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        cfg.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
+        cfg.setExposedHeaders(List.of("Location", "Content-Disposition"));
         cfg.setAllowCredentials(true); // fetch에 credentials:true 쓰면 필수
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
