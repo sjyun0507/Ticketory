@@ -1,7 +1,9 @@
 package com.gudrhs8304.ticketory.repository;
 
 import com.gudrhs8304.ticketory.domain.Seat;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -20,4 +22,14 @@ public interface SeatRepository extends JpaRepository<Seat, Long> {
 
     // 안전장치(선택): 중복 체크용
     boolean existsByScreen_ScreenIdAndRowLabelAndColNumber(Long screenId, String rowLabel, Integer colNumber);
+
+    @Query("select s from Seat s where s.screen.screenId = :screenId order by s.rowLabel asc, s.colNumber asc")
+    List<Seat> findAllByScreenId(@Param("screenId") Long screenId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select s from Seat s where s.seatId in :ids")
+    List<Seat> lockSeatsForUpdate(@Param("ids") List<Long> ids);
+
+    @Query("select count(s) > 0 from Seat s where s.seatId in :ids and s.screen.screenId = :screenId")
+    boolean allSeatsBelongToScreen(@Param("ids") List<Long> ids, @Param("screenId") Long screenId);
 }

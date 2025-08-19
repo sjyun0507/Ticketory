@@ -50,7 +50,7 @@ public class Seat extends BaseTimeEntity {
             name = "status",
             length = 10,
             nullable = false,
-            columnDefinition = "ENUM('AVAILABLE','PENDING','BOOKED') DEFAULT 'AVAILABLE'"
+            columnDefinition = "ENUM('AVAILABLE','HOLD','BOOKED') DEFAULT 'AVAILABLE'"
     )
     private SeatStatusType status;
 

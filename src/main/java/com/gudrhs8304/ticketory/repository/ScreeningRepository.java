@@ -47,4 +47,7 @@ public interface ScreeningRepository extends JpaRepository<Screening, Long> {
         and s.endAt   > :startAt
       """)
     boolean existsOverlap(Long screenId, LocalDateTime startAt, LocalDateTime endAt, Long excludeId);
+
+    @Query("select s.screen.screenId from Screening s where s.screeningId = :screeningId")
+    Long findScreenIdByScreeningId(@Param("screeningId") Long screeningId);
 }
