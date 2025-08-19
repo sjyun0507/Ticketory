@@ -19,6 +19,8 @@ public class ScreeningQueryService {
 
     private final ScreeningRepository screeningRepository;
 
+    private static final int MAX_PAGE_SIZE = 200;
+
     public ScreeningListResponseDTO getScreenings(
             Long movieId,
             LocalDate date,
@@ -32,7 +34,7 @@ public class ScreeningQueryService {
 
         Pageable pageable = PageRequest.of(
                 Math.max(page, 0),
-                Math.min(Math.max(size, 1), 100),
+                Math.min(Math.max(size, 1), MAX_PAGE_SIZE),
                 Sort.by(Sort.Direction.ASC, "startAt").and(Sort.by("screeningId"))
         );
 

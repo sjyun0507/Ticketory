@@ -30,7 +30,7 @@ public class ScreeningController {
             @RequestParam(required = false, name = "screenId") Long screenId,   // ✅ theaterId → screenId
             @RequestParam(required = false, name = "region") String region,     // ✅ Screen.location 사용
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "24") int size
+            @RequestParam(defaultValue = "200") int size
     ) {
         var dto = screeningQueryService.getScreenings(movieId, date, screenId, region, page, size);
         return ResponseEntity.ok(dto);
