@@ -20,7 +20,7 @@ public class BookingControllerV2 {
     @PostMapping("/bookings")
     public ResponseEntity<InitBookingResponseDTO> initBooking(
             @RequestHeader(value = "Idempotency-Key", required = false) String idemKey,
-            @AuthenticationPrincipal(errorOnInvalidType = false) Object principal,
+            @AuthenticationPrincipal(expression = "memberId", errorOnInvalidType = false) Object principal,
             @RequestBody InitBookingRequestDTO req
     ) {
         Long memberId = extractMemberId(principal);
