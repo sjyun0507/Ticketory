@@ -20,16 +20,15 @@ public class BookingControllerV2 {
     @PostMapping("/bookings")
     public ResponseEntity<InitBookingResponseDTO> initBooking(
             @RequestHeader(value = "Idempotency-Key", required = false) String idemKey,
-            @AuthenticationPrincipal(expression = "memberId", errorOnInvalidType = false) Object principal,
+            @AuthenticationPrincipal(errorOnInvalidType = false) Object principal,
             @RequestBody InitBookingRequestDTO req
     ) {
-        Long memberId = extractMemberId(principal);
+        Long memberId = (principal instanceof CustomUserPrincipal p) ? p.getMemberId() : null;
 
         if (memberId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        InitBookingResponseDTO resp = bookingOrchestrator.initBooking(memberId, idemKey, req);
-        return ResponseEntity.ok(resp);
+        return ResponseEntity.ok(bookingOrchestrator.initBooking(memberId, idemKey, req));
     }
 
     /** principal에서 memberId를 안전하게 뽑아내는 헬퍼 */

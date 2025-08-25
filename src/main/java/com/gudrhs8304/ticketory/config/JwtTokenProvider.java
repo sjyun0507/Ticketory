@@ -1,14 +1,10 @@
 package com.gudrhs8304.ticketory.config;
 
 import com.gudrhs8304.ticketory.domain.enums.RoleType;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jws;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;

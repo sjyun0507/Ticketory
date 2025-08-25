@@ -67,7 +67,7 @@ public class SecurityConfig {
                     .csrf(csrf -> csrf.disable())
                     .formLogin(f -> f.disable())
                     .httpBasic(h -> h.disable())
-                    .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                    .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                     .cors(Customizer.withDefaults())
                     .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
                     .oauth2Login(o -> o

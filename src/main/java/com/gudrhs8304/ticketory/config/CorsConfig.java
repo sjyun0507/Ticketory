@@ -16,7 +16,7 @@ public class CorsConfig {
         CorsConfiguration cfg = new CorsConfiguration();
 
         // 개발 프론트 도메인
-        cfg.setAllowedOriginPatterns(List.of("http://localhost:5173"));
+        cfg.setAllowedOriginPatterns(List.of("http://localhost:5173", "http://127.0.0.1:5173"));
         // 사용하는 메서드
         cfg.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
         // 허용할 요청 헤더 (여기에 Idempotency-Key 포함!)
