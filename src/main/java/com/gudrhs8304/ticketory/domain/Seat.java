@@ -49,9 +49,9 @@ public class Seat extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     @Column(
             name = "status",
-            length = 10,
+            length = 20,
             nullable = false,
-            columnDefinition = "ENUM('AVAILABLE','HOLD','BOOKED') DEFAULT 'AVAILABLE'"
+            columnDefinition = "ENUM('AVAILABLE','DISABLED') DEFAULT 'AVAILABLE'"
     )
     private SeatStatus status;
 

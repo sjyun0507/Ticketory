@@ -35,6 +35,13 @@ public class BookingOrchestrator {
         if (req.screeningId() == null || req.seatIds() == null || req.seatIds().isEmpty()) {
             throw new IllegalArgumentException("screeningId/seatIds는 필수입니다.");
         }
+        // 좌석 수 == 인원 수(성인+청소년) 체크 (원하면 유지/삭제)
+        int adults = Optional.ofNullable(req.counts()).map(m -> m.getOrDefault("adult", 0)).orElse(0);
+        int teens  = Optional.ofNullable(req.counts()).map(m -> m.getOrDefault("teen", 0)).orElse(0);
+        if (req.seatIds().size() != adults + teens) {
+            throw new IllegalArgumentException("선택 좌석 수와 인원 수가 일치하지 않습니다.");
+        }
+
         int holdSec = Optional.ofNullable(req.holdSeconds()).orElse(DEFAULT_HOLD_SECONDS);
         LocalDateTime now = LocalDateTime.now();
 

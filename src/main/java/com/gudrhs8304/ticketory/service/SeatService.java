@@ -20,6 +20,7 @@ public class SeatService {
     private final ScreeningRepository screeningRepository;
     private final SeatRepository seatRepository;
     private final SeatHoldRepository seatHoldRepository;
+    private final BookingSeatRepository bookingSeatRepository;
 
     private static final int DEFAULT_HOLD_SECONDS = 120;
 
@@ -106,7 +107,7 @@ public class SeatService {
         var seats = seatRepository.lockSeatsForUpdate(req.getSeatIds());
 
         // 이미 BOOKED 좌석 포함 여부
-        Set<Long> bookedSeatIds = findBookedSeatIds(req.getScreeningId());
+        Set<Long> bookedSeatIds = bookingSeatRepository.findSeatIdsByScreeningPaid(req.getScreeningId());
         if (seats.stream().anyMatch(s -> bookedSeatIds.contains(s.getSeatId())))
             throw new IllegalStateException("이미 예매 완료된 좌석이 포함되어 있습니다.");
 
@@ -164,6 +165,6 @@ public class SeatService {
     // ====== 여기만 너희 프로젝트의 확정 예매 테이블에 맞춰 구현 ======
     private Set<Long> findBookedSeatIds(Long screeningId) {
         // TODO: 예) reservation_seat 테이블에서 screeningId=... AND paid=true 로 seatId 조회
-        return Collections.emptySet();
+        return bookingSeatRepository.findSeatIdsByScreeningPaid(screeningId);
     }
 }

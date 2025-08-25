@@ -25,7 +25,7 @@ public class BookingControllerV2 {
     ) {
         Long memberId = extractMemberId(principal);
 
-        if (principal == null) {
+        if (memberId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         InitBookingResponseDTO resp = bookingOrchestrator.initBooking(memberId, idemKey, req);
