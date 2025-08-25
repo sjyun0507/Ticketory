@@ -15,7 +15,7 @@ public class SeatController {
 
     private final SeatService seatService;
 
-    @Operation(summary = "좌석 현황 조회", description = "screeningId 기준으로 AVAILABLE/PENDING/BOOKED 상태를 반환합니다.")
+    @Operation(summary = "좌석 현황 조회", description = "screeningId 기준으로 AVAILABLE/ 상태를 반환합니다.")
     @GetMapping("/map")
     public ResponseEntity<SeatMapResponseDTO> getSeatMap(@RequestParam Long screeningId) {
         return ResponseEntity.ok(seatService.getSeatMap(screeningId));
@@ -30,8 +30,8 @@ public class SeatController {
     @Operation(summary = "좌석 HOLD 연장", description = "holdId의 만료 시각을 연장합니다.")
     @PatchMapping("/hold/{holdId}")
     public ResponseEntity<SeatHoldResponseDTO> extendHold(@PathVariable Long holdId,
-                                                       @RequestParam(required = false) Integer ttlSeconds) {
-        return ResponseEntity.ok(seatService.extendHold(holdId, ttlSeconds));
+                                                       @RequestParam(required = false) Integer holdSeconds) {
+        return ResponseEntity.ok(seatService.extendHold(holdId, holdSeconds));
     }
 
     @Operation(summary = "좌석 HOLD 해제", description = "임시 점유를 해제합니다.")

@@ -29,8 +29,6 @@ public class Payment extends BaseTimeEntity {
     @Column(name = "provider", nullable = false, length = 10)
     private PaymentProvider provider;
 
-    @Column(name = "provider_tx_id", length = 100, nullable = false, unique = true)
-    private String providerTxId;
 
     @Column(name = "amount", precision = 10, scale = 2, nullable = false)
     private BigDecimal amount;

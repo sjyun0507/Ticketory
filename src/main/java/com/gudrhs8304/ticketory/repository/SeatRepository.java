@@ -26,10 +26,25 @@ public interface SeatRepository extends JpaRepository<Seat, Long> {
     @Query("select s from Seat s where s.screen.screenId = :screenId order by s.rowLabel asc, s.colNumber asc")
     List<Seat> findAllByScreenId(@Param("screenId") Long screenId);
 
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select s from Seat s where s.seatId in :ids")
-    List<Seat> lockSeatsForUpdate(@Param("ids") List<Long> ids);
+//    @Lock(LockModeType.PESSIMISTIC_WRITE)
+//    @Query("select s from Seat s where s.seatId in :ids")
+//    List<Seat> lockSeatsForUpdate(@Param("ids") List<Long> ids);
 
-    @Query("select count(s) > 0 from Seat s where s.seatId in :ids and s.screen.screenId = :screenId")
-    boolean allSeatsBelongToScreen(@Param("ids") List<Long> ids, @Param("screenId") Long screenId);
+//    @Query("select count(s) > 0 from Seat s where s.seatId in :ids and s.screen.screenId = :screenId")
+//    boolean allSeatsBelongToScreen(@Param("ids") List<Long> ids, @Param("screenId") Long screenId);
+
+    boolean existsByScreen_ScreenId(Long screenId);
+
+    @Query("""
+      select (count(s) = :#{#ids.size()})
+      from Seat s
+      where s.seatId in :ids
+        and s.screen.screenId = :screenId
+    """)
+    boolean allSeatsBelongToScreen(@Param("ids") List<Long> ids,
+                                   @Param("screenId") Long screenId);
+
+    @Query("select s from Seat s where s.seatId in ?1")
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    List<Seat> lockSeatsForUpdate(List<Long> seatIds);
 }

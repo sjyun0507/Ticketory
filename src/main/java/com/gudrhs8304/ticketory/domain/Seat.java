@@ -1,5 +1,6 @@
 package com.gudrhs8304.ticketory.domain;
 
+import com.gudrhs8304.ticketory.domain.enums.SeatStatus;
 import com.gudrhs8304.ticketory.domain.enums.SeatStatusType; // AVAILABLE, PENDING, BOOKED
 import com.gudrhs8304.ticketory.domain.enums.SeatType;       // NORMAL, VIP
 import jakarta.persistence.*;
@@ -52,12 +53,12 @@ public class Seat extends BaseTimeEntity {
             nullable = false,
             columnDefinition = "ENUM('AVAILABLE','HOLD','BOOKED') DEFAULT 'AVAILABLE'"
     )
-    private SeatStatusType status;
+    private SeatStatus status;
 
     /** JPA로 null 넣을 때도 기본값 보장 */
     @PrePersist
     void applyDefaults() {
         if (seatType == null) seatType = SeatType.NORMAL;
-        if (status == null) status = SeatStatusType.AVAILABLE;
+        if (status == null) status = SeatStatus.AVAILABLE;
     }
 }

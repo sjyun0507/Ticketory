@@ -1,60 +1,68 @@
-// domain/SeatHold.java
 package com.gudrhs8304.ticketory.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "seat_hold",
+@Table(
+        name = "seat_hold",
         indexes = {
                 @Index(name = "idx_hold_screening", columnList = "screening_id"),
-                @Index(name = "idx_hold_expires", columnList = "expires_at")
-        },
-        uniqueConstraints = {
-                // 같은 상영에서 같은 좌석을 중복 홀드 못 하도록(만료 정리는 별도)
-                @UniqueConstraint(name = "uk_screening_seat", columnNames = {"screening_id","seat_id"})
+                @Index(name = "idx_hold_expires",   columnList = "expires_at")
         }
 )
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class SeatHold {
+@Getter
+@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
+public class SeatHold extends BaseTimeEntity {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @CreatedDate
+    protected LocalDateTime createdAt;
+    @LastModifiedDate
+    protected LocalDateTime updatedAt;
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "hold_id")
     private Long holdId;
 
-    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "screening_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "screening_id", nullable = false)
     private Screening screening;
 
-    @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "seat_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "seat_id", nullable = false)
     private Seat seat;
-
-    @Column(name = "hold_key", length = 64)
-    private String holdKey;
-
-    // ⬇️ 추가: 홀드 유지시간(초)
-    @Column(name = "hold_time", nullable = false)
-    private Integer holdTime; // 예: 180초
 
     @Column(name = "expires_at", nullable = false)
     private LocalDateTime expiresAt;
 
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
+    @Column(name = "hold_key", length = 64)
+    private String holdKey;
 
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
+    // JPA 레벨에서 NULL 금지. (DB도 DEFAULT 120 권장: 아래 DDL 참고)
+    @Column(
+            name = "hold_time",
+            nullable = false
+            // 필요시 DB 기본값까지 지정하려면 다음 줄을 사용 (MariaDB 의존적)
+            // , columnDefinition = "INT NOT NULL DEFAULT 120"
+    )
+    private Integer holdTime; // seconds
+
+    private static final int DEFAULT_HOLD_SECONDS = 120;
 
     @PrePersist
-    void onCreate() {
-        if (holdTime == null) holdTime = 180;                   // 기본 3분
-        if (expiresAt == null) expiresAt = LocalDateTime.now().plusSeconds(holdTime);
-        if (createdAt == null) createdAt = LocalDateTime.now();
-        if (updatedAt == null) updatedAt = createdAt;
-    }
-
-    @PreUpdate
-    void onUpdate() {
-        updatedAt = LocalDateTime.now();
+    protected void prePersistSeatHold() {
+        if (holdTime == null) holdTime = DEFAULT_HOLD_SECONDS;
+        if (expiresAt == null) {
+            expiresAt = LocalDateTime.now().plusSeconds(holdTime);
+        }
+        // createdAt/updatedAt은 BaseTimeEntity(@CreatedDate/@LastModifiedDate)가 처리
     }
 }

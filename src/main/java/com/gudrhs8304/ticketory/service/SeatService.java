@@ -1,6 +1,7 @@
 package com.gudrhs8304.ticketory.service;
 
 import com.gudrhs8304.ticketory.domain.*;
+import com.gudrhs8304.ticketory.domain.enums.SeatStatus;
 import com.gudrhs8304.ticketory.domain.enums.SeatStatusType;
 import com.gudrhs8304.ticketory.dto.seats.*;
 import com.gudrhs8304.ticketory.repository.*;
@@ -31,37 +32,44 @@ public class SeatService {
         int rowCount = screening.getScreen().getRowCount();
         int colCount = screening.getScreen().getColCount();
 
-        var seats = seatRepository.findAllByScreenId(screenId);
+        // 스크린의 모든 좌석(전역 상태: AVAILABLE/DISABLED)
+        List<Seat> seats = seatRepository.findAllByScreenId(screenId);
 
         LocalDateTime now = LocalDateTime.now();
-        var holds = seatHoldRepository.findActiveByScreening(screeningId, now);
-        Set<Long> holdSeatIds = holds.stream().map(h -> h.getSeat().getSeatId()).collect(Collectors.toSet());
+
+        Set<Long> holdSeatIds = seatHoldRepository.findActiveByScreening(screeningId, now)
+                .stream()
+                .map(h -> h.getSeat().getSeatId())
+                .collect(Collectors.toSet());
 
         // 프로젝트의 '예매 확정 좌석' 테이블에 맞게 이 메서드 구현
         Set<Long> bookedSeatIds = findBookedSeatIds(screeningId);
 
         // ✅ rows 배열 생성 (A, B, C, ...)
-        List<String> rows = new java.util.ArrayList<>();
+        List<String> rows = new ArrayList<>();
         for (int i = 0; i < rowCount; i++) {
             rows.add(String.valueOf((char) ('A' + i)));
         }
 
         // ✅ 프론트 명칭으로 status 매핑
         List<SeatMapResponseDTO.SeatItem> items = seats.stream().map(s -> {
-            SeatStatusType mappedStatus;
-            if (bookedSeatIds.contains(s.getSeatId())) {
-                mappedStatus = SeatStatusType.BOOKED;   // BOOKED
+            boolean disabled = s.getStatus() == SeatStatus.DISABLED;
+            SeatStatusType mapped;
+            if (disabled) {
+                mapped = SeatStatusType.BLOCKED; // 미운영
+            } else if (bookedSeatIds.contains(s.getSeatId())) {
+                mapped = SeatStatusType.SOLD; // 예매완료
             } else if (holdSeatIds.contains(s.getSeatId())) {
-                mappedStatus = SeatStatusType.HOLD;     // HOLD
+                mapped = SeatStatusType.HELD; // 임시 선점
             } else {
-                mappedStatus = SeatStatusType.AVAILABLE; // AVAILABLE
+                mapped = SeatStatusType.AVAILABLE; // 선택 가능
             }
 
             return SeatMapResponseDTO.SeatItem.builder()
                     .seatId(s.getSeatId())
                     .rowLabel(s.getRowLabel())
                     .colNumber(s.getColNumber())
-                    .status(mappedStatus)
+                    .status(mapped)
                     .type(s.getSeatType() != null ? s.getSeatType().name() : "NORMAL")
                     .build();
         }).toList();
@@ -82,7 +90,7 @@ public class SeatService {
         if (req.getSeatIds() == null || req.getSeatIds().isEmpty())
             throw new IllegalArgumentException("seatIds가 비어있습니다.");
 
-        int ttl = Optional.ofNullable(req.getTtlSeconds()).orElse(DEFAULT_HOLD_SECONDS);
+        int ttl = Optional.ofNullable(req.getHoldSeconds()).orElse(DEFAULT_HOLD_SECONDS);
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime expires = now.plusSeconds(ttl);
 
@@ -91,7 +99,7 @@ public class SeatService {
         Long screenId = screening.getScreen().getScreenId();
 
         // 좌석이 모두 해당 스크린에 속하는지 검증
-        boolean ok = seatRepository.allSeatsBelongToScreen(req.getSeatIds(), screenId);
+        boolean ok = seatRepository.allSeatsBelongToScreen(req.getSeatIds(),  screenId);
         if (!ok) throw new IllegalArgumentException("좌석이 상영관에 속하지 않습니다.");
 
         // 경합 방지: 좌석 잠금
@@ -103,7 +111,7 @@ public class SeatService {
             throw new IllegalStateException("이미 예매 완료된 좌석이 포함되어 있습니다.");
 
         // 이미 유효한 HOLD 포함 여부
-        if (seatHoldRepository.existsActiveHold(req.getSeatIds(), now))
+        if (seatHoldRepository.existsAnyActiveHold(req.getScreeningId(), req.getSeatIds(), now))
             throw new IllegalStateException("이미 홀드된 좌석이 포함되어 있습니다.");
 
         // HOLD 생성
@@ -112,8 +120,6 @@ public class SeatService {
             SeatHold h = SeatHold.builder()
                     .screening(screening)
                     .seat(seat)
-                    .createdAt(now)
-                    .updatedAt(now)
                     .expiresAt(expires)
                     .holdKey(req.getHoldKey())
                     .holdTime(ttl)
@@ -130,8 +136,8 @@ public class SeatService {
 
     // --- HOLD 연장
     @Transactional
-    public SeatHoldResponseDTO extendHold(Long holdId, Integer ttlSeconds) {
-        int ttl = Optional.ofNullable(ttlSeconds).orElse(DEFAULT_HOLD_SECONDS);
+    public SeatHoldResponseDTO extendHold(Long holdId, Integer holdSeconds) {
+        int ttl = Optional.ofNullable(holdSeconds).orElse(DEFAULT_HOLD_SECONDS);
         SeatHold h = seatHoldRepository.findById(holdId)
                 .orElseThrow(() -> new IllegalArgumentException("holdId가 올바르지 않습니다."));
         LocalDateTime newExp = LocalDateTime.now().plusSeconds(ttl);

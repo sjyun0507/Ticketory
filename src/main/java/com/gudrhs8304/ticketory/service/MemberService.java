@@ -30,7 +30,6 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
-    private final BookingRepository bookingRepository;
 
     @Transactional(readOnly = true)
     public boolean isLoginIdAvailable(String loginId) {
@@ -189,9 +188,6 @@ public class MemberService {
                 m.setEmail(newEmail);
             }
         }
-        if (req.getProfileImageUrl() != null) {
-            m.setProfileImageUrl(req.getProfileImageUrl());
-        }
 
         boolean wantsPwChange = (req.getNewPassword() != null && !req.getNewPassword().isBlank());
         if (wantsPwChange) {
@@ -247,7 +243,6 @@ public class MemberService {
 
         // nullable 컬럼은 정리
         m.setPhone(null);              // nullable 아니면 "" 로
-        m.setProfileImageUrl(null);
         m.setSocialId(null);
 
         // role / signupType 이 NOT NULL이면 값 유지(또는 최소 권한으로 축소)

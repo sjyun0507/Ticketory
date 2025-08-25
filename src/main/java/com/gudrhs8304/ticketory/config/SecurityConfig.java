@@ -173,17 +173,17 @@ public class SecurityConfig {
         );
     }
 
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration cfg = new CorsConfiguration();
-        cfg.setAllowedOrigins(List.of("http://localhost:5173")); // 프론트 주소
-        cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        cfg.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
-        cfg.setExposedHeaders(List.of("Location", "Content-Disposition"));
-        cfg.setAllowCredentials(true); // fetch에 credentials:true 쓰면 필수
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", cfg);
-        return source;
-    }
+//    @Bean
+//    public CorsConfigurationSource corsConfigurationSource() {
+//        CorsConfiguration cfg = new CorsConfiguration();
+//        cfg.setAllowedOrigins(List.of("http://localhost:5173")); // 프론트 주소
+//        cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+//        cfg.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
+//        cfg.setExposedHeaders(List.of("Location", "Content-Disposition"));
+//        cfg.setAllowCredentials(true); // fetch에 credentials:true 쓰면 필수
+//
+//        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+//        source.registerCorsConfiguration("/**", cfg);
+//        return source;
+//    }
 }

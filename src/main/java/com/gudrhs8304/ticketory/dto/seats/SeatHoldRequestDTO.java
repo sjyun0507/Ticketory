@@ -8,6 +8,6 @@ import java.util.List;
 public class SeatHoldRequestDTO {
     private Long screeningId;
     private List<Long> seatIds;
-    private Integer ttlSeconds; // 기본 180초
+    private Integer holdSeconds; // 기본 120초
     private String holdKey;     // 선택
 }

@@ -10,6 +10,7 @@ import com.gudrhs8304.ticketory.service.BookingService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.context.annotation.Profile;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.*;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
+@Profile("legacy")
 public class BookingController {
 
     private final BookingQueryService bookingQueryService;
@@ -81,14 +83,15 @@ public class BookingController {
     @Operation(summary = "예매 생성(결제 전)")
     @PostMapping("/bookings")
     public ResponseEntity<?> createBooking(
-            @AuthenticationPrincipal(expression = "memberId") Long memberId,
+            Authentication authentication,
             @RequestBody CreateBookingRequest req
     ) {
-        if (memberId == null) {
+        if (authentication == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body("{\"message\":\"로그인이 필요합니다.\"}");
         }
+        Long memberId = Long.valueOf(authentication.getName());
         CreateBookingResponse resp = bookingService.create(memberId, req);
         return ResponseEntity.ok(resp);
     }
@@ -96,14 +99,15 @@ public class BookingController {
     @Operation(summary = "예매 상세(본인만)")
     @GetMapping("/bookings/{bookingId}")
     public ResponseEntity<?> getBooking(
-            @AuthenticationPrincipal(expression = "memberId") Long memberId,
+            Authentication authentication,
             @PathVariable Long bookingId
     ) {
-        if (memberId == null) {
+        if (authentication == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body("{\"message\":\"로그인이 필요합니다.\"}");
         }
+        Long memberId = Long.valueOf(authentication.getName());
         Booking booking = bookingService.getMyBooking(memberId, bookingId);
         return ResponseEntity.ok(booking);
     }
@@ -111,15 +115,16 @@ public class BookingController {
     @Operation(summary = "예매 취소")
     @PostMapping("/bookings/{bookingId}/cancel")
     public ResponseEntity<?> cancel(
-            @AuthenticationPrincipal(expression = "memberId") Long memberId,
+            Authentication authentication,
             @PathVariable Long bookingId,
             @RequestBody(required = false) CancelBookingRequest req
     ) {
-        if (memberId == null) {
+        if (authentication == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body("{\"message\":\"로그인이 필요합니다.\"}");
         }
+        Long memberId = Long.valueOf(authentication.getName());
         bookingService.cancel(memberId, bookingId, req == null ? null : req.reason());
         return ResponseEntity.noContent().build();
     }

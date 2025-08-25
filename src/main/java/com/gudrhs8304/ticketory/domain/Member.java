@@ -52,9 +52,6 @@ public class Member extends BaseTimeEntity {
     @Column(nullable = false)
     private RoleType role;
 
-    @Column(name = "profile_image_url", length = 255)
-    private String profileImageUrl;
-
     @Column(name = "point_balance", nullable = false)
     private Integer pointBalance;
 

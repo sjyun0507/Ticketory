@@ -2,6 +2,7 @@ package com.gudrhs8304.ticketory.service;
 
 import com.gudrhs8304.ticketory.domain.Screen;
 import com.gudrhs8304.ticketory.domain.Seat;
+import com.gudrhs8304.ticketory.domain.enums.SeatStatus;
 import com.gudrhs8304.ticketory.domain.enums.SeatStatusType;
 import com.gudrhs8304.ticketory.domain.enums.SeatType;
 import com.gudrhs8304.ticketory.dto.screen.CreateScreenRequest;
@@ -84,7 +85,7 @@ public class AdminScreenService {
                         .rowLabel(rowLabel)
                         .colNumber(c)
                         .seatType(SeatType.NORMAL)
-                        .status(SeatStatusType.AVAILABLE)
+                        .status(SeatStatus.AVAILABLE)
                         .build();
 
                 seatRepository.save(seat);
