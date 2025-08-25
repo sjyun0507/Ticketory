@@ -42,8 +42,9 @@ public class BookingOrchestrator {
             throw new IllegalArgumentException("선택 좌석 수와 인원 수가 일치하지 않습니다.");
         }
 
-        int holdSec = Optional.ofNullable(req.holdSeconds()).orElse(DEFAULT_HOLD_SECONDS);
+        int holdSec = DEFAULT_HOLD_SECONDS;
         LocalDateTime now = LocalDateTime.now();
+        LocalDateTime expiresAt = now.plusSeconds(holdSec);
 
         // 1) 상영 로드
         Screening screening = screeningRepo.findById(req.screeningId())
@@ -64,7 +65,6 @@ public class BookingOrchestrator {
         if (hasActiveHold) throw new IllegalStateException("이미 홀드된 좌석 포함");
 
         // 4) HOLD 생성
-        LocalDateTime expiresAt = now.plusSeconds(holdSec);
         List<Long> holdIds = new ArrayList<>();
         for (Seat seat : seats) {
             SeatHold h = SeatHold.builder()
@@ -141,5 +141,23 @@ public class BookingOrchestrator {
         String ymd = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String shortUuid = UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
         return "ORD-" + ymd + "-" + bookingId + "-" + shortUuid;
+    }
+
+    @Transactional
+    public void releaseHold(Long memberId, Long bookingId) {
+        // (선택) 본인 예매만 허용
+        Booking booking = bookingRepo.findById(bookingId).orElse(null);
+        if (booking == null) return;
+        Long ownerId = (booking.getMember() != null) ? booking.getMember().getMemberId() : null;
+        if (memberId != null && !Objects.equals(ownerId, memberId)) {
+            return;
+        }
+
+        // 1) 좌석 상태 AVAILABLE로
+        seatRepo.releaseSeatsByBookingId(bookingId);
+
+        // 2) seat_hold 해제 (행 삭제 또는 releasedAt 마킹)
+        seatHoldRepo.deleteByBookingId(bookingId);
+        // 또는: seatHoldRepo.markReleasedByBookingId(bookingId);
     }
 }

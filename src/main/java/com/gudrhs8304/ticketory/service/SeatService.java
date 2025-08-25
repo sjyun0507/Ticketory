@@ -1,6 +1,7 @@
 package com.gudrhs8304.ticketory.service;
 
 import com.gudrhs8304.ticketory.domain.*;
+import com.gudrhs8304.ticketory.domain.enums.HoldStatus;
 import com.gudrhs8304.ticketory.domain.enums.SeatStatus;
 import com.gudrhs8304.ticketory.domain.enums.SeatStatusType;
 import com.gudrhs8304.ticketory.dto.seats.*;
@@ -124,6 +125,7 @@ public class SeatService {
                     .expiresAt(expires)
                     .holdKey(req.getHoldKey())
                     .holdTime(ttl)
+                    .status(HoldStatus.HOLD)
                     .build();
             seatHoldRepository.save(h);
             holdIds.add(h.getHoldId());

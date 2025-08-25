@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +32,7 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final BookingSeatRepository bookingSeatRepository;
     private final JwtTokenProvider jwtTokenProvider;
+    private final SeatHoldRepository seatHoldRepository;
 
     private static final BigDecimal DEFAULT_UNIT_PRICE = new BigDecimal("12000");
 
@@ -119,5 +121,36 @@ public class BookingService {
 
         // 취소 로그 남기기(선택)
 //        cancelLogRepository.save(CancelLog.ofMemberCancel(booking, memberId, reason));
+    }
+
+    @Transactional
+    public void releaseHold(Long memberId, Long bookingId) {
+        Booking booking = bookingRepository.findById(bookingId).orElse(null);
+        if (booking == null) return;
+
+        // 소유자 확인 (Booking.member가 null일 수 있으므로 안전하게)
+        if (memberId != null) {
+            Long ownerId = null;
+            if (booking.getMember() != null) {
+                // ↓ 프로젝트의 Member 엔티티에 맞춰 한 줄만 선택하세요.
+                // ownerId = booking.getMember().getId();
+                ownerId = booking.getMember().getMemberId();  // 보통 이렇게 되어 있음
+            }
+            if (!Objects.equals(ownerId, memberId)) return;
+        }
+
+        // 1) 좌석 상태 AVAILABLE로
+        seatRepository.releaseSeatsByBookingId(bookingId);
+
+        // 2) seat_hold 삭제
+        seatHoldRepository.deleteByBookingId(bookingId);
+    }
+
+    @Transactional
+    public void releaseHoldByKey(String holdKey) {
+        if (holdKey == null || holdKey.isBlank()) return;
+        seatHoldRepository.deleteByHoldKey(holdKey);
+        // 또는 seatHoldRepository.markReleasedByHoldKey(holdKey);
+        // 좌석 상태를 별도 테이블에서 관리한다면 그 부분도 업데이트
     }
 }

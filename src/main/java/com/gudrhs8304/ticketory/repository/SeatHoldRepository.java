@@ -27,5 +27,21 @@ public interface SeatHoldRepository extends JpaRepository<SeatHold, Long> {
     @Query("delete from SeatHold h where h.expiresAt <= :now")
     int deleteExpired(@Param("now") LocalDateTime now);
 
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("DELETE FROM SeatHold h WHERE h.holdKey = :holdKey")
+    int deleteByHoldKey(@Param("holdKey") String holdKey);
+
+
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = """
+        DELETE h
+          FROM seat_hold h
+          JOIN booking_seat bs ON bs.seat_id = h.seat_id
+         WHERE bs.booking_id = :bookingId
+        """, nativeQuery = true)
+    int deleteByBookingId(@Param("bookingId") Long bookingId);
+
+
 }
 

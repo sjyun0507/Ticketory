@@ -5,8 +5,10 @@ import com.gudrhs8304.ticketory.dto.booking.InitBookingResponseDTO;
 import com.gudrhs8304.ticketory.security.auth.CustomUserPrincipal;
 import com.gudrhs8304.ticketory.security.oauth.CustomOAuth2UserService;
 import com.gudrhs8304.ticketory.service.BookingOrchestrator;
+import com.gudrhs8304.ticketory.service.BookingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 public class BookingControllerV2 {
 
     private final BookingOrchestrator bookingOrchestrator;
+    private final BookingService bookingService;
 
     @PostMapping("/bookings")
     public ResponseEntity<InitBookingResponseDTO> initBooking(
@@ -38,6 +41,25 @@ public class BookingControllerV2 {
         }
         return null; // 비로그인(anonymousUser) 등
     }
+
+    @DeleteMapping("/bookings/{bookingId}/cancel")
+    public ResponseEntity<Void> cancel(Authentication authentication,
+                                       @PathVariable Long bookingId) {
+        Long memberId = null;
+        if (authentication != null && authentication.isAuthenticated()) {
+            try { memberId = Long.valueOf(authentication.getName()); } catch (NumberFormatException ignore) {}
+        }
+        bookingService.releaseHold(memberId, bookingId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/holds/{holdKey}")
+    public ResponseEntity<Void> cancelHold(@PathVariable String holdKey) {
+        bookingService.releaseHoldByKey(holdKey);
+        return ResponseEntity.noContent().build();
+    }
+
+
 
 
 }

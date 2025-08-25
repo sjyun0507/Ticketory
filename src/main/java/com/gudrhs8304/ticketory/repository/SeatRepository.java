@@ -47,4 +47,18 @@ public interface SeatRepository extends JpaRepository<Seat, Long> {
     @Query("select s from Seat s where s.seatId in ?1")
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     List<Seat> lockSeatsForUpdate(List<Long> seatIds);
+
+
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+        UPDATE Seat s
+           SET s.status = com.gudrhs8304.ticketory.domain.enums.SeatStatus.AVAILABLE
+         WHERE s.id IN (
+               SELECT bs.seat.id
+                 FROM BookingSeat bs
+                WHERE bs.booking.id = :bookingId
+           )
+        """)
+    int releaseSeatsByBookingId(@Param("bookingId") Long bookingId);
 }

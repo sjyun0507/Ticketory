@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -21,12 +22,6 @@ import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequest
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -39,7 +34,7 @@ public class SecurityConfig {
     private final ClientRegistrationRepository clientRegistrationRepository;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 
-    @Value("${app.security.enabled:true}")                                       // ✅ (1) 프로퍼티 스위치
+    @Value("${app.security.enabled:true}")
     private boolean securityEnabled;
 
     @Bean
@@ -47,7 +42,6 @@ public class SecurityConfig {
         return new JwtAuthFilter(jwtTokenProvider);
     }
 
-    // ⬇️ 카카오 인가요청에 prompt=login 추가
     @Bean
     public OAuth2AuthorizationRequestResolver kakaoAuthRequestResolver() {
         DefaultOAuth2AuthorizationRequestResolver delegate =
@@ -61,10 +55,8 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        // ✅ (2) 개발용: security 끄면 전부 허용(스웨거/프론트 테스트 편하게)
         if (!securityEnabled) {
-            http
-                    .csrf(csrf -> csrf.disable())
+            http.csrf(csrf -> csrf.disable())
                     .formLogin(f -> f.disable())
                     .httpBasic(h -> h.disable())
                     .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -78,12 +70,12 @@ public class SecurityConfig {
             return http.build();
         }
 
-        // ✅ (3) 보안 ON 일 때 기존 설정 유지 + 공개 API만 허용
         http
                 .csrf(csrf -> csrf.disable())
                 .formLogin(f -> f.disable())
                 .httpBasic(h -> h.disable())
-                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)) // JWT면 stateless 권장
+                // 🔐 JWT 사용 시 stateless 권장
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .cors(Customizer.withDefaults())
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((req, res, e) -> {
@@ -103,21 +95,22 @@ public class SecurityConfig {
                         // CORS preflight
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // 정적 리소스 & 파비콘 허용
+                        // 정적 리소스 & 샘플 페이지
                         .requestMatchers(
                                 "/", "/favicon.ico", "/files/**",
-                                "/assets/**", "/static/**", "/css/**", "/js/**", "/images/**", "/webjars/**", "/payments-test.html"
+                                "/assets/**", "/static/**", "/css/**", "/js/**", "/images/**", "/webjars/**",
+                                "/payments-test.html", "/success.html", "/fail.html"
                         ).permitAll()
 
                         // Swagger/OpenAPI
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/api-docs/**").permitAll()
 
-                        // ✅ (4) 프론트 개발용 공개 GET API (영화 목록/상세, 상영스케줄)
+                        // 공개 GET API
                         .requestMatchers(HttpMethod.GET, "/api/movies/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/screenings/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/proxy/**").permitAll()
 
-                        // ===== 공개 엔드포인트 =====
+                        // Auth/OAuth & 회원 공개 API
                         .requestMatchers("/login", "/login/success").permitAll()
                         .requestMatchers("/oauth2/authorization/**", "/login/oauth2/code/**").permitAll()
                         .requestMatchers("/api/members/signup").permitAll()
@@ -134,16 +127,24 @@ public class SecurityConfig {
                                 "/api/members/logout"
                         ).permitAll()
 
-                        // 관리자 전용
+                        // ✅ 결제 플로우
+                        // 결제 시작(주문 생성) — 로그인 필요 권장
+                        .requestMatchers(HttpMethod.POST, "/api/payments").authenticated()
+                        // 결제 승인(성공 리다이렉트 후 서버 검증) — success 페이지에서 쉽게 호출할 수 있게 permitAll
+                        .requestMatchers(HttpMethod.POST, "/payments/confirm").permitAll()
+                        // 결제 상태 조회 — 로그인 필요
+                        .requestMatchers(HttpMethod.GET, "/api/payments/**").authenticated()
+
+                        // 관리자
                         .requestMatchers("/api/admin/**", "/login/admin/**").hasRole("ADMIN")
 
-                        // 인증 필요 엔드포인트 (멤버 관련)
+                        // 멤버 관련 보호 API
                         .requestMatchers(HttpMethod.GET, "/api/members/**").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/members/**").authenticated()
                         .requestMatchers(HttpMethod.DELETE, "/api/members/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/bookings/*/qr").authenticated()
 
-                        // 그 외
+                        // 나머지 전부 인증 필요
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(o -> o
@@ -156,8 +157,7 @@ public class SecurityConfig {
                                 String code = (exception instanceof org.springframework.security.oauth2.core.OAuth2AuthenticationException e)
                                         ? e.getError().getErrorCode() : "unknown";
                                 response.sendRedirect("/login?oauth2_error=" + code);
-                            } catch (Exception ignored) {
-                            }
+                            } catch (Exception ignored) { }
                         })
                 )
                 .addFilterBefore(jwtAuthFilter(), UsernamePasswordAuthenticationFilter.class);
@@ -166,24 +166,10 @@ public class SecurityConfig {
     }
 
     @Bean
-    public WebSecurityCustomizer webSecurityCustomizer() {                        // ✅ (5) 타입 임포트 정리
+    public WebSecurityCustomizer webSecurityCustomizer() {
         return web -> web.ignoring().requestMatchers(
                 PathRequest.toStaticResources().atCommonLocations(),
                 new AntPathRequestMatcher("/favicon.ico")
         );
     }
-
-//    @Bean
-//    public CorsConfigurationSource corsConfigurationSource() {
-//        CorsConfiguration cfg = new CorsConfiguration();
-//        cfg.setAllowedOrigins(List.of("http://localhost:5173")); // 프론트 주소
-//        cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-//        cfg.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
-//        cfg.setExposedHeaders(List.of("Location", "Content-Disposition"));
-//        cfg.setAllowCredentials(true); // fetch에 credentials:true 쓰면 필수
-//
-//        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-//        source.registerCorsConfiguration("/**", cfg);
-//        return source;
-//    }
 }

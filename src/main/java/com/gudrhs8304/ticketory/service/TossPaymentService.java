@@ -2,6 +2,7 @@ package com.gudrhs8304.ticketory.service;
 
 import com.gudrhs8304.ticketory.domain.Booking;
 import com.gudrhs8304.ticketory.domain.Payment;
+import com.gudrhs8304.ticketory.domain.enums.BookingPayStatus;
 import com.gudrhs8304.ticketory.domain.enums.PaymentProvider;
 import com.gudrhs8304.ticketory.domain.enums.PaymentStatus;
 import com.gudrhs8304.ticketory.dto.payment.*;
@@ -17,6 +18,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -42,7 +44,7 @@ public class TossPaymentService {
 
         // 금액 서버 검증 (프론트가 보낸 amount와 서버 계산 금액 일치 체크)
         BigDecimal serverAmount = booking.getTotalPrice();
-        if (serverAmount != req.amount()) {
+        if (serverAmount == null || req.amount() == null || serverAmount.compareTo(req.amount()) != 0) {
             throw new IllegalArgumentException("결제 금액이 일치하지 않습니다.");
         }
 
@@ -83,7 +85,7 @@ public class TossPaymentService {
         }
 
         // 금액 검증
-        if (payment.getAmount() != req.amount()) {
+        if (payment.getAmount() == null || req.amount() == null || payment.getAmount().compareTo(req.amount()) != 0) {
             throw new IllegalArgumentException("결제 금액이 일치하지 않습니다.");
         }
 
@@ -105,7 +107,12 @@ public class TossPaymentService {
             // 승인 성공 → 상태 업데이트
             payment.setPaymentKey(req.paymentKey());
             payment.setStatus(PaymentStatus.PAID);
+            payment.setPaidAt(LocalDateTime.now());
             paymentRepository.save(payment);
+
+            var booking = payment.getBooking();
+            booking.setPaymentStatus(BookingPayStatus.PAID);
+            bookingRepository.save(booking);
 
             // TODO: 좌석 확정, 포인트 적립 등 후처리 연결
             return payment;
@@ -115,6 +122,10 @@ public class TossPaymentService {
             paymentRepository.save(payment);
             throw e;
         }
+    }
+
+    public Optional<Payment> findById(Long id) {
+        return paymentRepository.findById(id);
     }
 
     /** 3) 결제 취소 */

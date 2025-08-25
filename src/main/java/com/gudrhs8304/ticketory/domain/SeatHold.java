@@ -1,5 +1,6 @@
 package com.gudrhs8304.ticketory.domain;
 
+import com.gudrhs8304.ticketory.domain.enums.HoldStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -57,12 +58,17 @@ public class SeatHold extends BaseTimeEntity {
 
     private static final int DEFAULT_HOLD_SECONDS = 120;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    private HoldStatus status;
+
     @PrePersist
     protected void prePersistSeatHold() {
         if (holdTime == null) holdTime = DEFAULT_HOLD_SECONDS;
         if (expiresAt == null) {
             expiresAt = LocalDateTime.now().plusSeconds(holdTime);
         }
+        if (status == null) status = HoldStatus.HOLD;
         // createdAt/updatedAt은 BaseTimeEntity(@CreatedDate/@LastModifiedDate)가 처리
     }
 }
