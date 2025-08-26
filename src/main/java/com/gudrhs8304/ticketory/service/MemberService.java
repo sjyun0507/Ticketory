@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -247,6 +248,10 @@ public class MemberService {
 
         // role / signupType 이 NOT NULL이면 값 유지(또는 최소 권한으로 축소)
         // m.setRole(RoleType.USER);
+    }
+
+    public Optional<MemberResponseDTO> findOptionalById(Long memberId) {
+        return memberRepository.findById(memberId).map(MemberResponseDTO::from);
     }
 
 

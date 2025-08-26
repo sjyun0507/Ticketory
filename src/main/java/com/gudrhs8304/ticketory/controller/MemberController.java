@@ -65,10 +65,14 @@ public class MemberController {
     }
 
     @Operation(summary = "마이페이지/회원 정보 조회 — 본인 또는 관리자만", security = {})
-    @GetMapping("/{memberId}")
-    public ResponseEntity<MemberResponseDTO> getMember(@PathVariable Long memberId, Authentication auth) {
+    // 내 정보 조회(프론트는 /api/members/{id} 호출)
+    @GetMapping(path = "/{memberId:\\d+}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<MemberResponseDTO> getMember(
+            @PathVariable("memberId") Long memberId,
+            Authentication auth
+    ) {
         if (auth == null || !auth.isAuthenticated()) throw new AccessDeniedException("로그인이 필요합니다.");
-        Long me = Long.valueOf(auth.getName()); // JwtAuthFilter에서 principal=memberId 문자열
+        Long me = Long.valueOf(auth.getName());
         boolean isAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         if (!isAdmin && !memberId.equals(me)) throw new AccessDeniedException("본인 또는 관리자만 접근할 수 있습니다.");
         return ResponseEntity.ok(memberService.getMemberById(memberId));
