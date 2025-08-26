@@ -7,6 +7,7 @@ import com.gudrhs8304.ticketory.security.oauth.CustomOAuth2UserService;
 import com.gudrhs8304.ticketory.service.BookingOrchestrator;
 import com.gudrhs8304.ticketory.service.BookingService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Profile;
 import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api")
+@Profile("legacy")
 public class BookingControllerV2 {
 
     private final BookingOrchestrator bookingOrchestrator;

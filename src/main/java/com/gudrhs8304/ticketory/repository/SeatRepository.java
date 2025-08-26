@@ -61,4 +61,17 @@ public interface SeatRepository extends JpaRepository<Seat, Long> {
            )
         """)
     int releaseSeatsByBookingId(@Param("bookingId") Long bookingId);
+
+    // 예: 좌석 상태를 BOOKED로(컬럼/값은 프로젝트에 맞게)
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+        update Seat s
+           set s.status = 'BOOKED'
+         where s.seatId in (
+             select bs.seat.seatId
+               from BookingSeat bs
+              where bs.booking.bookingId = :bookingId
+         )
+    """)
+    int confirmSeatsByBookingId(@Param("bookingId") Long bookingId);
 }

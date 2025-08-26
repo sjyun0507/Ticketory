@@ -7,27 +7,39 @@ import com.gudrhs8304.ticketory.domain.enums.PaymentProvider;
 import com.gudrhs8304.ticketory.domain.enums.PaymentStatus;
 import com.gudrhs8304.ticketory.dto.movie.MovieDetailDTO;
 import com.gudrhs8304.ticketory.dto.movie.MovieDetailResponseDTO;
+import com.gudrhs8304.ticketory.dto.pay.ConfirmPaymentRequestDTO;
 import com.gudrhs8304.ticketory.dto.payment.ApprovePaymentRequest;
-import com.gudrhs8304.ticketory.repository.BookingRepository;
-import com.gudrhs8304.ticketory.repository.MovieMediaRepository;
-import com.gudrhs8304.ticketory.repository.MovieRepository;
-import com.gudrhs8304.ticketory.repository.PaymentRepository;
+import com.gudrhs8304.ticketory.dto.payment.PaymentOrderCreateReqDTO;
+import com.gudrhs8304.ticketory.dto.payment.TossConfirmRequestDTO;
+import com.gudrhs8304.ticketory.repository.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Log4j2
 public class PaymentService {
 
     private final BookingRepository bookingRepository;
     private final PaymentRepository paymentRepository;
     private final MovieRepository movieRepository;
     private final MovieMediaRepository movieMediaRepository;
+    private final SeatRepository seatRepository;
+    private final SeatHoldRepository seatHoldRepository;
+    private final TossPaymentService tossPaymentService;
+    private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
+
 
     @Transactional
     public Payment approve(Long memberId, ApprovePaymentRequest req) {
@@ -82,5 +94,92 @@ public class PaymentService {
 
         // ✅ 서비스는 내부 DTO를 리턴
         return MovieDetailDTO.of(movie, medias);
+    }
+
+    /**
+     * 토스 승인 성공 → 내부 확정 처리
+     */
+    @Transactional
+    public void confirmAndFinalize(ConfirmPaymentRequestDTO req) {
+        // 1) 토스 승인(기존 서비스 호출)
+        var approved = tossPaymentService.confirm(
+                new TossConfirmRequestDTO(req.paymentKey(), req.orderId(), req.amount())
+        );
+
+        // 2) 결제/예매 엔티티 갱신
+        Payment payment = paymentRepository.findByOrderId(req.orderId())
+                .orElseThrow(() -> new IllegalArgumentException("결제 정보 없음"));
+        Booking booking = payment.getBooking();
+
+        payment.setStatus(PaymentStatus.PAID);
+        payment.setPaidAt(LocalDateTime.now()); // approved 안에 시간이 있으면 그걸 사용해도 OK
+        paymentRepository.save(payment);
+
+        booking.setPaymentStatus(BookingPayStatus.PAID);
+        bookingRepository.save(booking);
+
+        // 3) seat_hold 정리
+        seatHoldRepository.deleteByBookingId(booking.getBookingId());
+
+        log.info("[TOSS] finalized bookingId={}, paymentId={}, status=PAID", booking.getBookingId(), payment.getPaymentId());
+
+    }
+
+
+    /**
+     * 주문ID를 결제(PENDING)에 부착
+     */
+    // 주문 선생성 + 기존 PENDING 결제행에 orderId 붙이기
+    @Transactional
+    public void createOrderAndAttach(Long bookingId, String orderId, BigDecimal amount) {
+        // 1) 기존 PENDING + paidAt null에 orderId 부착
+        int updated = paymentRepository.attachOrderIdToPendingByBookingId(bookingId, orderId);
+
+        if (updated == 0) {
+            // 2) 없으면 새로 생성
+            Payment p = new Payment();
+            p.setBooking(bookingRepository.getReferenceById(bookingId));
+            p.setAmount(amount);
+            p.setProvider(PaymentProvider.TOSS);
+            p.setStatus(PaymentStatus.PENDING);
+            p.setOrderId(orderId);
+            paymentRepository.save(p);
+        } else {
+            // 3) 있었다면 그 행의 금액도 최신으로 맞춰줌
+            paymentRepository.updateAmountByOrderId(orderId, amount);
+        }
+
+        log.info("[ORDER] bookingId={}, orderId={}, amount={}", bookingId, orderId, amount);
+    }
+
+
+    /** 결제 확정 */
+    @Transactional
+    public void confirm(String paymentKey, String orderId, long amount) {
+        Payment payment = paymentRepository.findByOrderIdForUpdate(orderId)
+                .orElseThrow(() -> new IllegalStateException("payment not found by orderId"));
+
+        if (payment.getAmount().compareTo(BigDecimal.valueOf(amount)) != 0) {
+            log.warn("[AMOUNT-MISMATCH] orderId={}, saved={}, approved={}",
+                    orderId, payment.getAmount(), amount);
+            throw new IllegalArgumentException("amount mismatch");
+        }
+
+        payment.setStatus(PaymentStatus.PAID);
+        payment.setPaymentKey(paymentKey);
+        payment.setPaidAt(LocalDateTime.now());
+
+        Booking booking = payment.getBooking();
+        booking.setPaymentStatus(BookingPayStatus.PAID);
+        // seat hold 해제 등 추가 로직이 있으면 여기에
+    }
+
+    // 필요시 남겨둬도 되는 보조 메서드
+    @Transactional
+    public void attachOrderId(long bookingId, String orderId) {
+        int updated = paymentRepository.attachOrderIdToPendingByBookingId(bookingId, orderId);
+        if (updated == 0) {
+            throw new IllegalStateException("PENDING payment row not found: bookingId=" + bookingId);
+        }
     }
 }

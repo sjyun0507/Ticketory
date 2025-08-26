@@ -1,10 +1,9 @@
 package com.gudrhs8304.ticketory.controller;
 
 import com.gudrhs8304.ticketory.domain.Booking;
-import com.gudrhs8304.ticketory.dto.booking.BookingSummaryDTO;
-import com.gudrhs8304.ticketory.dto.booking.CancelBookingRequest;
-import com.gudrhs8304.ticketory.dto.booking.CreateBookingRequest;
-import com.gudrhs8304.ticketory.dto.booking.CreateBookingResponse;
+import com.gudrhs8304.ticketory.dto.booking.*;
+import com.gudrhs8304.ticketory.security.auth.CustomUserPrincipal;
+import com.gudrhs8304.ticketory.service.BookingOrchestrator;
 import com.gudrhs8304.ticketory.service.BookingQueryService;
 import com.gudrhs8304.ticketory.service.BookingService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -23,11 +22,11 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
-@Profile("legacy")
 public class BookingController {
 
     private final BookingQueryService bookingQueryService;
     private final BookingService bookingService;
+    private final BookingOrchestrator bookingOrchestrator;
 
     @Operation(summary = "예매내역")
     @GetMapping("/{memberId}/booking")
@@ -82,18 +81,25 @@ public class BookingController {
 
     @Operation(summary = "예매 생성(결제 전)")
     @PostMapping("/bookings")
-    public ResponseEntity<?> createBooking(
-            Authentication authentication,
-            @RequestBody CreateBookingRequest req
+    public ResponseEntity<InitBookingResponseDTO> initBooking(
+            @RequestHeader(value = "Idempotency-Key", required = false) String idemKey,
+            @AuthenticationPrincipal(errorOnInvalidType = false) Object principal,
+            @RequestBody InitBookingRequestDTO req
     ) {
-        if (authentication == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body("{\"message\":\"로그인이 필요합니다.\"}");
+        Long memberId = (principal instanceof CustomUserPrincipal p) ? p.getMemberId() : null;
+
+        if (memberId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        Long memberId = Long.valueOf(authentication.getName());
-        CreateBookingResponse resp = bookingService.create(memberId, req);
-        return ResponseEntity.ok(resp);
+        return ResponseEntity.ok(bookingOrchestrator.initBooking(memberId, idemKey, req));
+    }
+
+    /** principal에서 memberId를 안전하게 뽑아내는 헬퍼 */
+    private Long extractMemberId(Object principal) {
+        if (principal instanceof CustomUserPrincipal p) {
+            return p.getMemberId();   // ← 여기서 Long만 뽑아서 return
+        }
+        return null; // 비로그인(anonymousUser) 등
     }
 
     @Operation(summary = "예매 상세(본인만)")
@@ -113,19 +119,20 @@ public class BookingController {
     }
 
     @Operation(summary = "예매 취소")
-    @PostMapping("/bookings/{bookingId}/cancel")
-    public ResponseEntity<?> cancel(
-            Authentication authentication,
-            @PathVariable Long bookingId,
-            @RequestBody(required = false) CancelBookingRequest req
-    ) {
-        if (authentication == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body("{\"message\":\"로그인이 필요합니다.\"}");
+    @DeleteMapping("/bookings/{bookingId}/cancel")
+    public ResponseEntity<Void> cancel(Authentication authentication,
+                                       @PathVariable Long bookingId) {
+        Long memberId = null;
+        if (authentication != null && authentication.isAuthenticated()) {
+            try { memberId = Long.valueOf(authentication.getName()); } catch (NumberFormatException ignore) {}
         }
-        Long memberId = Long.valueOf(authentication.getName());
-        bookingService.cancel(memberId, bookingId, req == null ? null : req.reason());
+        bookingService.releaseHold(memberId, bookingId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/holds/{holdKey}")
+    public ResponseEntity<Void> cancelHold(@PathVariable String holdKey) {
+        bookingService.releaseHoldByKey(holdKey);
         return ResponseEntity.noContent().build();
     }
 }

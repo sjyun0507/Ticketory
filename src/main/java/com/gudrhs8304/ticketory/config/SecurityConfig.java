@@ -61,9 +61,9 @@ public class SecurityConfig {
                     .httpBasic(h -> h.disable())
                     .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                     .cors(Customizer.withDefaults())
-                    .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                    .authorizeHttpRequests(a -> a.anyRequest().permitAll())
                     .oauth2Login(o -> o
-                            .authorizationEndpoint(a -> a.authorizationRequestResolver(kakaoAuthRequestResolver()))
+                            .authorizationEndpoint(e -> e.authorizationRequestResolver(kakaoAuthRequestResolver()))
                             .userInfoEndpoint(u -> u.userService(customOAuth2UserService))
                             .successHandler(oAuth2LoginSuccessHandler)
                     );
@@ -74,9 +74,10 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .formLogin(f -> f.disable())
                 .httpBasic(h -> h.disable())
-                // 🔐 JWT 사용 시 stateless 권장
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .cors(Customizer.withDefaults())
+
+                // 401/403을 명확히 반환(404로 가리지 않음)
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((req, res, e) -> {
                             log.debug("[401] {}", e.getMessage());
@@ -91,30 +92,30 @@ public class SecurityConfig {
                             res.getWriter().write("{\"error\":\"forbidden\"}");
                         })
                 )
+
                 .authorizeHttpRequests(auth -> auth
                         // CORS preflight
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // 정적 리소스 & 샘플 페이지
+                        // 정적/문서
                         .requestMatchers(
                                 "/", "/favicon.ico", "/files/**",
                                 "/assets/**", "/static/**", "/css/**", "/js/**", "/images/**", "/webjars/**",
                                 "/payments-test.html", "/success.html", "/fail.html"
                         ).permitAll()
-
-                        // Swagger/OpenAPI
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/api-docs/**").permitAll()
 
-                        // 공개 GET API
+                        // 공개 GET
                         .requestMatchers(HttpMethod.GET, "/api/movies/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/screenings/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/proxy/**").permitAll()
 
-                        // Auth/OAuth & 회원 공개 API
+                        // 인증/소셜
                         .requestMatchers("/login", "/login/success").permitAll()
                         .requestMatchers("/oauth2/authorization/**", "/login/oauth2/code/**").permitAll()
+
+                        // 멤버 공개 API
                         .requestMatchers("/api/members/signup").permitAll()
-                        .requestMatchers("/api/members/kakao", "/kakao/logout", "/api/members/logout/kakao").permitAll()
                         .requestMatchers(HttpMethod.GET,
                                 "/api/members/exists",
                                 "/api/members/check-id",
@@ -127,26 +128,26 @@ public class SecurityConfig {
                                 "/api/members/logout"
                         ).permitAll()
 
-                        // ✅ 결제 플로우
-                        // 결제 시작(주문 생성) — 로그인 필요 권장
+                        // 결제 플로우
+                        .requestMatchers(HttpMethod.POST, "/api/payments/confirm").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/payments").authenticated()
-                        // 결제 승인(성공 리다이렉트 후 서버 검증) — success 페이지에서 쉽게 호출할 수 있게 permitAll
-                        .requestMatchers(HttpMethod.POST, "/payments/confirm").permitAll()
-                        // 결제 상태 조회 — 로그인 필요
                         .requestMatchers(HttpMethod.GET, "/api/payments/**").authenticated()
+
+                        // 내 정보/탈퇴 (me)
+                        .requestMatchers(HttpMethod.GET, "/api/members/me").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/members/me").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/members/me").authenticated()
 
                         // 관리자
                         .requestMatchers("/api/admin/**", "/login/admin/**").hasRole("ADMIN")
 
-                        // 멤버 관련 보호 API
-                        .requestMatchers(HttpMethod.GET, "/api/members/**").authenticated()
-                        .requestMatchers(HttpMethod.PUT, "/api/members/**").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/api/members/**").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/bookings/*/qr").authenticated()
+                        // 그 외 멤버 API는 인증 필요( /api/members/{id} 포함 )
+                        .requestMatchers("/api/members/**").authenticated()
 
-                        // 나머지 전부 인증 필요
+                        // 기타 전부 인증
                         .anyRequest().authenticated()
                 )
+
                 .oauth2Login(o -> o
                         .authorizationEndpoint(a -> a.authorizationRequestResolver(kakaoAuthRequestResolver()))
                         .userInfoEndpoint(u -> u.userService(customOAuth2UserService))
@@ -157,9 +158,10 @@ public class SecurityConfig {
                                 String code = (exception instanceof org.springframework.security.oauth2.core.OAuth2AuthenticationException e)
                                         ? e.getError().getErrorCode() : "unknown";
                                 response.sendRedirect("/login?oauth2_error=" + code);
-                            } catch (Exception ignored) { }
+                            } catch (Exception ignored) {}
                         })
                 )
+
                 .addFilterBefore(jwtAuthFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

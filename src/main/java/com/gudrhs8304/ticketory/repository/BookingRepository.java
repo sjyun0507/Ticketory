@@ -1,6 +1,7 @@
 package com.gudrhs8304.ticketory.repository;
 
 import com.gudrhs8304.ticketory.domain.Booking;
+import com.gudrhs8304.ticketory.domain.enums.BookingPayStatus;
 import com.gudrhs8304.ticketory.dto.booking.BookingSummaryDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -54,4 +55,11 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     Optional<Booking> findByBookingIdAndMember_MemberId(Long bookingId, Long memberId);
 
     boolean existsByScreening_ScreeningId(Long screeningId);
+
+    Optional<Booking> findTopByMember_MemberIdAndPaymentStatusOrderByCreatedAtDesc(
+            Long memberId,
+            BookingPayStatus paymentStatus
+    );
+
+
 }

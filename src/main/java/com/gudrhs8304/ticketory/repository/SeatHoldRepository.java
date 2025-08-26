@@ -43,5 +43,7 @@ public interface SeatHoldRepository extends JpaRepository<SeatHold, Long> {
     int deleteByBookingId(@Param("bookingId") Long bookingId);
 
 
+
+
 }
 
