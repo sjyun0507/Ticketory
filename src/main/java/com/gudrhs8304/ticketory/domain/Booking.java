@@ -40,7 +40,7 @@ public class Booking extends BaseTimeEntity {
     @Column(name = "payment_status", length = 10, nullable = false)
     private BookingPayStatus paymentStatus;
 
-    @Column(name = "qr_code_url", length = 255)
+    @Column(name = "qr_code_url", columnDefinition = "TEXT")
     private String qrCodeUrl;
 
     @PrePersist

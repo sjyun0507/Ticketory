@@ -1,5 +1,8 @@
 package com.gudrhs8304.ticketory.service;
 
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
+import com.google.zxing.qrcode.QRCodeWriter;
 import com.gudrhs8304.ticketory.domain.*;
 import com.gudrhs8304.ticketory.domain.enums.BookingPayStatus;
 import com.gudrhs8304.ticketory.domain.enums.MovieMediaType;
@@ -19,12 +22,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -204,8 +206,42 @@ public class PaymentService {
         payment.setStatus(PaymentStatus.PAID);
         payment.setPaymentKey(paymentKey);     // 최종 결제키 저장
         payment.setPaidAt(now);
-
         booking.setPaymentStatus(BookingPayStatus.PAID);
+
+        String qrPayload = buildQrPayload(booking);           // 아래 메서드
+        String dataUrl   = generateQrPngDataUrl(qrPayload, 240, 240);
+        booking.setQrCodeUrl(dataUrl);
+    }
+
+    /** QR에 담을 내용 (JWT 있으면 사용, 없으면 텍스트로) */
+    private String buildQrPayload(Booking booking) {
+        try {
+            // JwtTokenProvider 를 사용 중이면 여기에 주입해서 claim 생성
+            Map<String, Object> claims = new HashMap<>();
+            claims.put("bookingId", booking.getBookingId());
+            claims.put("screeningId", booking.getScreening().getScreeningId());
+            claims.put("issuedAt", System.currentTimeMillis());
+            // 예: jwtTokenProvider.generateTokenWithClaims(claims, 60 * 60);
+            // JWT 안 쓰면 아래 텍스트 리턴:
+            return "BOOKING:" + booking.getBookingId();
+        } catch (Exception e) {
+            return "BOOKING:" + booking.getBookingId();
+        }
+    }
+
+    /** ZXing으로 QR PNG → data URL 생성 */
+    private String generateQrPngDataUrl(String text, int width, int height) {
+        try {
+            var writer = new QRCodeWriter();
+            var matrix = writer.encode(text, BarcodeFormat.QR_CODE, width, height);
+            try (var baos = new ByteArrayOutputStream()) {
+                MatrixToImageWriter.writeToStream(matrix, "PNG", baos);
+                String b64 = Base64.getEncoder().encodeToString(baos.toByteArray());
+                return "data:image/png;base64," + b64;
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("QR 생성 실패", e);
+        }
     }
 
     // 필요시 남겨둬도 되는 보조 메서드
