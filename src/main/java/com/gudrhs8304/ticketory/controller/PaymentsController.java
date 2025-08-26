@@ -62,9 +62,9 @@ public class PaymentsController {
         // ✅ 서버 기준 금액 계산
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "booking not found"));
-        long usedPoint = req.getUsedPoint(); // 원시 long: null 아님
+        BigDecimal usedPoint = req.getUsedPoint(); // 원시 long: null 아님
         BigDecimal serverAmount = booking.getTotalPrice()
-                .subtract(BigDecimal.valueOf(usedPoint))
+                .subtract(usedPoint)
                 .max(BigDecimal.ZERO);
 
         // orderId 생성
@@ -96,7 +96,7 @@ public class PaymentsController {
     @PostMapping("/confirm")
     public ResponseEntity<Void> confirm(@RequestBody ConfirmPaymentRequestDTO req) {
         log.info("결제 확인 요청: orderId={}, paymentKey={}, amount={}", req.orderId(), req.paymentKey(), req.amount());
-        paymentService.confirm(req.paymentKey(), req.orderId(), req.amount().longValue());
+        paymentService.confirm(req.paymentKey(), req.orderId(), req.amount());
         return ResponseEntity.noContent().build();
     }
 

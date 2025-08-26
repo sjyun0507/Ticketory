@@ -25,6 +25,36 @@ public class MemberController {
     private final MemberService memberService;
     private final MemberRepository memberRepository; // (현재 사용 안 하지만 남겨둬도 무방)
 
+    /**
+     * 인증 주체에서 memberId를 안전하게 추출한다.
+     * - principal 이 CustomUserPrincipal 객체인 경우(getMemberId 또는 getId)
+     * - principal 이 문자열(예: Jwt 필터가 memberId를 name에 저장)인 경우 모두 지원
+     */
+    private Long extractMemberId(Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            throw new AccessDeniedException("로그인이 필요합니다.");
+        }
+        Object principal = auth.getPrincipal();
+        // CustomUserPrincipal 지원
+        if (principal instanceof com.gudrhs8304.ticketory.security.auth.CustomUserPrincipal cup) {
+            try {
+                return (Long) cup.getClass().getMethod("getMemberId").invoke(cup);
+            } catch (Exception ignore) {
+                try {
+                    return (Long) cup.getClass().getMethod("getId").invoke(cup);
+                } catch (Exception e) {
+                    throw new AccessDeniedException("인증 주체에서 ID를 추출할 수 없습니다.");
+                }
+            }
+        }
+        // 문자열 기반
+        try {
+            return Long.valueOf(auth.getName());
+        } catch (NumberFormatException e) {
+            throw new AccessDeniedException("인증 주체가 올바르지 않습니다.");
+        }
+    }
+
     @Operation(summary = "회원 가입", description = "일반(LOCAL) 회원 가입 처리", security = {})
     @PostMapping("/signup")
     public MemberResponseDTO signup(@Valid @RequestBody MemberSignupRequestDTO req) {
@@ -65,14 +95,10 @@ public class MemberController {
     }
 
     @Operation(summary = "마이페이지/회원 정보 조회 — 본인 또는 관리자만", security = {})
-    // 내 정보 조회(프론트는 /api/members/{id} 호출)
-    @GetMapping(path = "/{memberId:\\d+}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<MemberResponseDTO> getMember(
-            @PathVariable("memberId") Long memberId,
-            Authentication auth
-    ) {
+    @GetMapping("/{memberId}")
+    public ResponseEntity<MemberResponseDTO> getMember(@PathVariable Long memberId, Authentication auth) {
         if (auth == null || !auth.isAuthenticated()) throw new AccessDeniedException("로그인이 필요합니다.");
-        Long me = Long.valueOf(auth.getName());
+        Long me = extractMemberId(auth);
         boolean isAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         if (!isAdmin && !memberId.equals(me)) throw new AccessDeniedException("본인 또는 관리자만 접근할 수 있습니다.");
         return ResponseEntity.ok(memberService.getMemberById(memberId));
@@ -87,8 +113,7 @@ public class MemberController {
             Authentication auth
     ) {
         if (auth == null || !auth.isAuthenticated()) return ResponseEntity.status(401).build();
-
-        Long authId = Long.valueOf(auth.getName()); // JwtAuthFilter 전제
+        Long authId = extractMemberId(auth);
         boolean isAdmin = auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
 
@@ -104,20 +129,17 @@ public class MemberController {
     /** 회원탈퇴 — 본인 */
     @Operation(summary = "회원탈퇴(본인)")
     @DeleteMapping("/{memberId}")
-    public ResponseEntity<Void> deleteMe(Authentication auth) {
+    public ResponseEntity<Void> deleteMe(@PathVariable Long memberId, Authentication auth) {
         if (auth == null || !auth.isAuthenticated()) return ResponseEntity.status(401).build();
+        Long authId = extractMemberId(auth);
+        boolean isAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
 
-        // JwtAuthFilter가 principal을 String.valueOf(memberId)로 넣는 전제
-        Long authMemberId;
-        try {
-            authMemberId = Long.valueOf(auth.getName());
-        } catch (NumberFormatException e) {
-            // 필터가 아직 교체 전이라면 숫자가 아닐 수 있음 → 401 처리
-            return ResponseEntity.status(401).build();
+        if (!isAdmin && !memberId.equals(authId)) {
+            throw new AccessDeniedException("본인 또는 관리자만 삭제할 수 있습니다.");
         }
 
-        memberService.deleteMember(authMemberId, authMemberId, false);
-        return ResponseEntity.noContent().build(); // 204
+        memberService.deleteMember(memberId, authId, isAdmin);
+        return ResponseEntity.noContent().build();
     }
 
     /** 회원탈퇴 — 관리자 */

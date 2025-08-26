@@ -27,5 +27,5 @@ public class ScreeningDetailResponseDTO {
     private LocalDateTime endAt;
 
     // 💰 상영관 기본 요금
-    private Integer basePrice;
+    private long basePrice;
 }

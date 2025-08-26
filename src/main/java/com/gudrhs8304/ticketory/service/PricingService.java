@@ -1,87 +1,123 @@
 package com.gudrhs8304.ticketory.service;
 
 import com.gudrhs8304.ticketory.domain.PricingRule;
+import com.gudrhs8304.ticketory.domain.Screen;
 import com.gudrhs8304.ticketory.domain.enums.PricingKind;
 import com.gudrhs8304.ticketory.domain.enums.PricingOp;
 import com.gudrhs8304.ticketory.repository.PricingRuleRepository;
+import com.gudrhs8304.ticketory.repository.ScreenRepository;
+import com.gudrhs8304.ticketory.repository.ScreeningRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 public class PricingService {
 
-    private final PricingRuleRepository repo;
-
-    /** 규칙이 없을 때 기본 단가 */
-    private static final BigDecimal DEFAULT_UNIT_PRICE = new BigDecimal("12000");
+    private final PricingRuleRepository pricingRuleRepository;
+    private final ScreenRepository screenRepository;
 
     /**
-     * 상영관 + 요금종류 기준으로 단가 계산
-     * @param screenId 상영관 ID
-     * @param kind     요금 종류(성인/청소년 등). null이면 모든 kind 규칙을 적용.
-     * @param at       기준 시각(유효기간 판정용). null이면 기간 무시.
+     * 관객군별 단가 계산 (basePrice 원단위, BigDecimal)
+     * audienceType: "ADULT" / "TEEN" (대소문자 구분 없음)
      */
-    public BigDecimal resolvePrice(Long screenId, PricingKind kind, LocalDateTime at) {
-        BigDecimal price = DEFAULT_UNIT_PRICE;
+    public BigDecimal calcUnitPrice(Long screenId, BigDecimal basePrice, String audienceType) {
+        List<PricingRule> rules = pricingRuleRepository.findActiveRules(screenId, LocalDateTime.now());
 
-        // 1) 저장소에서 우선순위 정렬된 규칙 조회
-        List<PricingRule> rules = (kind == null)
-                ? repo.findByScreenIdAndEnabledTrueOrderByPriorityAscIdAsc(screenId)
-                : repo.findByScreenIdAndKindAndEnabledTrueOrderByPriorityAscIdAsc(screenId, kind);
+        BigDecimal price = basePrice;
+        String t = audienceType == null ? "ALL" : audienceType.toUpperCase();
 
-        // 2) 유효기간 필터
-        rules = rules.stream()
-                .filter(r -> isInRange(r, at))
-                .toList();
-
-        // 3) 규칙 적용
         for (PricingRule r : rules) {
-            PricingOp op = r.getOp();
-            BigDecimal amt = r.getAmount() == null ? BigDecimal.ZERO : r.getAmount();
+            if (!appliesTo(r.getKind(), t)) continue;
+            price = apply(price, r.getOp(), r.getAmount());
+        }
+        // 음수가 되지 않도록 방어
+        if (price.signum() < 0) price = BigDecimal.ZERO;
+        // 소수점 0자리(원) 정규화 (DB scale=2면 필요시 setScale(2))
+        return price;
+    }
 
+    private boolean appliesTo(PricingKind kind, String t) {
+        if (kind == null) return true;
+        switch (kind) {
+            case ADULT: return "ADULT".equals(t);
+            case TEEN:  return "TEEN".equals(t);
+            case CHILD:   return true;
+            default:    return true; // 다른 값이더라도 전체 적용
+        }
+    }
+
+    private BigDecimal apply(BigDecimal price, PricingOp op, BigDecimal amount) {
+        if (op == null || amount == null) return price;
+
+        switch (op) {
+            case PLUS:
+                return price.add(amount);
+            case MINUS:
+                return price.subtract(amount);
+            case PCT_PLUS:
+                // amount=10 → +10%  (price * (1 + 10/100))
+                return price.add(price.multiply(amount).movePointLeft(2));
+            case PCT_MINUS:
+                // amount=10 → -10%
+                return price.subtract(price.multiply(amount).movePointLeft(2));
+            default:
+                return price;
+        }
+    }
+
+    /** 단가 계산: screen.base_price 를 시작점으로, 해당 kind 의 rule 들을 priority 순서대로 적용 */
+    public BigDecimal resolveUnit(Long screenId, PricingKind kind, LocalDateTime when) {
+        // 1) base price (NULL 이면 0)
+        Screen screen = screenRepository.findById(screenId)
+                .orElseThrow(() -> new IllegalArgumentException("screen not found: " + screenId));
+        BigDecimal price = screen.getBasePrice() == null
+                ? BigDecimal.ZERO
+                : new BigDecimal(screen.getBasePrice());
+
+        // 2) kind 에 해당하는 rule 적용
+        List<PricingRule> rules = pricingRuleRepository.findEnabledByScreenAtAndKind(screenId, kind, when);
+        for (PricingRule r : rules) {
+            BigDecimal amt = r.getAmount();
+            PricingOp op = r.getOp();
             switch (op) {
-                case SET -> {
-                    // 금액을 고정
-                    price = amt;
-                }
-                case PLUS -> {
-                    // 정액 가산
-                    price = price.add(amt);
-                }
-                case MINUS -> {
-                    // 정액 감액
-                    price = price.subtract(amt);
-                }
-                case PCT_PLUS -> {
-                    // % 인상 (예: amt=10 → 10% 인상)
-                    BigDecimal rate = BigDecimal.ONE.add(amt.movePointLeft(2)); // 1 + pct/100
-                    price = price.multiply(rate);
-                }
-                case PCT_MINUS -> {
-                    // % 인하 (예: amt=10 → 10% 인하)
-                    BigDecimal rate = BigDecimal.ONE.subtract(amt.movePointLeft(2)); // 1 - pct/100
-                    price = price.multiply(rate);
-                }
+                case PLUS -> price = price.add(amt);
+                case MINUS -> price = price.subtract(amt);
+                case PCT_PLUS -> price = price.multiply(BigDecimal.ONE.add(amt.movePointLeft(2)));
+                case PCT_MINUS -> price = price.multiply(BigDecimal.ONE.subtract(amt.movePointLeft(2)));
             }
         }
-
-        // 4) 음수 방지 + 원단위 반올림
+        // 마이너스 방지 + 반올림
         if (price.signum() < 0) price = BigDecimal.ZERO;
-        return price.setScale(0, RoundingMode.HALF_UP);
+        return price.setScale(0, RoundingMode.HALF_UP); // 원 단위
     }
 
-    private boolean isInRange(PricingRule r, LocalDateTime at) {
-        if (at == null) return true;
-        if (r.getValidFrom() != null && at.isBefore(r.getValidFrom())) return false;
-        if (r.getValidTo() != null && at.isAfter(r.getValidTo())) return false;
-        return true;
+    /** 여러 인원 종류 합산 금액 계산 */
+    public BigDecimal computeTotal(Long screenId,
+                                   Map<PricingKind, Integer> counts,
+                                   LocalDateTime when) {
+        BigDecimal total = BigDecimal.ZERO;
+        for (Map.Entry<PricingKind, Integer> e : counts.entrySet()) {
+            int n = e.getValue() == null ? 0 : e.getValue();
+            if (n <= 0) continue;
+            BigDecimal unit = resolveUnit(screenId, e.getKey(), when);
+            total = total.add(unit.multiply(BigDecimal.valueOf(n)));
+        }
+        return total;
     }
 
-
+    /** 편의: 성인/청소년 숫자로 바로 합산 */
+    public BigDecimal computeTotal(Long screenId, int adult, int teen, LocalDateTime when) {
+        Map<PricingKind, Integer> m = new EnumMap<>(PricingKind.class);
+        m.put(PricingKind.ADULT, adult);
+        m.put(PricingKind.TEEN,  teen);
+        return computeTotal(screenId, m, when);
+    }
 }

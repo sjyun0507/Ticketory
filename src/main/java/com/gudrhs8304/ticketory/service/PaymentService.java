@@ -28,7 +28,6 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-@Log4j2
 public class PaymentService {
 
     private final BookingRepository bookingRepository;
@@ -155,11 +154,11 @@ public class PaymentService {
 
     /** 결제 확정 */
     @Transactional
-    public void confirm(String paymentKey, String orderId, long amount) {
+    public void confirm(String paymentKey, String orderId, BigDecimal amount) {
         Payment payment = paymentRepository.findByOrderIdForUpdate(orderId)
                 .orElseThrow(() -> new IllegalStateException("payment not found by orderId"));
 
-        if (payment.getAmount().compareTo(BigDecimal.valueOf(amount)) != 0) {
+        if (payment.getAmount().compareTo(amount) != 0) {
             log.warn("[AMOUNT-MISMATCH] orderId={}, saved={}, approved={}",
                     orderId, payment.getAmount(), amount);
             throw new IllegalArgumentException("amount mismatch");

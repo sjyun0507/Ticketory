@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.util.List;
 @Data
 public class PaymentOrderCreateReqDTO {
@@ -13,8 +14,8 @@ public class PaymentOrderCreateReqDTO {
     private Long memberId;
     private String orderId;
     @NotNull
-    private long totalAmount;
-    private long usedPoint;
+    private BigDecimal totalAmount;
+    private BigDecimal usedPoint;
     private String orderMethod;
     private String orderTime;
     private String status;

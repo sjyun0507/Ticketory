@@ -1,9 +1,7 @@
 package com.gudrhs8304.ticketory.service;
 
 import com.gudrhs8304.ticketory.domain.*;
-import com.gudrhs8304.ticketory.domain.enums.BookingPayStatus;
-import com.gudrhs8304.ticketory.domain.enums.PaymentProvider;
-import com.gudrhs8304.ticketory.domain.enums.PaymentStatus;
+import com.gudrhs8304.ticketory.domain.enums.*;
 import com.gudrhs8304.ticketory.dto.booking.InitBookingRequestDTO;
 import com.gudrhs8304.ticketory.dto.booking.InitBookingResponseDTO;
 import com.gudrhs8304.ticketory.repository.*;
@@ -12,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -27,6 +26,8 @@ public class BookingOrchestrator {
     private final BookingSeatRepository bookingSeatRepo;
     private final PaymentRepository paymentRepo;
     private final MemberRepository memberRepo;
+    private final PricingRuleRepository pricingRuleRepo;
+    private final PricingService pricingService;
 
     private static final int DEFAULT_HOLD_SECONDS = 120;
 
@@ -78,10 +79,23 @@ public class BookingOrchestrator {
             holdIds.add(h.getHoldId());
         }
 
-        // 5) 가격 계산 (예: adult 14000, teen 11000)
+        // 5) 가격 계산 — 규칙 기반
         int cntAdult = Optional.ofNullable(req.counts()).map(m -> m.getOrDefault("adult", 0)).orElse(0);
         int cntTeen  = Optional.ofNullable(req.counts()).map(m -> m.getOrDefault("teen", 0)).orElse(0);
-        int total = cntAdult * 14000 + cntTeen * 11000;
+
+        // 기본 단가(상영관 base_price)
+        BigDecimal base = Optional.ofNullable(screening.getScreen().getBasePrice())
+                .map(BigDecimal::valueOf).orElse(BigDecimal.ZERO);
+
+        // kind별 단가
+        BigDecimal unitAdult = calcUnitPrice(base, screenId, PricingKind.ADULT, now);
+        BigDecimal unitTeen  = calcUnitPrice(base, screenId, PricingKind.TEEN,  now);
+
+        // 합계
+        BigDecimal total = unitAdult.multiply(BigDecimal.valueOf(cntAdult))
+                .add(unitTeen.multiply(BigDecimal.valueOf(cntTeen)));
+
+
 
         // 6) BOOKING
         Member memberRef = memberRepo.getReferenceById(memberId);
@@ -89,7 +103,7 @@ public class BookingOrchestrator {
                 .member(memberRef)
                 .screening(screening)
                 .bookingTime(now)
-                .totalPrice(new BigDecimal(total))
+                .totalPrice(total)
                 .paymentStatus(BookingPayStatus.PENDING)
                 .build();
         bookingRepo.save(booking);
@@ -104,7 +118,7 @@ public class BookingOrchestrator {
             bookingSeatRepo.save(bs);
         }
 
-        // 8) PAYMENT(PENDING)  — orderId(필수)와 paymentKey(선택) 세팅
+        // 8) PAYMENT(PENDING)
         String orderId = newOrderId(booking.getBookingId(), idemKey);
         String paymentKey = (idemKey == null || idemKey.isBlank())
                 ? "IDEMP-" + UUID.randomUUID()
@@ -117,11 +131,11 @@ public class BookingOrchestrator {
 
         Payment pay = Payment.builder()
                 .booking(booking)
-                .orderId(orderId)                 // ★ NOT NULL/UNIQUE
-                .paymentKey(paymentKey)           // (선택) 프런트 Idempotency-Key 재사용
+                .orderId(orderId)
+                .paymentKey(paymentKey)
                 .provider(provider)
                 .status(PaymentStatus.PENDING)
-                .amount(new BigDecimal(total))
+                .amount(total)
                 .build();
         paymentRepo.save(pay);
 
@@ -132,7 +146,7 @@ public class BookingOrchestrator {
                 expiresAt.toString(),
                 pay.getStatus().name(),
                 pay.getProvider().name(),
-                total
+                total // 프론트엔드가 원단위 정수라면
         );
     }
 
@@ -159,5 +173,32 @@ public class BookingOrchestrator {
         // 2) seat_hold 해제 (행 삭제 또는 releasedAt 마킹)
         seatHoldRepo.deleteByBookingId(bookingId);
         // 또는: seatHoldRepo.markReleasedByBookingId(bookingId);
+    }
+
+    /** 단가 계산: basePrice에 pricing_rule(op/amount/priority) 순서대로 적용 */
+    private BigDecimal calcUnitPrice(BigDecimal basePrice,
+                                     Long screenId,
+                                     PricingKind kind,
+                                     LocalDateTime when) {
+        // basePrice가 null/0이면 안전한 기본값
+        BigDecimal price = (basePrice != null && basePrice.compareTo(BigDecimal.ZERO) > 0)
+                ? basePrice : new BigDecimal("12000");
+
+        List<PricingRule> rules = pricingRuleRepo.findActiveRulesByKind(screenId, kind, when);
+
+        for (PricingRule r : rules) {
+            BigDecimal amt = (r.getAmount() != null) ? r.getAmount() : BigDecimal.ZERO;
+
+            switch (r.getOp()) {
+                case SET      -> price = amt; // ★ 단가 고정
+                case PLUS     -> price = price.add(amt);
+                case MINUS    -> price = price.subtract(amt);
+                case PCT_PLUS -> price = price.multiply(BigDecimal.ONE.add(amt.movePointLeft(2)));
+                case PCT_MINUS-> price = price.multiply(BigDecimal.ONE.subtract(amt.movePointLeft(2)));
+                default -> { /* no-op */ }
+            }
+        }
+        // 원단위 반올림 + 음수 방지
+        return price.max(BigDecimal.ZERO).setScale(0, RoundingMode.HALF_UP);
     }
 }

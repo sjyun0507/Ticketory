@@ -1,13 +1,11 @@
 package com.gudrhs8304.ticketory.service;
 
-import com.google.zxing.BarcodeFormat;
-import com.google.zxing.WriterException;
-import com.google.zxing.client.j2se.MatrixToImageWriter;
-import com.google.zxing.qrcode.QRCodeWriter;
+
 import com.gudrhs8304.ticketory.config.JwtTokenProvider;
 import com.gudrhs8304.ticketory.domain.*;
 import com.gudrhs8304.ticketory.domain.enums.BookingPayStatus;
 import com.gudrhs8304.ticketory.domain.enums.PricingKind;
+import com.gudrhs8304.ticketory.domain.enums.PricingOp;
 import com.gudrhs8304.ticketory.dto.booking.CreateBookingRequest;
 import com.gudrhs8304.ticketory.dto.booking.CreateBookingResponse;
 import com.gudrhs8304.ticketory.repository.*;
@@ -16,12 +14,9 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Base64;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -33,15 +28,16 @@ public class BookingService {
     private final BookingSeatRepository bookingSeatRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final SeatHoldRepository seatHoldRepository;
+    private final PricingRuleRepository pricingRuleRepository;
 
     private static final BigDecimal DEFAULT_UNIT_PRICE = new BigDecimal("12000");
 
     @Transactional
     public CreateBookingResponse create(Long memberId, CreateBookingRequest req) {
-        var screening = screeningRepository.findById(req.screeningId())
+        Screening screening = screeningRepository.findById(req.screeningId())
                 .orElseThrow(() -> new IllegalArgumentException("상영이 없습니다."));
 
-        var seats = seatRepository.findBySeatIdIn(req.seatIds());
+        List<Seat> seats = seatRepository.findBySeatIdIn(req.seatIds());
         if (seats.size() != req.seatIds().size()) {
             throw new IllegalArgumentException("유효하지 않은 좌석이 포함되어 있습니다.");
         }
@@ -53,29 +49,50 @@ public class BookingService {
             throw new IllegalArgumentException("다른 상영관 좌석이 섞여 있습니다.");
         }
 
+        // 이미 예약된 좌석 방지
         for (Long seatId : req.seatIds()) {
-            if (bookingSeatRepository.existsByScreening_ScreeningIdAndSeat_SeatId(req.screeningId(), seatId)) {
+            if (bookingSeatRepository
+                    .existsByScreening_ScreeningIdAndSeat_SeatId(req.screeningId(), seatId)) {
                 throw new IllegalStateException("이미 예약된 좌석이 포함되어 있습니다. (seatId=" + seatId + ")");
             }
         }
 
-        // ✅ 상영관 단가 계산 (성인 기준 예시. 필요하면 req에 kind 추가)
-        BigDecimal unitPrice;
-        try {
-            unitPrice = pricingService.resolvePrice(screenId, com.gudrhs8304.ticketory.domain.enums.PricingKind.ADULT, LocalDateTime.now());
-            if (unitPrice == null) unitPrice = DEFAULT_UNIT_PRICE;
-        } catch (Exception e) {
-            unitPrice = DEFAULT_UNIT_PRICE;
-        }
+        // ==== 가격 계산 (pricing_rule 적용) ====
+        var now = LocalDateTime.now();
+        // 카운트(미지정 시 0)
+        int cntAdult = req.adult() != null ? req.adult() : req.seatIds().size();
+        int cntTeen  = req.teen() != null ? req.teen() : 0;
 
-        BigDecimal total = unitPrice.multiply(BigDecimal.valueOf(seats.size()));
+        BigDecimal total = pricingService.computeTotal(screenId, cntAdult, cntTeen, now);
 
+        // 기본 단가(상영관 base_price → 없으면 DEFAULT)
+        BigDecimal baseUnit = Optional.ofNullable(screening.getScreen().getBasePrice())
+                .map(i -> new BigDecimal(i))
+                .orElse(DEFAULT_UNIT_PRICE);
+
+        // 활성화된 규칙 로드
+        List<PricingRule> rules = pricingRuleRepository.findActiveByScreenId(screenId, now);
+
+        // 인원 유형별 단가 계산
+        BigDecimal adultUnit = applyRules(baseUnit, rules, PricingKind.ADULT);
+        BigDecimal teenUnit  = applyRules(baseUnit, rules, PricingKind.TEEN);
+
+        // 좌석 수와 인원 수가 다른 경우(프론트에서 좌석만 보내는 시나리오) → 전부 ADULT로 간주
+//        BigDecimal totalPrice;
+//        if (totalCount == cntAdult + cntTeen) {
+//            totalPrice = adultUnit.multiply(BigDecimal.valueOf(cntAdult))
+//                    .add(teenUnit.multiply(BigDecimal.valueOf(cntTeen)));
+//        } else {
+//            totalPrice = adultUnit.multiply(BigDecimal.valueOf(totalCount));
+//        }
+
+        // ==== 예약 생성 ====
         Booking booking = new Booking();
         booking.setMember(new Member(memberId));
         booking.setScreening(screening);
         booking.setTotalPrice(total);
         booking.setPaymentStatus(BookingPayStatus.PENDING);
-        booking.setBookingTime(LocalDateTime.now());
+        booking.setBookingTime(now);
         booking = bookingRepository.save(booking);
 
         for (Seat seat : seats) {
@@ -152,5 +169,31 @@ public class BookingService {
         seatHoldRepository.deleteByHoldKey(holdKey);
         // 또는 seatHoldRepository.markReleasedByHoldKey(holdKey);
         // 좌석 상태를 별도 테이블에서 관리한다면 그 부분도 업데이트
+    }
+
+    /** pricing_rule 목록을 주어진 kind에 맞게 baseUnit에 적용 */
+    private BigDecimal applyRules(BigDecimal baseUnit, List<PricingRule> rules, PricingKind kind) {
+        BigDecimal price = baseUnit;
+
+        for (PricingRule r : rules) {
+            // kind 매칭 (필요하면 ALL 같은 공통용 kind 도입 가능)
+            if (r.getKind() != kind) continue;
+
+            BigDecimal amt = r.getAmount() == null ? BigDecimal.ZERO : r.getAmount();
+
+            PricingOp op = r.getOp();
+            if (op == null) continue;
+
+            switch (op) {
+                case PLUS -> price = price.add(amt);
+                case MINUS -> price = price.subtract(amt).max(BigDecimal.ZERO);
+                case PCT_PLUS -> price = price.add(price.multiply(amt).divide(BigDecimal.valueOf(100)));
+                case PCT_MINUS -> {
+                    BigDecimal dec = price.multiply(amt).divide(BigDecimal.valueOf(100));
+                    price = price.subtract(dec).max(BigDecimal.ZERO);
+                }
+            }
+        }
+        return price;
     }
 }

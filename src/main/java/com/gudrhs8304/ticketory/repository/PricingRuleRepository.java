@@ -32,4 +32,71 @@ public interface PricingRuleRepository extends JpaRepository<PricingRule, Long> 
     List<PricingRule> findByScreenIdAndEnabledTrueOrderByPriorityAscIdAsc(Long screenId);
 
     List<PricingRule> findByScreenIdAndKindAndEnabledTrueOrderByPriorityAscIdAsc(Long screenId, PricingKind kind);
+
+    @Query("""
+        select r
+          from PricingRule r
+         where r.screenId = :screenId
+           and r.enabled = true
+           and (:now between coalesce(r.validFrom, :now) and coalesce(r.validTo, :now))
+         order by r.priority asc, r.id asc
+    """)
+    List<PricingRule> findActiveRules(@Param("screenId") Long screenId,
+                                      @Param("now") LocalDateTime now);
+
+    @Query("""
+        select p
+          from PricingRule p
+         where p.screenId = :screenId
+           and p.enabled = true
+           and (p.validFrom is null or p.validFrom <= :now)
+           and (p.validTo   is null or p.validTo   >= :now)
+         order by p.priority asc, p.id asc
+    """)
+    List<PricingRule> findActiveByScreenId(@Param("screenId") Long screenId,
+                                           @Param("now") LocalDateTime now);
+
+    @Query("""
+      select r
+        from PricingRule r
+       where r.screenId = :screenId
+         and r.enabled = true
+         and (r.validFrom is null or r.validFrom <= :when)
+         and (r.validTo   is null or r.validTo   >= :when)
+       order by r.priority asc, r.id asc
+    """)
+    List<PricingRule> findEnabledByScreenAt(
+            @Param("screenId") Long screenId,
+            @Param("when") LocalDateTime when);
+
+    @Query("""
+      select r
+        from PricingRule r
+       where r.screenId = :screenId
+         and r.enabled = true
+         and r.kind = :kind
+         and (r.validFrom is null or r.validFrom <= :when)
+         and (r.validTo   is null or r.validTo   >= :when)
+       order by r.priority asc, r.id asc
+    """)
+    List<PricingRule> findEnabledByScreenAtAndKind(
+            @Param("screenId") Long screenId,
+            @Param("kind") PricingKind kind,
+            @Param("when") LocalDateTime when);
+
+    @Query("""
+      select r
+      from PricingRule r
+      where r.screenId = :screenId
+        and r.enabled = true
+        and (r.validFrom is null or r.validFrom <= :when)
+        and (r.validTo   is null or r.validTo   >= :when)
+        and r.kind = :kind
+      order by r.priority asc, r.id asc
+    """)
+    List<PricingRule> findActiveRulesByKind(
+            @Param("screenId") Long screenId,
+            @Param("kind") PricingKind kind,
+            @Param("when") LocalDateTime when
+    );
 }
