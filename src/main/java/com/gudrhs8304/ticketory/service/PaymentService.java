@@ -37,7 +37,9 @@ public class PaymentService {
     private final SeatRepository seatRepository;
     private final SeatHoldRepository seatHoldRepository;
     private final TossPaymentService tossPaymentService;
+    private final BookingSeatRepository bookingSeatRepository;
     private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
+
 
 
     @Transactional
@@ -154,23 +156,56 @@ public class PaymentService {
 
     /** 결제 확정 */
     @Transactional
-    public void confirm(String paymentKey, String orderId, BigDecimal amount) {
+    public void confirm(String paymentKey, String orderId, BigDecimal approvedAmount) {
+        // 1) 결제행 잠금 조회
         Payment payment = paymentRepository.findByOrderIdForUpdate(orderId)
                 .orElseThrow(() -> new IllegalStateException("payment not found by orderId"));
 
-        if (payment.getAmount().compareTo(amount) != 0) {
+        // 2) 금액 검증
+        if (payment.getAmount().compareTo(approvedAmount) != 0) {
             log.warn("[AMOUNT-MISMATCH] orderId={}, saved={}, approved={}",
-                    orderId, payment.getAmount(), amount);
+                    orderId, payment.getAmount(), approvedAmount);
             throw new IllegalArgumentException("amount mismatch");
         }
 
-        payment.setStatus(PaymentStatus.PAID);
-        payment.setPaymentKey(paymentKey);
-        payment.setPaidAt(LocalDateTime.now());
+        // 3) 관련 엔티티
+        Booking booking   = payment.getBooking();
+        Screening screening = booking.getScreening();
+        Long screeningId  = screening.getScreeningId();
 
-        Booking booking = payment.getBooking();
+        // 4) 활성 홀드(만료 전) 잠금 조회
+        LocalDateTime now = LocalDateTime.now();
+        List<SeatHold> holds = seatHoldRepository.findActiveByHoldKeyForUpdate(
+                payment.getPaymentKey(), screeningId, now
+        );
+        if (holds.isEmpty()) {
+            // 프론트가 페이지를 오래 놔둬서 hold 만료된 경우 등
+            throw new IllegalStateException("no active holds for this paymentKey/order");
+        }
+
+        // 5) booking_seat 생성 (UNIQUE(screening_id, seat_id) 충돌 시 -> 이미 선점된 좌석)
+        for (SeatHold h : holds) {
+            BookingSeat bs = BookingSeat.builder()
+                    .booking(booking)
+                    .screening(screening)
+                    .seat(h.getSeat())
+                    .build();
+            bookingSeatRepository.save(bs);
+        }
+
+        // (선택) 좌석 상태 관리가 있으면 여기서 점유 처리
+        // seatRepository.markOccupiedBySeatIds(holds.stream().map(h -> h.getSeat().getSeatId()).toList());
+
+        // 6) 홀드 해제/삭제
+        seatHoldRepository.deleteAll(holds);
+        // 또는 seatHoldRepository.deleteByHoldKey(payment.getPaymentKey());
+
+        // 7) 결제/예매 상태 업데이트
+        payment.setStatus(PaymentStatus.PAID);
+        payment.setPaymentKey(paymentKey);     // 최종 결제키 저장
+        payment.setPaidAt(now);
+
         booking.setPaymentStatus(BookingPayStatus.PAID);
-        // seat hold 해제 등 추가 로직이 있으면 여기에
     }
 
     // 필요시 남겨둬도 되는 보조 메서드

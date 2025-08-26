@@ -1,6 +1,7 @@
 package com.gudrhs8304.ticketory.repository;
 
 import com.gudrhs8304.ticketory.domain.SeatHold;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 
@@ -32,17 +33,25 @@ public interface SeatHoldRepository extends JpaRepository<SeatHold, Long> {
     int deleteByHoldKey(@Param("holdKey") String holdKey);
 
 
-
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = """
-        DELETE h
-          FROM seat_hold h
-          JOIN booking_seat bs ON bs.seat_id = h.seat_id
-         WHERE bs.booking_id = :bookingId
-        """, nativeQuery = true)
+            DELETE h
+              FROM seat_hold h
+              JOIN booking_seat bs ON bs.seat_id = h.seat_id
+             WHERE bs.booking_id = :bookingId
+            """, nativeQuery = true)
     int deleteByBookingId(@Param("bookingId") Long bookingId);
 
-
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+               select h from SeatHold h
+               where h.holdKey = :holdKey
+                 and h.screening.screeningId = :screeningId
+                 and h.expiresAt > :now
+            """)
+    List<SeatHold> findActiveByHoldKeyForUpdate(@Param("holdKey") String holdKey,
+                                                @Param("screeningId") Long screeningId,
+                                                @Param("now") LocalDateTime now);
 
 
 }

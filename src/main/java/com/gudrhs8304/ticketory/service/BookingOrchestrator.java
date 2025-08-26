@@ -108,17 +108,8 @@ public class BookingOrchestrator {
                 .build();
         bookingRepo.save(booking);
 
-        // 7) BOOKING_SEAT (screening_id + seat_id UNIQUE)
-        for (Seat seat : seats) {
-            BookingSeat bs = BookingSeat.builder()
-                    .booking(booking)
-                    .screening(screening)
-                    .seat(seat)
-                    .build();
-            bookingSeatRepo.save(bs);
-        }
 
-        // 8) PAYMENT(PENDING)
+        // 7) PAYMENT(PENDING)
         String orderId = newOrderId(booking.getBookingId(), idemKey);
         String paymentKey = (idemKey == null || idemKey.isBlank())
                 ? "IDEMP-" + UUID.randomUUID()
