@@ -41,6 +41,7 @@ public class AdminMovieService {
     public MovieResponseDTO put(Long movieId, MovieUpdateRequestDTO req) {
         Movie m = find(movieId);
         m.setTitle(req.title());
+        m.setSubtitle(req.subtitle());
         m.setSummary(req.summary());
         m.setGenre(req.genre());
         m.setRating(req.rating());
@@ -56,6 +57,7 @@ public class AdminMovieService {
     public MovieResponseDTO patch(Long movieId, MoviePatchRequestDTO req) {
         Movie m = find(movieId);
         if (req.title() != null && !req.title().isBlank()) m.setTitle(req.title());
+        if (req.subtitle() != null) m.setSubtitle(req.subtitle());
         if (req.summary() != null) m.setSummary(req.summary());
         if (req.genre() != null) m.setGenre(req.genre());
         if (req.rating() != null) m.setRating(req.rating());
@@ -80,7 +82,7 @@ public class AdminMovieService {
 
     private MovieResponseDTO toRes(Movie m) {
         return new MovieResponseDTO(
-                m.getMovieId(), m.getTitle(), m.getSummary(), m.getGenre(), m.getRating(),
+                m.getMovieId(), m.getTitle(),m.getSubtitle(), m.getSummary(), m.getGenre(), m.getRating(),
                 m.getRunningMinutes(), m.getReleaseDate(), m.getStatus(), m.getActors(), m.getDirector()
         );
     }

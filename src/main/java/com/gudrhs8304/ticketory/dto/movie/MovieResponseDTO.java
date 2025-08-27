@@ -5,6 +5,7 @@ import java.time.LocalDate;
 public record MovieResponseDTO(
         Long movieId,
         String title,
+        String subtitle,
         String summary,
         String genre,
         String rating,

@@ -25,14 +25,34 @@ public class BookingQueryService {
     public Page<BookingSummaryDTO> getMemberBookings(Long targetMemberId,
                                                      Long authMemberId,
                                                      boolean isAdmin,
-                                                     int page, int size, Sort sort) {
+                                                     int page, int size, Sort sort,
+                                                     String status) {
 
         if (!isAdmin && !Objects.equals(targetMemberId, authMemberId)) {
             throw new SecurityException("본인만 조회할 수 있습니다.");
         }
 
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<BookingSummaryDTO> slice = bookingRepository.findSummaryPageByMemberId(targetMemberId, pageable);
+        Page<BookingSummaryDTO> base = bookingRepository.findSummaryPageByMemberIdAll(targetMemberId, pageable);
+
+        // status 파라미터가 주어지면 클라이언트가 원하는 상태만 필터링
+        Page<BookingSummaryDTO> slice;
+        if (status != null && !status.isBlank()) {
+            final String want = status.trim().toUpperCase();
+            List<BookingSummaryDTO> filtered = base.getContent().stream()
+                    .filter(dto -> {
+                        String ps = String.valueOf(dto.getPaymentStatus());
+                        String up = ps == null ? "" : ps.toUpperCase();
+                        if ("PAID".equals(want)) return "PAID".equals(up);
+                        if ("CANCELLED".equals(want) || "CANCELED".equals(want)) return "CANCELLED".equals(up) || "CANCELED".equals(up);
+                        if (want.startsWith("CANCEL")) return up.startsWith("CANCEL");
+                        return true; // 알 수 없는 값이면 전체 반환과 동일
+                    })
+                    .toList();
+            slice = new org.springframework.data.domain.PageImpl<>(filtered, base.getPageable(), filtered.size());
+        } else {
+            slice = base;
+        }
 
         if (slice.isEmpty()) return slice;
 

@@ -34,6 +34,44 @@ order by b.createdAt desc
     Page<BookingSummaryDTO> findSummaryPageByMemberId(@Param("memberId") Long memberId,
                                                       Pageable pageable);
 
+    // (1-A) 예매 요약 페이지 (전체: 상태 제한 없음)
+    @Query("""
+select new com.gudrhs8304.ticketory.dto.booking.BookingSummaryDTO(
+    b.bookingId, m.title, sc.startAt, sc.endAt,
+    s.name, s.location,
+    b.totalPrice, b.paymentStatus,
+    m.posterUrl
+)
+from Booking b
+join b.screening sc
+join sc.movie m
+join sc.screen s
+where b.member.memberId = :memberId
+order by b.createdAt desc
+""")
+    Page<BookingSummaryDTO> findSummaryPageByMemberIdAll(@Param("memberId") Long memberId,
+                                                         Pageable pageable);
+
+    // (1-B) 예매 요약 페이지 (지정 상태만)
+    @Query("""
+select new com.gudrhs8304.ticketory.dto.booking.BookingSummaryDTO(
+    b.bookingId, m.title, sc.startAt, sc.endAt,
+    s.name, s.location,
+    b.totalPrice, b.paymentStatus,
+    m.posterUrl
+)
+from Booking b
+join b.screening sc
+join sc.movie m
+join sc.screen s
+where b.member.memberId = :memberId
+  and b.paymentStatus = :status
+order by b.createdAt desc
+""")
+    Page<BookingSummaryDTO> findSummaryPageByMemberIdAndPaymentStatus(@Param("memberId") Long memberId,
+                                                                      @Param("status") BookingPayStatus status,
+                                                                      Pageable pageable);
+
 
     // (2) 좌석 라벨 일괄 조회
     //  - 파라미터 이름을 bookingIds 로 통일
@@ -59,6 +97,7 @@ order by b.createdAt desc
             Long memberId,
             BookingPayStatus paymentStatus
     );
+
 
 
 }

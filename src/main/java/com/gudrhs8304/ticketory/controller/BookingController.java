@@ -55,7 +55,7 @@ public class BookingController {
 
         Sort sortObj = parseSort(sort);
         Page<BookingSummaryDTO> result =
-                bookingQueryService.getMemberBookings(memberId, authMemberId, isAdmin, page, size, sortObj /*, status*/);
+                bookingQueryService.getMemberBookings(memberId, authMemberId, isAdmin, page, size, sortObj, status);
         return ResponseEntity.ok(result);
     }
 

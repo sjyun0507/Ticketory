@@ -4,6 +4,7 @@ import java.time.LocalDate;
 
 public record MoviePatchRequestDTO(
         String title,
+        String subtitle,
         String summary,
         String genre,
         String rating,

@@ -8,6 +8,7 @@ import java.time.LocalDate;
 
 public record MovieUpdateRequestDTO(
         @NotBlank String title,
+        String subtitle,
         String summary,
         String genre,
         String rating,
