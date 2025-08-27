@@ -16,24 +16,21 @@ import java.util.Optional;
 public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     // (1) 예매 요약 페이지 (JPQL DTO 프로젝션)
-    @Query(
-            value = """
-        select new com.gudrhs8304.ticketory.dto.booking.BookingSummaryDTO(
-            b.bookingId, m.title, sc.startAt,  sc.endAt,
-        s.name, s.location,
-                 b.totalPrice, b.paymentStatus, m.posterUrl
-        )
-        from Booking b
-          join b.screening sc
-          join sc.movie m
-          join sc.screen s
-        where b.member.memberId = :memberId
-        order by b.createdAt desc
-        """,
-            countQuery = """
-        select count(b) from Booking b where b.member.memberId = :memberId
-        """
-    )
+    @Query("""
+select new com.gudrhs8304.ticketory.dto.booking.BookingSummaryDTO(
+    b.bookingId, m.title, sc.startAt, sc.endAt,
+    s.name, s.location,
+    b.totalPrice, b.paymentStatus,
+    m.posterUrl
+)
+from Booking b
+join b.screening sc
+join sc.movie m
+join sc.screen s
+where b.member.memberId = :memberId
+  and b.paymentStatus = com.gudrhs8304.ticketory.domain.enums.BookingPayStatus.PAID
+order by b.createdAt desc
+""")
     Page<BookingSummaryDTO> findSummaryPageByMemberId(@Param("memberId") Long memberId,
                                                       Pageable pageable);
 
