@@ -125,17 +125,45 @@ public class BookingController {
     @DeleteMapping("/bookings/{bookingId}/cancel")
     public ResponseEntity<Map<String, Object>> cancelBooking(
             @PathVariable Long bookingId,
-            @RequestParam(required = false) String reason,
+            @RequestParam(name = "reason", required = false) String reason,
+            @RequestParam(value = "memo", required = false) String memo,
             Authentication auth
     ) {
-        Long me = extractMemberId(auth);
-        if (me == null) {
+        if (auth == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "로그인이 필요합니다."));
         }
+        Long me = extractMemberId(auth);
 
-        paymentService.cancel(me, bookingId, reason); // 본인 예매 검증은 서비스에서 그대로 유지
+        String label = toReasonLabel(reason);
+        String finalReason = buildFinalReason(label, memo);
+
+        paymentService.cancel(me, bookingId, finalReason); // 본인 예매 검증은 서비스에서 그대로 유지
         return ResponseEntity.ok(Map.of("bookingId", bookingId, "status", "CANCELLED"));
+    }
+
+    /** 드롭다운 코드 → 한글 라벨 매핑 */
+    private String toReasonLabel(String codeOrText) {
+        if (codeOrText == null || codeOrText.isBlank()) return null;
+        String c = codeOrText.trim().toUpperCase();
+
+        return switch (c) {
+            case "CHANGE_OF_PLANS" -> "일정 변경";
+            case "MISTAKE"         -> "잘못된 예매";
+            case "PRICE"           -> "가격/좌석 재선택";
+            case "WEATHER"         -> "날씨/이동 문제";
+            case "HEALTH"          -> "건강 문제";
+            case "OTHER"           -> "기타";
+            default                -> codeOrText; // 이미 라벨 문자열이면 그대로 저장
+        };
+    }
+
+    private String buildFinalReason(String label, String memo) {
+        // 최대 255자 안전 처리
+        String base = (label == null || label.isBlank()) ? "" : label;
+        String extra = (memo == null || memo.isBlank()) ? "" : (" - " + memo.trim());
+        String combined = (base + extra).trim();
+        return combined.length() > 255 ? combined.substring(0, 255) : combined;
     }
 
     /** Authentication에서 memberId를 최대한 안전하게 추출 */
