@@ -41,6 +41,8 @@ public class MemberResponseDTO extends BaseTimeEntity {
     /** 권한 (예: ROLE_USER, ROLE_ADMIN) */
     private String role;
 
+    private Integer points;
+
     public static MemberResponseDTO from(Member m) {
         return MemberResponseDTO.builder()
                 .memberId(m.getMemberId())
@@ -49,6 +51,7 @@ public class MemberResponseDTO extends BaseTimeEntity {
                 .name(m.getName())
                 .phone(PhoneUtil.format(m.getPhone())) // ← 여기서만 하이픈 붙임
                 .role(m.getRole().name())
+                .points(m.getPointBalance() == null ? 0 : m.getPointBalance())
                 .build();
     }
 }

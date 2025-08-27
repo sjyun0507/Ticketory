@@ -9,5 +9,6 @@ public record InitBookingRequestDTO(
         List<Long> seatIds,            // seat_id 배열
         Map<String, Integer> counts,   // { "adult": 2, "teen": 0 }
         Integer holdSeconds,           // 없으면 기본 120
-        String provider                // "TOSS"|"KAKAO"|"CARD"...
+        String provider,                // "TOSS"|"KAKAO"|"CARD"...
+        Integer pointsUsed
 ) {}

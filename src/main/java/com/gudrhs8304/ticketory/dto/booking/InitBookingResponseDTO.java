@@ -7,8 +7,10 @@ public record InitBookingResponseDTO(
         Long bookingId,
         Long paymentId,
         List<Long> holdIds,
-        String holdExpiresAt,       // ISO-8601 문자열
-        String paymentStatus,       // "PENDING"
+        String expiresAt,
+        String paymentStatus,
         String provider,
-        BigDecimal totalPrice
+        BigDecimal totalAmount,
+        Integer pointsUsed,
+        BigDecimal payableAmount
 ) {}

@@ -36,7 +36,7 @@ public class BookingOrchestrator {
         if (req.screeningId() == null || req.seatIds() == null || req.seatIds().isEmpty()) {
             throw new IllegalArgumentException("screeningId/seatIds는 필수입니다.");
         }
-        // 좌석 수 == 인원 수(성인+청소년) 체크 (원하면 유지/삭제)
+
         int adults = Optional.ofNullable(req.counts()).map(m -> m.getOrDefault("adult", 0)).orElse(0);
         int teens  = Optional.ofNullable(req.counts()).map(m -> m.getOrDefault("teen", 0)).orElse(0);
         if (req.seatIds().size() != adults + teens) {
@@ -54,7 +54,7 @@ public class BookingOrchestrator {
 
         // 2) 좌석 소속 검증 + 잠금
         boolean ok = seatRepo.allSeatsBelongToScreen(req.seatIds(), screenId);
-        if (!ok) throw new IllegalArgumentException("선택 좌석 중 상영관 외 좌석 포함");
+        if (!ok) throw new IllegalArgumentException("상영관 외 좌석 포함");
         List<Seat> seats = seatRepo.lockSeatsForUpdate(req.seatIds());
 
         // 3) 중복 점유 검사(확정/홀드)
@@ -79,28 +79,31 @@ public class BookingOrchestrator {
             holdIds.add(h.getHoldId());
         }
 
-        // 5) 가격 계산 — 규칙 기반
-        int cntAdult = Optional.ofNullable(req.counts()).map(m -> m.getOrDefault("adult", 0)).orElse(0);
-        int cntTeen  = Optional.ofNullable(req.counts()).map(m -> m.getOrDefault("teen", 0)).orElse(0);
-
-        // 기본 단가(상영관 base_price)
+        // 5) 가격 계산
         BigDecimal base = Optional.ofNullable(screening.getScreen().getBasePrice())
                 .map(BigDecimal::valueOf).orElse(BigDecimal.ZERO);
-
-        // kind별 단가
         BigDecimal unitAdult = calcUnitPrice(base, screenId, PricingKind.ADULT, now);
         BigDecimal unitTeen  = calcUnitPrice(base, screenId, PricingKind.TEEN,  now);
 
-        // 합계
-        BigDecimal total = unitAdult.multiply(BigDecimal.valueOf(cntAdult))
-                .add(unitTeen.multiply(BigDecimal.valueOf(cntTeen)));
+        BigDecimal total = unitAdult.multiply(BigDecimal.valueOf(adults))
+                .add(unitTeen.multiply(BigDecimal.valueOf(teens)));
 
+        // 5-1) 포인트 사용량 확정 (요청값 → 보유/총액 한도 내로 클램프)
+        Member me = memberRepo.getReferenceById(memberId);
+        int wantUse = Optional.ofNullable(req.pointsUsed()).orElse(0);
+        int have    = Optional.ofNullable(me.getPointBalance()).orElse(0);
+        if (wantUse < 0) wantUse = 0;
+        if (wantUse > have) wantUse = have;                    // 보유 초과 방지
+        if (BigDecimal.valueOf(wantUse).compareTo(total) > 0)  // 총액 초과 방지
+            wantUse = total.intValue();
 
+        // 실결제금액 = 총액 - 사용포인트
+        BigDecimal payable = total.subtract(BigDecimal.valueOf(wantUse));
+        if (payable.compareTo(BigDecimal.ZERO) < 0) payable = BigDecimal.ZERO;
 
-        // 6) BOOKING
-        Member memberRef = memberRepo.getReferenceById(memberId);
+        // 6) BOOKING (총액 저장)
         Booking booking = Booking.builder()
-                .member(memberRef)
+                .member(me)
                 .screening(screening)
                 .bookingTime(now)
                 .totalPrice(total)
@@ -108,14 +111,13 @@ public class BookingOrchestrator {
                 .build();
         bookingRepo.save(booking);
 
-
-        // 7) PAYMENT(PENDING)
+        // 7) PAYMENT(PENDING) — amount = 실결제금액
         String orderId = newOrderId(booking.getBookingId(), idemKey);
         String paymentKey = (idemKey == null || idemKey.isBlank())
                 ? "IDEMP-" + UUID.randomUUID()
                 : idemKey;
 
-        PaymentProvider provider = PaymentProvider.CARD;
+        PaymentProvider provider = PaymentProvider.TOSS;
         if (req.provider() != null) {
             try { provider = PaymentProvider.valueOf(req.provider()); } catch (Exception ignore) {}
         }
@@ -126,10 +128,11 @@ public class BookingOrchestrator {
                 .paymentKey(paymentKey)
                 .provider(provider)
                 .status(PaymentStatus.PENDING)
-                .amount(total)
+                .amount(payable) // ★ 포인트 차감 반영된 금액
                 .build();
         paymentRepo.save(pay);
 
+        // 8) 응답 (프론트 결제창에서 바로 사용)
         return new InitBookingResponseDTO(
                 booking.getBookingId(),
                 pay.getPaymentId(),
@@ -137,7 +140,9 @@ public class BookingOrchestrator {
                 expiresAt.toString(),
                 pay.getStatus().name(),
                 pay.getProvider().name(),
-                total // 프론트엔드가 원단위 정수라면
+                total,      // 총액
+                wantUse,    // 사용 포인트
+                payable     // 실결제 금액
         );
     }
 
@@ -150,46 +155,35 @@ public class BookingOrchestrator {
 
     @Transactional
     public void releaseHold(Long memberId, Long bookingId) {
-        // (선택) 본인 예매만 허용
         Booking booking = bookingRepo.findById(bookingId).orElse(null);
         if (booking == null) return;
         Long ownerId = (booking.getMember() != null) ? booking.getMember().getMemberId() : null;
-        if (memberId != null && !Objects.equals(ownerId, memberId)) {
-            return;
-        }
+        if (memberId != null && !Objects.equals(ownerId, memberId)) return;
 
-        // 1) 좌석 상태 AVAILABLE로
         seatRepo.releaseSeatsByBookingId(bookingId);
-
-        // 2) seat_hold 해제 (행 삭제 또는 releasedAt 마킹)
         seatHoldRepo.deleteByBookingId(bookingId);
-        // 또는: seatHoldRepo.markReleasedByBookingId(bookingId);
     }
 
-    /** 단가 계산: basePrice에 pricing_rule(op/amount/priority) 순서대로 적용 */
+    /** 단가 계산: basePrice + pricing_rule(op/amount/priority) */
     private BigDecimal calcUnitPrice(BigDecimal basePrice,
                                      Long screenId,
                                      PricingKind kind,
                                      LocalDateTime when) {
-        // basePrice가 null/0이면 안전한 기본값
         BigDecimal price = (basePrice != null && basePrice.compareTo(BigDecimal.ZERO) > 0)
                 ? basePrice : new BigDecimal("12000");
 
         List<PricingRule> rules = pricingRuleRepo.findActiveRulesByKind(screenId, kind, when);
-
         for (PricingRule r : rules) {
             BigDecimal amt = (r.getAmount() != null) ? r.getAmount() : BigDecimal.ZERO;
-
             switch (r.getOp()) {
-                case SET      -> price = amt; // ★ 단가 고정
+                case SET      -> price = amt;
                 case PLUS     -> price = price.add(amt);
                 case MINUS    -> price = price.subtract(amt);
                 case PCT_PLUS -> price = price.multiply(BigDecimal.ONE.add(amt.movePointLeft(2)));
                 case PCT_MINUS-> price = price.multiply(BigDecimal.ONE.subtract(amt.movePointLeft(2)));
-                default -> { /* no-op */ }
+                default -> { }
             }
         }
-        // 원단위 반올림 + 음수 방지
         return price.max(BigDecimal.ZERO).setScale(0, RoundingMode.HALF_UP);
     }
 }

@@ -153,6 +153,7 @@ public class MemberService {
                 .email(m.getEmail())
                 .phone(PhoneUtil.format(m.getPhone()))
                 .role(m.getRole().name())
+                .points(m.getPointBalance() == null ? 0 : m.getPointBalance())
                 .build();
     }
 

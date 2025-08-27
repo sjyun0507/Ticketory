@@ -17,7 +17,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor @AllArgsConstructor @Builder
 public class Payment extends BaseTimeEntity {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "payment_id")
     private Long paymentId;
 
@@ -29,7 +30,10 @@ public class Payment extends BaseTimeEntity {
     @Column(name = "provider", nullable = false, length = 10)
     private PaymentProvider provider;
 
-
+    /**
+     * 실제 결제 금액 (PG로 결제한 금액)
+     * → 총액 - 사용포인트
+     */
     @Column(name = "amount", precision = 10, scale = 2, nullable = false)
     private BigDecimal amount;
 
@@ -48,4 +52,8 @@ public class Payment extends BaseTimeEntity {
 
     @Column(unique = true, nullable = false)
     private String orderId;
+
+    // ▼ 포인트 관련은 DB 컬럼 X → 계산/DTO에서만 사용
+    @Transient
+    private Integer pointsUsed;   // 총액 - amount 로 계산
 }
