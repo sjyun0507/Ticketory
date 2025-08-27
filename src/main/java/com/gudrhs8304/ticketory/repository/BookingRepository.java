@@ -19,7 +19,9 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query(
             value = """
         select new com.gudrhs8304.ticketory.dto.booking.BookingSummaryDTO(
-            b.bookingId, m.title, sc.startAt,  sc.endAt, s.name, s.location, b.totalPrice, b.paymentStatus
+            b.bookingId, m.title, sc.startAt,  sc.endAt,
+        s.name, s.location,
+                 b.totalPrice, b.paymentStatus, m.posterUrl
         )
         from Booking b
           join b.screening sc

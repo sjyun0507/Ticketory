@@ -30,12 +30,14 @@ public class BookingSummaryDTO {
     private BookingPayStatus paymentStatus;
     private BigDecimal totalPrice;
 
+    private String posterUrl;
+
     // === JPQL이 LocalDateTime을 주는 경우 (8개 파라미터) ===
     public BookingSummaryDTO(
             Long bookingId, String movieTitle,
             LocalDateTime startAt, LocalDateTime endAt,
             String screenName, String screenLocation,
-            BigDecimal totalPrice, BookingPayStatus paymentStatus
+            BigDecimal totalPrice, BookingPayStatus paymentStatus, String posterUrl
     ) {
         this.bookingId = bookingId;
         this.movieTitle = movieTitle;
@@ -45,20 +47,10 @@ public class BookingSummaryDTO {
         this.screenLocation = screenLocation;
         this.totalPrice = totalPrice;
         this.paymentStatus = paymentStatus;
+        this.posterUrl = posterUrl;
     }
 
-    // === 만약 엔티티가 OffsetDateTime이면 이 오버로드가 매칭됨 ===
-    public BookingSummaryDTO(
-            Long bookingId, String movieTitle,
-            OffsetDateTime startAt, OffsetDateTime endAt,
-            String screenName, String screenLocation,
-            BigDecimal totalPrice, BookingPayStatus paymentStatus
-    ) {
-        this(bookingId, movieTitle,
-                startAt != null ? startAt.toLocalDateTime() : null,
-                endAt   != null ? endAt.toLocalDateTime()   : null,
-                screenName, screenLocation, totalPrice, paymentStatus);
-    }
+
 
     // === 만약 엔티티가 Instant면 이 오버로드가 매칭됨 ===
     public BookingSummaryDTO(
