@@ -6,6 +6,7 @@ import com.gudrhs8304.ticketory.domain.enums.MovieMediaType;
 import com.gudrhs8304.ticketory.repository.MovieMediaRepository;
 import com.gudrhs8304.ticketory.repository.MovieRepository;
 import com.gudrhs8304.ticketory.storage.FileStorage;
+import jakarta.annotation.Nullable;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -23,6 +24,8 @@ public class AdminMovieMediaService {
     private final MovieRepository movieRepository;
     private final MovieMediaRepository mediaRepository;
     private final FileStorage storage;
+    private final MovieRepository movieRepo;
+    private final MovieMediaRepository movieMediaRepo;
 
     @Value("${app.media.posters-dir:posters}")
     private String postersDir;
@@ -74,20 +77,45 @@ public class AdminMovieMediaService {
 
     // 트레일러 URL 등록 (파일 업로드 없음)
     @Transactional
-    public MovieMedia addTrailerUrl(Long movieId, String trailerUrl, String description) {
-        var movie = movieRepository.findByMovieIdAndDeletedAtIsNull(movieId)
-                .orElseThrow(() -> new IllegalArgumentException("영화가 없습니다: " + movieId));
-
-        if (!(trailerUrl.startsWith("http://") || trailerUrl.startsWith("https://"))) {
-            throw new IllegalArgumentException("잘못된 URL 형식입니다.");
-        }
-
+    public MovieMedia addTrailerUrl(Long movieId, String rawUrl, @Nullable String description) {
+        String embed = toYoutubeEmbedUrl(rawUrl); // 유튜브면 embed URL로 치환
         MovieMedia media = new MovieMedia();
-        media.setMovie(movie);
+        media.setMovie(movieRepo.getReferenceById(movieId));
         media.setMovieMediaType(MovieMediaType.TRAILER);
-        media.setUrl(trailerUrl.trim());
+        media.setUrl(embed != null ? embed : rawUrl); // 유튜브 외에는 원본 유지(비메오 등)
         media.setDescription(description);
-        return mediaRepository.save(media);
+        return movieMediaRepo.save(media);
+    }
+
+    /** 다양한 유튜브 URL -> https://www.youtube.com/embed/{id} 로 변환 */
+    @Nullable
+    private String toYoutubeEmbedUrl(String url) {
+        if (url == null) return null;
+        String lower = url.toLowerCase();
+
+        // youtu.be/{id}
+        if (lower.contains("youtu.be/")) {
+            String id = url.substring(url.indexOf("youtu.be/") + "youtu.be/".length())
+                    .split("[?&/#]")[0];
+            return "https://www.youtube.com/embed/" + id;
+        }
+        // www.youtube.com/watch?v={id}&...
+        if (lower.contains("youtube.com/watch")) {
+            String query = url.substring(url.indexOf('?') + 1);
+            for (String kv : query.split("&")) {
+                String[] p = kv.split("=");
+                if (p.length == 2 && p[0].equals("v")) {
+                    return "https://www.youtube.com/embed/" + p[1];
+                }
+            }
+        }
+        // shorts/{id}
+        if (lower.contains("youtube.com/shorts/")) {
+            String id = url.substring(url.indexOf("/shorts/") + "/shorts/".length())
+                    .split("[?&/#]")[0];
+            return "https://www.youtube.com/embed/" + id;
+        }
+        return null; // 비유튜브는 변환하지 않음
     }
 
     public List<MovieMedia> list(Long movieId, MovieMediaType type) {
