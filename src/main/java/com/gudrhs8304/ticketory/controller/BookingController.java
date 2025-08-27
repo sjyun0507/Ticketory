@@ -18,6 +18,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @Log4j2
 @RestController
 @RequestMapping("/api")
@@ -29,30 +31,29 @@ public class BookingController {
     private final BookingOrchestrator bookingOrchestrator;
 
     @Operation(summary = "예매내역")
-    @GetMapping("/{memberId}/booking")
-    public ResponseEntity<Page<BookingSummaryDTO>> getBookings(
+    @GetMapping({"/{memberId}/bookings", "/{memberId}/booking"}) // 경로 2개를 '한 메서드'에만
+    public ResponseEntity<?> getBookings(
             @PathVariable Long memberId,
+            @AuthenticationPrincipal CustomUserPrincipal principal, // ← 이것만 사용
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "bookingTime,desc") String sort,
-            Authentication authentication
+            @RequestParam(required = false) String status
     ) {
-        Long authMemberId = null;
-        boolean isAdmin = false;
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "로그인이 필요합니다."));
+        }
+        Long authMemberId = principal.getMemberId();
+        boolean isAdmin = principal.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
 
-        if (authentication != null && authentication.isAuthenticated()) {
-            try {
-                // JwtAuthFilter에서 Authentication#setName(memberId)로 넣었다는 전제
-                authMemberId = Long.valueOf(authentication.getName());
-            } catch (NumberFormatException ignore) {}
-            isAdmin = authentication.getAuthorities()
-                    .contains(new SimpleGrantedAuthority("ROLE_ADMIN"));
+        if (!isAdmin && !memberId.equals(authMemberId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", "본인만 조회할 수 있습니다."));
         }
 
         Sort sortObj = parseSort(sort);
         Page<BookingSummaryDTO> result =
-                bookingQueryService.getMemberBookings(memberId, authMemberId, isAdmin, page, size, sortObj);
-
+                bookingQueryService.getMemberBookings(memberId, authMemberId, isAdmin, page, size, sortObj /*, status*/);
         return ResponseEntity.ok(result);
     }
 
@@ -105,15 +106,15 @@ public class BookingController {
     @Operation(summary = "예매 상세(본인만)")
     @GetMapping("/bookings/{bookingId}")
     public ResponseEntity<?> getBooking(
-            Authentication authentication,
+            @AuthenticationPrincipal CustomUserPrincipal principal,
             @PathVariable Long bookingId
     ) {
-        if (authentication == null) {
+        if (principal == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body("{\"message\":\"로그인이 필요합니다.\"}");
         }
-        Long memberId = Long.valueOf(authentication.getName());
+        Long memberId = principal.getMemberId();
         Booking booking = bookingService.getMyBooking(memberId, bookingId);
         return ResponseEntity.ok(booking);
     }

@@ -63,5 +63,10 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
             org.springframework.data.domain.Pageable pageable
     );
 
+    // 제목 부분일치(대소문자 무시)
+    Page<Movie> findByTitleContainingIgnoreCase(String q, Pageable pageable);
+
+    // 전체 조회용(검색어 비었을 때 최신순)
+    Page<Movie> findAllByOrderByReleaseDateDesc(Pageable pageable);
 
 }

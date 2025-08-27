@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -29,33 +30,56 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                                     FilterChain chain) throws ServletException, IOException {
 
         String token = jwtTokenProvider.resolveToken(request);
-        if (token != null && jwtTokenProvider.validateToken(token)) {
+
+        if (token != null && jwtTokenProvider.validateToken(token)
+                && SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
-                String sub = jwtTokenProvider.getSubject(token);
-                Long memberId = Long.valueOf(sub);
+                // 1) memberId: Number로 받고 longValue()
+                Number memberNum = jwtTokenProvider.getClaim(token, "memberId", Number.class);
+                Long memberId;
+                if (memberNum != null) {
+                    memberId = memberNum.longValue();
+                } else {
+                    // subject fallback (subject가 email일 수 있음 -> 예외)
+                    String sub = jwtTokenProvider.getSubject(token);
+                    try {
+                        memberId = Long.valueOf(sub);
+                    } catch (NumberFormatException e) {
+                        throw new IllegalStateException("JWT에 memberId 클레임이 없고 subject가 숫자가 아닙니다.");
+                    }
+                }
 
-                // role 클레임이 있으면 활용, 없으면 USER
-                String role = jwtTokenProvider.getClaim(token, "role", String.class);
-                var authorities = List.of(new SimpleGrantedAuthority("ROLE_" + (role != null ? role : "USER")));
+                // 2) ROLE 접두사 정규화
+                String roleClaim = jwtTokenProvider.getClaim(token, "role", String.class); // "ADMIN" or "ROLE_ADMIN"
+                String granted = (roleClaim == null || roleClaim.isBlank())
+                        ? "ROLE_USER"
+                        : (roleClaim.startsWith("ROLE_") ? roleClaim : "ROLE_" + roleClaim);
 
-                // ✅ 간편 생성자 사용(위에서 기본 ROLE_USER 넣었다면 여기선 4파라미터로 세팅해도 OK)
+                var authorities = List.of(new SimpleGrantedAuthority(granted));
+
+                // 3) principal.username을 memberId 문자열로 (getName() 사용 코드 호환)
                 CustomUserPrincipal principal = new CustomUserPrincipal(
                         memberId,
-                        "jwtUser-" + memberId,
-                        null,
+                        String.valueOf(memberId),
+                        granted,
                         authorities
                 );
 
-                var authentication = new UsernamePasswordAuthenticationToken(
-                        principal, null, authorities
-                );
+                var authentication = new UsernamePasswordAuthenticationToken(principal, null, authorities);
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+
+                log.info("AUTH memberId={}, authorities={}", principal.getMemberId(),
+                        authorities.stream().map(GrantedAuthority::getAuthority).toList());
+
             } catch (Exception e) {
                 SecurityContextHolder.clearContext();
+                log.warn("JWT authentication failed: {}", e.getMessage());
             }
         }
 
         chain.doFilter(request, response);
     }
+
+
 }

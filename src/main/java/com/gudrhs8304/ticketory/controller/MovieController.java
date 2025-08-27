@@ -1,17 +1,22 @@
 package com.gudrhs8304.ticketory.controller;
 
+import com.gudrhs8304.ticketory.domain.Movie;
 import com.gudrhs8304.ticketory.dto.movie.MovieDetailResponseDTO;
 import com.gudrhs8304.ticketory.dto.movie.MovieListItemDTO;
 import com.gudrhs8304.ticketory.dto.movie.MovieScrollResponseDTO;
+import com.gudrhs8304.ticketory.dto.movie.MovieSearchResponseDTO;
 import com.gudrhs8304.ticketory.repository.MovieRepository;
 import com.gudrhs8304.ticketory.service.MovieQueryService;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/movies")
@@ -62,5 +67,31 @@ public class MovieController {
 
     private String emptyToNull(String s) {
         return (s == null || s.isBlank()) ? null : s;
+    }
+
+    @Operation(summary = "검색어로 영화 검색 (제목 부분일치)", description = "예: /api/movies/search?q=전독시&page=0&size=24")
+    @GetMapping("/search")
+    public ResponseEntity<List<MovieSearchResponseDTO>> search(
+            @RequestParam(name = "q", required = false) String q,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "24") int size
+    ) {
+        int capped = Math.min(Math.max(size, 1), 50); // 1~50
+        Pageable pageable = PageRequest.of(page, capped);
+
+        List<Movie> items = (q == null || q.isBlank())
+                ? movieRepository.findAllByOrderByReleaseDateDesc(pageable).getContent()
+                : movieRepository.findByTitleContainingIgnoreCase(q.trim(), pageable).getContent();
+
+        List<MovieSearchResponseDTO> dto = items.stream()
+                .map(m -> new MovieSearchResponseDTO(
+                        m.getMovieId(),
+                        m.getTitle(),
+                        m.getPosterUrl(),
+                        m.getReleaseDate()
+                ))
+                .toList();
+
+        return ResponseEntity.ok(dto);
     }
 }
