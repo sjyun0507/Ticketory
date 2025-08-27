@@ -250,28 +250,20 @@ public class PaymentService {
         Booking booking = payment.getBooking();
         Screening screening = booking.getScreening();
         Long screeningId = screening.getScreeningId();
-
         LocalDateTime now = LocalDateTime.now();
 
-        // holdKey 보정: paymentKey 비어있으면 orderId 사용
-        String holdKey = payment.getPaymentKey() != null && !payment.getPaymentKey().isBlank()
+        String holdKey = (payment.getPaymentKey() != null && !payment.getPaymentKey().isBlank())
                 ? payment.getPaymentKey()
                 : orderId;
 
         var holds = seatHoldRepository.findActiveByHoldKeyForUpdate(holdKey, screeningId, now);
-        if (holds.isEmpty()) {
-            throw new IllegalStateException("no active holds for this paymentKey/order");
-        }
+        if (holds.isEmpty()) throw new IllegalStateException("no active holds for this paymentKey/order");
 
         for (SeatHold h : holds) {
-            BookingSeat bs = BookingSeat.builder()
-                    .booking(booking)
-                    .screening(screening)
-                    .seat(h.getSeat())
-                    .build();
-            bookingSeatRepository.save(bs);
+            bookingSeatRepository.save(
+                    BookingSeat.builder().booking(booking).screening(screening).seat(h.getSeat()).build()
+            );
         }
-
         seatHoldRepository.deleteAll(holds);
 
         payment.setStatus(PaymentStatus.PAID);
@@ -279,26 +271,19 @@ public class PaymentService {
         payment.setPaidAt(now);
         booking.setPaymentStatus(BookingPayStatus.PAID);
 
-        // ==== 포인트 사용/적립 ====
-        // 총액(Booking.totalPrice) - 실결제(Payment.amount) = 사용포인트
+        // === 포인트 계산 ===
         int usedPoints = booking.getTotalPrice()
                 .subtract(payment.getAmount())
                 .max(BigDecimal.ZERO)
                 .intValue();
 
-        // 포인트 사용 기록 (부호: -)
         if (usedPoints > 0) {
             pointService.applyAndLog(
-                    booking.getMember(),
-                    booking,
-                    payment,
-                    PointChangeType.USE,
-                    -usedPoints,
-                    "예매 포인트 사용"
+                    booking.getMember(), booking, payment,
+                    PointChangeType.USE, -usedPoints, "예매 포인트 사용"
             );
         }
 
-        // 포인트 적립 (실결제금액의 5% -> 내림/FLOOR)
         int earn = payment.getAmount()
                 .multiply(BigDecimal.valueOf(0.05))
                 .setScale(0, RoundingMode.FLOOR)
@@ -306,40 +291,21 @@ public class PaymentService {
 
         if (earn > 0) {
             pointService.applyAndLog(
-                    booking.getMember(),
-                    booking,
-                    payment,
-                    PointChangeType.EARN,
-                    +earn,
-                    "결제 적립 5%"
+                    booking.getMember(), booking, payment,
+                    PointChangeType.EARN, earn, "결제 적립 5%"
             );
         }
 
-        // DB 컬럼 추가 없이 응답/로깅용으로만 쓰고 싶다면 Payment에 @Transient Integer pointsUsed 추가
+        // 응답/로그 표시용(비영속)
         try { payment.setPointsUsed(usedPoints); } catch (Exception ignore) {}
 
-        Member member = booking.getMember();
-        if (member != null) {
-            int cur = member.getPointBalance() == null ? 0 : member.getPointBalance();
-            if (usedPoints > 0) {
-                cur = Math.max(0, cur - usedPoints);        // 사용 차감
-            }
-            earn = payment.getAmount()
-                    .multiply(BigDecimal.valueOf(0.05))
-                    .setScale(0, RoundingMode.FLOOR)
-                    .intValue();
-            member.setPointBalance(cur + earn);             // 5% 적립
-        }
-
-        // ==== QR 생성 (data URL) ====
+        // QR 생성
         String payload = buildQrPayload(booking);
         String dataUrl = generateQrPngDataUrl(payload, 240, 240);
         booking.setQrCodeUrl(dataUrl);
 
         log.info("[CONFIRM] bookingId={}, usedPoints={}, earned(5%)={}, cardAmount={}",
-                booking.getBookingId(), usedPoints,
-                payment.getAmount().multiply(BigDecimal.valueOf(0.05)).setScale(0, RoundingMode.FLOOR).intValue(),
-                payment.getAmount());
+                booking.getBookingId(), usedPoints, earn, payment.getAmount());
     }
 
     /** QR payload (JWT 사용 시 이 부분에서 생성) */

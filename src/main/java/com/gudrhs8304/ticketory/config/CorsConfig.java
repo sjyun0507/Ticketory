@@ -23,16 +23,9 @@ public class CorsConfig {
                 "https://127.0.0.1:5173"
         ));
         // 사용하는 메서드
-        cfg.setAllowedMethods(List.of("*"));
+        cfg.addAllowedMethod("*");
         // 허용할 요청 헤더 (여기에 Idempotency-Key 포함!)
-        cfg.setAllowedHeaders(List.of(
-                "Authorization",
-                "Content-Type",
-                "Idempotency-Key",
-                "X-Requested-With",
-                "Accept",
-                "Origin"
-        ));
+        cfg.addAllowedHeader("*");
         // 클라이언트로 노출할 응답 헤더(선택)
         cfg.setExposedHeaders(List.of("Location","Idempotency-Key"));
 
