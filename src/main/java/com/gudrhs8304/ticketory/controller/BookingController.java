@@ -6,6 +6,7 @@ import com.gudrhs8304.ticketory.security.auth.CustomUserPrincipal;
 import com.gudrhs8304.ticketory.service.BookingOrchestrator;
 import com.gudrhs8304.ticketory.service.BookingQueryService;
 import com.gudrhs8304.ticketory.service.BookingService;
+import com.gudrhs8304.ticketory.service.PaymentService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -29,6 +30,7 @@ public class BookingController {
     private final BookingQueryService bookingQueryService;
     private final BookingService bookingService;
     private final BookingOrchestrator bookingOrchestrator;
+    private final PaymentService paymentService;
 
     @Operation(summary = "예매내역")
     @GetMapping({"/{memberId}/bookings", "/{memberId}/booking"}) // 경로 2개를 '한 메서드'에만
@@ -120,16 +122,21 @@ public class BookingController {
     }
 
     @Operation(summary = "예매 취소")
-    @DeleteMapping("/bookings/{bookingId}/cancel")
-    public ResponseEntity<Void> cancel(Authentication authentication,
-                                       @PathVariable Long bookingId) {
-        Long memberId = null;
-        if (authentication != null && authentication.isAuthenticated()) {
-            try { memberId = Long.valueOf(authentication.getName()); } catch (NumberFormatException ignore) {}
+    @DeleteMapping("/api/bookings/{bookingId}/cancel")
+    public ResponseEntity<Map<String, Object>> cancelBooking(
+            @PathVariable Long bookingId,
+            @RequestParam(required = false) String reason,
+            Authentication auth
+    ) {
+        if (auth == null || !auth.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "로그인이 필요합니다."));
         }
-        bookingService.releaseHold(memberId, bookingId);
-        return ResponseEntity.noContent().build();
+        Long me = extractMemberId(auth);
+        paymentService.cancel(me, bookingId, reason); // ⬅️ 아래의 서비스 메서드 사용(이미 이름 동일)
+        return ResponseEntity.ok(Map.of("bookingId", bookingId, "status", "CANCELLED"));
     }
+
+
 
     @DeleteMapping("/holds/{holdKey}")
     public ResponseEntity<Void> cancelHold(@PathVariable String holdKey) {

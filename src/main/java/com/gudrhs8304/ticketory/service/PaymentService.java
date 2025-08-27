@@ -7,6 +7,7 @@ import com.gudrhs8304.ticketory.domain.*;
 import com.gudrhs8304.ticketory.domain.enums.BookingPayStatus;
 import com.gudrhs8304.ticketory.domain.enums.PaymentProvider;
 import com.gudrhs8304.ticketory.domain.enums.PaymentStatus;
+import com.gudrhs8304.ticketory.domain.enums.PointChangeType;
 import com.gudrhs8304.ticketory.dto.pay.ConfirmPaymentRequestDTO;
 import com.gudrhs8304.ticketory.dto.payment.ApprovePaymentRequest;
 import com.gudrhs8304.ticketory.dto.payment.TossConfirmRequestDTO;
@@ -35,6 +36,7 @@ public class PaymentService {
     private final SeatHoldRepository seatHoldRepository;
     private final TossPaymentService tossPaymentService;
     private final BookingSeatRepository bookingSeatRepository;
+    private final PointService pointService;
 
     private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
 
@@ -70,11 +72,123 @@ public class PaymentService {
     public void cancel(Long memberId, Long bookingId, String reason) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new IllegalArgumentException("예매가 없습니다."));
-        if (!booking.getMember().getMemberId().equals(memberId)) {
+
+        // 본인 또는 관리자만 허용하고 싶다면 권한 체크 추가
+        if (booking.getMember() == null || !Objects.equals(booking.getMember().getMemberId(), memberId)) {
             throw new SecurityException("본인 예매만 취소할 수 있습니다.");
         }
-        booking.setPaymentStatus(BookingPayStatus.CANCELLED);
-        // (환불/좌석해제 등은 필요 시 추가)
+
+        // 상영 시작 전 규정 체크 (원하면 완화/제거)
+        LocalDateTime startAt = booking.getScreening().getStartAt();
+        if (startAt != null && !LocalDateTime.now().isBefore(startAt)) {
+            throw new IllegalStateException("상영 시작 이후에는 취소할 수 없습니다.");
+        }
+
+        // 가장 최근 결제(있을 수도/없을 수도)
+        Payment payment = paymentRepository
+                .findTopByBooking_BookingIdOrderByPaymentIdDesc(bookingId)
+                .orElse(null);
+
+        // === 케이스 A: 결제 승인 전(미결제 또는 PENDING 등) 취소 ===
+        if (payment == null || payment.getStatus() == PaymentStatus.PENDING) {
+            // 1) PAYMENT 상태
+            if (payment != null) {
+                payment.setStatus(PaymentStatus.CANCELLED);
+                payment.setCancelledAt(LocalDateTime.now());
+                paymentRepository.save(payment);
+            }
+            // 2) BOOKING 상태
+            booking.setPaymentStatus(BookingPayStatus.CANCELLED);
+            bookingRepository.save(booking);
+
+            // 3) 좌석 해제 — HOLD 제거
+            //   - holdKey로 지우는 구현이 있다면 그것도 가능. 여기서는 bookingId 기준 메서드 사용(이미 보유)
+            seatHoldRepository.deleteByBookingId(bookingId);
+
+            // (선택) 좌석 점유상태를 별도 테이블로 관리한다면 AVAILABLE 처리
+            // seatRepository.releaseSeatsByBookingId(bookingId);
+
+            log.info("[CANCEL:PRE-APPROVE] bookingId={}, reason={}", bookingId, reason);
+            return;
+        }
+
+        // === 케이스 B: 결제 승인 후(PAID) 취소/환불 ===
+        if (payment.getStatus() == PaymentStatus.PAID) {
+            // 1) PG 환불 호출(연동 시)
+            try {
+                // tossPaymentService.cancel(payment.getPaymentKey(), payment.getAmount(), reason); // 필요 시 구현
+            } catch (Exception e) {
+                // 환불 연동 실패 시 롤백할지/재시도할지 정책 결정
+                throw new IllegalStateException("PG 환불 실패: " + e.getMessage(), e);
+            }
+
+            // 2) PAYMENT 상태
+            payment.setStatus(PaymentStatus.CANCELLED);
+            payment.setCancelledAt(LocalDateTime.now());
+            paymentRepository.save(payment);
+
+            // 3) BOOKING 상태
+            booking.setPaymentStatus(BookingPayStatus.CANCELLED);
+            bookingRepository.save(booking);
+
+            // 4) 좌석 해제 — BOOKING_SEAT 삭제(해당 회차 좌석 재개방)
+            bookingSeatRepository.deleteByBooking_BookingId(bookingId);
+
+            // (선택) 좌석 점유상태 별도 관리 시 AVAILABLE 처리
+            // seatRepository.releaseSeatsByBookingId(bookingId);
+
+            // 5) 포인트 롤백
+            //   사용 포인트 = 총액 - 실결제금액
+            int usedPoints = booking.getTotalPrice()
+                    .subtract(payment.getAmount())
+                    .max(BigDecimal.ZERO)
+                    .intValue();
+            if (usedPoints > 0) {
+                pointService.applyAndLog(
+                        booking.getMember(),
+                        booking,
+                        payment,
+                        PointChangeType.CANCEL,   // 환급
+                        +usedPoints,
+                        "예매 취소: 포인트 환급"
+                );
+            }
+
+            //   적립 회수 = 실결제금액 * 5% (내림)
+            int earned = payment.getAmount()
+                    .multiply(BigDecimal.valueOf(0.05))
+                    .setScale(0, RoundingMode.FLOOR)
+                    .intValue();
+            if (earned > 0) {
+                pointService.applyAndLog(
+                        booking.getMember(),
+                        booking,
+                        payment,
+                        PointChangeType.CANCEL,   // 회수(마이너스)
+                        -earned,
+                        "예매 취소: 적립 회수"
+                );
+            }
+
+            log.info("[CANCEL:POST-APPROVE] bookingId={}, refundAmount={}, usedPointsBack={}, earnedRevoke={}",
+                    bookingId, payment.getAmount(), usedPoints, earned);
+            return;
+        }
+
+        // === 그 외(이미 CANCELLED 등) ===
+        if (payment.getStatus() == PaymentStatus.CANCELLED) {
+            // 멱등 처리
+            booking.setPaymentStatus(BookingPayStatus.CANCELLED);
+            bookingRepository.save(booking);
+            // 좌석 정리도 안전하게 한번 더
+            seatHoldRepository.deleteByBookingId(bookingId);
+            bookingSeatRepository.deleteByBooking_BookingId(bookingId);
+            log.info("[CANCEL:IDEMPOTENT] bookingId={} already cancelled", bookingId);
+            return;
+        }
+
+        // 다른 상태가 있다면 필요 시 분기 추가
+        throw new IllegalStateException("취소할 수 없는 결제 상태: " + payment.getStatus());
     }
 
     /** 토스 승인 성공 → 내부 확정 처리(간단 래퍼) */
@@ -172,6 +286,35 @@ public class PaymentService {
                 .max(BigDecimal.ZERO)
                 .intValue();
 
+        // 포인트 사용 기록 (부호: -)
+        if (usedPoints > 0) {
+            pointService.applyAndLog(
+                    booking.getMember(),
+                    booking,
+                    payment,
+                    PointChangeType.USE,
+                    -usedPoints,
+                    "예매 포인트 사용"
+            );
+        }
+
+        // 포인트 적립 (실결제금액의 5% -> 내림/FLOOR)
+        int earn = payment.getAmount()
+                .multiply(BigDecimal.valueOf(0.05))
+                .setScale(0, RoundingMode.FLOOR)
+                .intValue();
+
+        if (earn > 0) {
+            pointService.applyAndLog(
+                    booking.getMember(),
+                    booking,
+                    payment,
+                    PointChangeType.EARN,
+                    +earn,
+                    "결제 적립 5%"
+            );
+        }
+
         // DB 컬럼 추가 없이 응답/로깅용으로만 쓰고 싶다면 Payment에 @Transient Integer pointsUsed 추가
         try { payment.setPointsUsed(usedPoints); } catch (Exception ignore) {}
 
@@ -181,7 +324,7 @@ public class PaymentService {
             if (usedPoints > 0) {
                 cur = Math.max(0, cur - usedPoints);        // 사용 차감
             }
-            int earn = payment.getAmount()
+            earn = payment.getAmount()
                     .multiply(BigDecimal.valueOf(0.05))
                     .setScale(0, RoundingMode.FLOOR)
                     .intValue();
