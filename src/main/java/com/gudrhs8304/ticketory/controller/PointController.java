@@ -2,15 +2,21 @@ package com.gudrhs8304.ticketory.controller;
 
 import com.gudrhs8304.ticketory.dto.point.PointLogDTO;
 import com.gudrhs8304.ticketory.domain.enums.PointChangeType;
+import com.gudrhs8304.ticketory.security.auth.CustomUserPrincipal;
 import com.gudrhs8304.ticketory.service.PointQueryService;
+import com.gudrhs8304.ticketory.service.PointService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/members")
@@ -18,40 +24,33 @@ import java.util.List;
 public class PointController {
 
     private final PointQueryService pointQueryService;
+    private final PointService pointService;
 
     @GetMapping("/{memberId}/points")
-    public ResponseEntity<Page<PointLogDTO>> getPointLogs(
+    public ResponseEntity<?> getPointLogs(
             @PathVariable Long memberId,
-            @RequestParam(required = false) LocalDate from,         // 예: ?from=2025-08-01
-            @RequestParam(required = false) LocalDate to,           // 예: ?to=2025-08-31
-            @RequestParam(required = false) List<PointChangeType> type, // 예: ?type=EARN&type=USE
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @RequestParam(required = false) List<PointChangeType> type,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             Authentication auth
     ) {
-        // 본인 또는 관리자만
-        if (auth == null || !auth.isAuthenticated()) {
-            return ResponseEntity.status(401).build();
-        }
-        Long me = extractMemberId(auth);
-        boolean isAdmin = auth.getAuthorities().stream().anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
-        if (!isAdmin && !memberId.equals(me)) {
-            return ResponseEntity.status(403).build();
+        // Authentication에서 memberId 꺼내기
+        Long me = null;
+        if (auth != null && auth.getPrincipal() instanceof CustomUserPrincipal principal) {
+            me = principal.getMemberId(); // ✅ CustomUserPrincipal에 memberId getter 필요
         }
 
-        Page<PointLogDTO> result = pointQueryService.getMemberPointLogs(memberId, from, to, type, page, size);
-        return ResponseEntity.ok(result);
-    }
-
-    private Long extractMemberId(Authentication auth) {
-        // 프로젝트에서 이미 쓰는 방식과 동일하게 구현 (예: JWT의 sub, 커스텀 Principal 등)
-        Object principal = auth.getPrincipal();
-        // TODO: 실제 구현에 맞춰 파싱
-        // 예시:
-        try {
-            return Long.valueOf(auth.getName());
-        } catch (Exception e) {
-            return null;
+        if (me == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "로그인이 필요합니다."));
         }
+        if (!Objects.equals(me, memberId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("message", "본인 내역만 조회할 수 있습니다."));
+        }
+
+        return ResponseEntity.ok(pointService.getLogs(memberId, from, to, type, page, size));
     }
 }

@@ -2,11 +2,19 @@ package com.gudrhs8304.ticketory.service;
 
 import com.gudrhs8304.ticketory.domain.*;
 import com.gudrhs8304.ticketory.domain.enums.PointChangeType;
+import com.gudrhs8304.ticketory.dto.point.PointLogDTO;
 import com.gudrhs8304.ticketory.repository.MemberRepository;
 import com.gudrhs8304.ticketory.repository.PointLogRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.gudrhs8304.ticketory.domain.PointLog;
+import org.springframework.data.domain.*;
+
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -41,5 +49,29 @@ public class PointService {
         pointLogRepository.save(log);
 
         // memberRepository.save(member); // JPA 변경감지면 생략 가능
+    }
+
+    public Page<PointLogDTO> getLogs(
+            Long memberId,
+            LocalDate from,       // nullable
+            LocalDate to,         // nullable (포함, 서비스에서 +1일 처리)
+            List<PointChangeType> types, // nullable/empty 허용
+            int page, int size
+    ) {
+        LocalDateTime fromDt = (from != null) ? from.atStartOfDay() : null;
+        // to는 '해당 날짜 끝까지' 포함되도록 +1일의 자정으로
+        LocalDateTime toDt   = (to != null) ? to.plusDays(1).atStartOfDay() : null;
+
+        List<PointChangeType> typesParam =
+                (types == null || types.isEmpty()) ? null : types;
+
+        Pageable pageable = PageRequest.of(
+                Math.max(page, 0),
+                Math.min(Math.max(size, 1), 100),
+                Sort.by(Sort.Direction.DESC, "createdAt", "id")
+        );
+
+        Page<PointLog> logs = pointLogRepository.search(memberId, fromDt, toDt, typesParam, pageable);
+        return logs.map(PointLogDTO::from);
     }
 }
