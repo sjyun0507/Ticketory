@@ -1,10 +1,14 @@
 package com.gudrhs8304.ticketory.config;
 
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.core.Ordered;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
 
 import java.util.List;
 
@@ -12,29 +16,35 @@ import java.util.List;
 public class CorsConfig {
 
     @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
+    @Primary
+    public CorsConfigurationSource corsSource() {
         CorsConfiguration cfg = new CorsConfiguration();
-
-        // 개발 프론트 도메인
+        // 크리덴셜(true)일 땐 "*" 금지 → 개발 도메인 명시
         cfg.setAllowedOriginPatterns(List.of(
                 "http://localhost:5173",
                 "http://127.0.0.1:5173",
                 "https://localhost:5173",
                 "https://127.0.0.1:5173"
         ));
-        // 사용하는 메서드
-        cfg.addAllowedMethod("*");
-        // 허용할 요청 헤더 (여기에 Idempotency-Key 포함!)
-        cfg.addAllowedHeader("*");
-        // 클라이언트로 노출할 응답 헤더(선택)
-        cfg.setExposedHeaders(List.of("Location","Idempotency-Key"));
-
-        // 인증/쿠키를 쓸 경우 true (아니면 생략 가능)
+        // 메서드/헤더 전부 허용 + 프리플라이트 캐시
+        cfg.addAllowedMethod(CorsConfiguration.ALL);   // DELETE 포함
+        cfg.addAllowedHeader(CorsConfiguration.ALL);   // Authorization 등
         cfg.setAllowCredentials(true);
         cfg.setMaxAge(3600L);
+        // 필요 시 노출 헤더
+        cfg.setExposedHeaders(List.of("Location","Idempotency-Key"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", cfg);
         return source;
+    }
+
+    // 전역 CORS 필터를 최우선으로
+    @Bean
+    public FilterRegistrationBean<CorsFilter> corsFilterRegistration(CorsConfigurationSource corsSource) {
+        FilterRegistrationBean<CorsFilter> bean =
+                new FilterRegistrationBean<>(new CorsFilter(corsSource));
+        bean.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        return bean;
     }
 }

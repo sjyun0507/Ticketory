@@ -122,18 +122,50 @@ public class BookingController {
     }
 
     @Operation(summary = "예매 취소")
-    @DeleteMapping("/api/bookings/{bookingId}/cancel")
+    @DeleteMapping("/bookings/{bookingId}/cancel")
     public ResponseEntity<Map<String, Object>> cancelBooking(
             @PathVariable Long bookingId,
             @RequestParam(required = false) String reason,
             Authentication auth
     ) {
-        if (auth == null || !auth.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "로그인이 필요합니다."));
-        }
         Long me = extractMemberId(auth);
-        paymentService.cancel(me, bookingId, reason); // ⬅️ 아래의 서비스 메서드 사용(이미 이름 동일)
+        if (me == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "로그인이 필요합니다."));
+        }
+
+        paymentService.cancel(me, bookingId, reason); // 본인 예매 검증은 서비스에서 그대로 유지
         return ResponseEntity.ok(Map.of("bookingId", bookingId, "status", "CANCELLED"));
+    }
+
+    /** Authentication에서 memberId를 최대한 안전하게 추출 */
+    private Long extractMemberId(Authentication auth) {
+        if (auth == null) return null;
+
+        // 1) 커스텀 Principal을 쓰는 경우
+        Object principal = auth.getPrincipal();
+        if (principal instanceof CustomUserPrincipal p) {
+            return p.getMemberId();
+        }
+
+        // 2) 스프링 기본 UserDetails를 쓰고, username에 memberId를 넣은 경우
+        if (principal instanceof org.springframework.security.core.userdetails.User u) {
+            try { return Long.valueOf(u.getUsername()); } catch (Exception ignore) {}
+        }
+
+        // 3) auth.getName()이 숫자면 그대로 사용
+        try { return Long.valueOf(auth.getName()); } catch (Exception ignore) {}
+
+        // 4) JWT의 Claim을 꺼낼 수 있다면 여기서 파싱(예: sub, id, memberId 등)
+        //    JwtAuthenticationToken 등을 쓰는 환경이면 형식에 맞게 보강
+        if (auth.getDetails() instanceof java.util.Map<?, ?> details) {
+            Object id = ((Map<?, ?>) details).get("memberId");
+            if (id != null) {
+                try { return Long.valueOf(String.valueOf(id)); } catch (Exception ignore) {}
+            }
+        }
+
+        return null;
     }
 
 

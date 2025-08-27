@@ -23,6 +23,7 @@ import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequest
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
@@ -34,6 +35,8 @@ public class SecurityConfig {
     private final JwtTokenProvider jwtTokenProvider;
     private final ClientRegistrationRepository clientRegistrationRepository;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
+    private final CorsConfigurationSource corsConfigurationSource;
+
 
     @Value("${app.security.enabled:true}")
     private boolean securityEnabled;
@@ -58,12 +61,12 @@ public class SecurityConfig {
     @Order(1)
     public SecurityFilterChain apiChain(HttpSecurity http) throws Exception {
         http
-                .securityMatcher("/api/**")         // 이 체인은 /api/** 만 처리
+                .securityMatcher("/api/**")
                 .csrf(csrf -> csrf.disable())
                 .formLogin(f -> f.disable())
                 .httpBasic(h -> h.disable())
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .cors(Customizer.withDefaults())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource)) // ← 위 CORS 소스 사용
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((req, res, e) -> {
                             res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -77,16 +80,14 @@ public class SecurityConfig {
                         })
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // 프리플라이트는 무조건 허용
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/api/**").permitAll()
                         .requestMatchers(
                                 "/api/members/signup",
                                 "/api/members/login",
                                 "/api/members/guest-login",
                                 "/api/members/logout",
                                 "/api/members/exists",
-                                "/api/members/check-id",
-                                "/api/members/check-email",
-                                "/api/members/availability",
                                 "/api/movies/**",
                                 "/api/screenings/**",
                                 "/proxy/**",

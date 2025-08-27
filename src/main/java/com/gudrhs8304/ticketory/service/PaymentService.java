@@ -37,6 +37,7 @@ public class PaymentService {
     private final TossPaymentService tossPaymentService;
     private final BookingSeatRepository bookingSeatRepository;
     private final PointService pointService;
+    private final CancelLogRepository cancelLogRepository;
 
     private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
 
@@ -99,11 +100,13 @@ public class PaymentService {
             }
             // 2) BOOKING 상태
             booking.setPaymentStatus(BookingPayStatus.CANCELLED);
+            cancelLogRepository.save(CancelLog.ofMemberCancel(booking, memberId, reason));
             bookingRepository.save(booking);
 
             // 3) 좌석 해제 — HOLD 제거
             //   - holdKey로 지우는 구현이 있다면 그것도 가능. 여기서는 bookingId 기준 메서드 사용(이미 보유)
             seatHoldRepository.deleteByBookingId(bookingId);
+            bookingSeatRepository.deleteByBooking_BookingId(bookingId);
 
             // (선택) 좌석 점유상태를 별도 테이블로 관리한다면 AVAILABLE 처리
             // seatRepository.releaseSeatsByBookingId(bookingId);
@@ -169,6 +172,8 @@ public class PaymentService {
                         "예매 취소: 적립 회수"
                 );
             }
+
+            cancelLogRepository.save(CancelLog.ofMemberCancel(booking, memberId, reason));
 
             log.info("[CANCEL:POST-APPROVE] bookingId={}, refundAmount={}, usedPointsBack={}, earnedRevoke={}",
                     bookingId, payment.getAmount(), usedPoints, earned);

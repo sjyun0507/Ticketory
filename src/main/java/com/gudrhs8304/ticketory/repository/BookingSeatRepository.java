@@ -51,4 +51,6 @@ public interface BookingSeatRepository extends JpaRepository<BookingSeat, Long> 
 
     // booking_id로 모든 BookingSeat 행 삭제
     void deleteByBooking_BookingId(Long bookingId);
+
+
 }
