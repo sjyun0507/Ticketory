@@ -1,13 +1,15 @@
 package com.gudrhs8304.ticketory.dto.booking;
 
 import com.gudrhs8304.ticketory.domain.enums.BookingPayStatus;
-import lombok.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.List;
-
-
 
 @Data
 @NoArgsConstructor
@@ -17,25 +19,24 @@ public class BookingSummaryDTO {
     // 상영/영화/상영관 정보
     private String movieTitle;
     private LocalDateTime screeningStartAt;
-    private LocalDateTime screeningEndAt; // 필요 없으면 제거 가능
+    private LocalDateTime screeningEndAt;
     private String screenName;
     private String screenLocation;
 
-    // 좌석 정보 (A5, A6 ...)
+    // 좌석 정보 (쿼리에서 안 뽑으면 null/빈값으로 둠)
     private List<String> seats;
 
     // 결제/상태
-    private BookingPayStatus paymentStatus;   // PENDING/PAID/CANCELLED
-    private BigDecimal totalPrice;      // "12000" 또는 "12,000" 등 포맷은 프론트에서 해도 됨
-//    private String qrCodeUrl;       // null 가능
+    private BookingPayStatus paymentStatus;
+    private BigDecimal totalPrice;
 
-    // 생성 시각(BaseTimeEntity.createdAt)
-//    private LocalDateTime bookedAt; // = booking.createdAt
-
-    public BookingSummaryDTO(Long bookingId, String movieTitle,
-                              LocalDateTime startAt, LocalDateTime endAt,
-                              String screenName, String screenLocation,
-                              BigDecimal totalPrice, BookingPayStatus paymentStatus) {
+    // === JPQL이 LocalDateTime을 주는 경우 (8개 파라미터) ===
+    public BookingSummaryDTO(
+            Long bookingId, String movieTitle,
+            LocalDateTime startAt, LocalDateTime endAt,
+            String screenName, String screenLocation,
+            BigDecimal totalPrice, BookingPayStatus paymentStatus
+    ) {
         this.bookingId = bookingId;
         this.movieTitle = movieTitle;
         this.screeningStartAt = startAt;
@@ -46,5 +47,34 @@ public class BookingSummaryDTO {
         this.paymentStatus = paymentStatus;
     }
 
+    // === 만약 엔티티가 OffsetDateTime이면 이 오버로드가 매칭됨 ===
+    public BookingSummaryDTO(
+            Long bookingId, String movieTitle,
+            OffsetDateTime startAt, OffsetDateTime endAt,
+            String screenName, String screenLocation,
+            BigDecimal totalPrice, BookingPayStatus paymentStatus
+    ) {
+        this(bookingId, movieTitle,
+                startAt != null ? startAt.toLocalDateTime() : null,
+                endAt   != null ? endAt.toLocalDateTime()   : null,
+                screenName, screenLocation, totalPrice, paymentStatus);
+    }
 
+    // === 만약 엔티티가 Instant면 이 오버로드가 매칭됨 ===
+    public BookingSummaryDTO(
+            Long bookingId, String movieTitle,
+            Instant startAt, Instant endAt,
+            String screenName, String screenLocation,
+            BigDecimal totalPrice, BookingPayStatus paymentStatus
+    ) {
+        ZoneId zone = ZoneId.systemDefault();
+        this.bookingId = bookingId;
+        this.movieTitle = movieTitle;
+        this.screeningStartAt = startAt != null ? LocalDateTime.ofInstant(startAt, zone) : null;
+        this.screeningEndAt   = endAt   != null ? LocalDateTime.ofInstant(endAt,   zone) : null;
+        this.screenName = screenName;
+        this.screenLocation = screenLocation;
+        this.totalPrice = totalPrice;
+        this.paymentStatus = paymentStatus;
+    }
 }

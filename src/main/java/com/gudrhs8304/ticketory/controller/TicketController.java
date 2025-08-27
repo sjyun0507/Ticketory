@@ -29,12 +29,10 @@ public class TicketController {
                     @ApiResponse(responseCode = "404", description = "예매 없음")
             }
     )
-    // ❗ produces 고정 제거 (401/403 JSON 등 협상 충돌 방지)
     @GetMapping("/{bookingId}/qr")
-    public ResponseEntity<?> getQr(
+    public ResponseEntity<?> getQrJson(
             @PathVariable Long bookingId,
-            @RequestParam(defaultValue = "320") int size,
-            @AuthenticationPrincipal Object principal // 어떤 타입이 와도 안전하게 처리
+            @AuthenticationPrincipal Object principal
     ) {
         Long memberId = extractMemberId(principal);
         if (memberId == null) {
@@ -43,22 +41,19 @@ public class TicketController {
                     .body("{\"message\":\"로그인이 필요합니다.\"}");
         }
 
-        int clamped = Math.max(240, Math.min(size, 1024));
-        byte[] png = ticketService.getTicketQrPng(bookingId, memberId, clamped);
+        // 서비스가 소유자 검증 후 data:image/png;base64,... 를 돌려줌
+        String dataUri = ticketService.getTicketQrDataUri(bookingId, memberId);
 
         HttpHeaders headers = new HttpHeaders();
-        headers.setCacheControl(CacheControl.noStore().getHeaderValue());
+        headers.setCacheControl(CacheControl.noStore());
         headers.add(HttpHeaders.PRAGMA, "no-cache");
         headers.add(HttpHeaders.EXPIRES, "0");
-        headers.setContentDisposition(
-                ContentDisposition.inline().filename("ticket-" + bookingId + ".png").build()
-        );
-
         return ResponseEntity.ok()
                 .headers(headers)
-                .contentType(MediaType.IMAGE_PNG)
-                .body(png);
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(java.util.Map.of("qrCode", dataUri));
     }
+
 
     /** principal 이 CustomUserPrincipal/Long/String 등 어떤 형태여도 memberId를 최대한 추출 */
     private Long extractMemberId(Object principal) {
