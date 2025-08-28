@@ -20,15 +20,15 @@ public class CorsConfig {
     public CorsConfigurationSource corsSource() {
         CorsConfiguration cfg = new CorsConfiguration();
         // 크리덴셜(true)일 땐 "*" 금지 → 개발 도메인 명시
-        cfg.setAllowedOriginPatterns(List.of(
+        cfg.setAllowedOrigins(List.of(
                 "http://localhost:5173",
                 "http://127.0.0.1:5173",
                 "https://localhost:5173",
                 "https://127.0.0.1:5173"
         ));
         // 메서드/헤더 전부 허용 + 프리플라이트 캐시
-        cfg.addAllowedMethod(CorsConfiguration.ALL);   // DELETE 포함
-        cfg.addAllowedHeader(CorsConfiguration.ALL);   // Authorization 등
+        cfg.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
+        cfg.setAllowedHeaders(List.of("*"));
         cfg.setAllowCredentials(true);
         cfg.setMaxAge(3600L);
         // 필요 시 노출 헤더
