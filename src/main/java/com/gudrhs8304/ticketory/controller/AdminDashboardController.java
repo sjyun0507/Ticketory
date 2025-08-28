@@ -1,6 +1,8 @@
 package com.gudrhs8304.ticketory.controller;
 
+import com.gudrhs8304.ticketory.domain.Booking;
 import com.gudrhs8304.ticketory.domain.CancelLog;
+import com.gudrhs8304.ticketory.domain.Payment;
 import com.gudrhs8304.ticketory.domain.RefundLog;
 import com.gudrhs8304.ticketory.dto.admin.CancelLogRes;
 import com.gudrhs8304.ticketory.dto.admin.RefundLogRes;
@@ -24,50 +26,14 @@ public class AdminDashboardController {
 
     @Operation(summary = "취소 로그 조회 (관리자)")
     @GetMapping("/cancel-logs")
-    public ResponseEntity<Page<CancelLogRes>> getCancelLogs(
+    public ResponseEntity<Page<CancelLogRes>> cancelLogs(
             @RequestParam(required = false) Long bookingId,
             @RequestParam(required = false) Long memberId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<CancelLog> slice = cancelLogRepo.search(bookingId, memberId, pageable);
-        Page<CancelLogRes> body = slice.map(c -> new CancelLogRes(
-                c.getCancelId(),
-                c.getBooking().getBookingId(),
-                c.getCanceledByMember() == null ? null : c.getCanceledByMember().getMemberId(),
-                c.getCanceledByAdmin()  == null ? null : c.getCanceledByAdmin().getMemberId(),
-                c.getReason(),
-                c.getCreatedAt()
-        ));
+        Page<CancelLogRes> body = cancelLogRepo.search(bookingId, memberId, pageable);
         return ResponseEntity.ok(body);
     }
-
-    @Operation(summary = "환불 로그 조회 (관리자)")
-    @GetMapping("/refund-logs")
-    public ResponseEntity<Page<RefundLogRes>> getRefundLogs(
-            @RequestParam(required = false) Long paymentId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
-    ) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-
-        Page<RefundLog> slice = (paymentId == null)
-                ? refundLogRepo.findAll(pageable)
-                : refundLogRepo.findByPayment_PaymentId(paymentId, pageable);
-
-        Page<RefundLogRes> body = slice.map(r -> new RefundLogRes(
-                r.getRefundId(),
-                r.getPayment().getPaymentId(),
-                r.getRefundAmount(),
-                r.getReason(),
-                r.getPgRefundTid(),
-                r.getStatus(),
-                r.getProcessedByAdmin() == null ? null : r.getProcessedByAdmin().getMemberId(),
-                r.getCreatedAt()
-        ));
-
-        return ResponseEntity.ok(body);
-    }
-
 }
