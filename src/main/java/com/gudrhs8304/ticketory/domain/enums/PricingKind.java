@@ -1,4 +1,4 @@
 package com.gudrhs8304.ticketory.domain.enums;
 
-public enum PricingKind {ADULT, TEEN, CHILD}
+public enum PricingKind {ADULT, TEEN}
 

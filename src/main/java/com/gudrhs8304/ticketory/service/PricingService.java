@@ -46,18 +46,19 @@ public class PricingService {
 
     private boolean appliesTo(PricingKind kind, String t) {
         if (kind == null) return true;
-        switch (kind) {
-            case ADULT: return "ADULT".equals(t);
-            case TEEN:  return "TEEN".equals(t);
-            case CHILD:   return true;
-            default:    return true; // 다른 값이더라도 전체 적용
-        }
+
+        return switch (kind) {
+            case ADULT -> "ADULT".equals(t);
+            case TEEN ->  "TEEN".equals(t);
+        };
     }
 
     private BigDecimal apply(BigDecimal price, PricingOp op, BigDecimal amount) {
         if (op == null || amount == null) return price;
 
         switch (op) {
+            case SET:
+                return amount;
             case PLUS:
                 return price.add(amount);
             case MINUS:
@@ -83,11 +84,16 @@ public class PricingService {
                 : new BigDecimal(screen.getBasePrice());
 
         // 2) kind 에 해당하는 rule 적용
-        List<PricingRule> rules = pricingRuleRepository.findEnabledByScreenAtAndKind(screenId, kind, when);
+        List<PricingRule> rules = pricingRuleRepository.findEnabledByScreenAt(screenId, when)
+                .stream()
+                .filter(r -> r.getKind() == null || r.getKind() == kind)
+                .toList();
+
         for (PricingRule r : rules) {
             BigDecimal amt = r.getAmount();
             PricingOp op = r.getOp();
             switch (op) {
+                case SET -> price = amt;
                 case PLUS -> price = price.add(amt);
                 case MINUS -> price = price.subtract(amt);
                 case PCT_PLUS -> price = price.multiply(BigDecimal.ONE.add(amt.movePointLeft(2)));
