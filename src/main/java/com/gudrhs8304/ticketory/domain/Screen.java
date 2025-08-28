@@ -33,4 +33,8 @@ public class Screen extends BaseTimeEntity {
 
     @Column(name = "base_price")
     private Integer basePrice;
+
+    /** 회차 간 청소/쉬는 시간(분). null이면 기본값 15분으로 처리 */
+    @Column(name = "clean_minutes")
+    private Integer cleanMinutes;
 }

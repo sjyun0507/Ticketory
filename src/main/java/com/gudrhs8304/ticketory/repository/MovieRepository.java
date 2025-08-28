@@ -69,4 +69,6 @@ public interface MovieRepository extends JpaRepository<Movie, Long> {
     // 전체 조회용(검색어 비었을 때 최신순)
     Page<Movie> findAllByOrderByReleaseDateDesc(Pageable pageable);
 
+    List<Movie> findByStatusTrue();
+
 }

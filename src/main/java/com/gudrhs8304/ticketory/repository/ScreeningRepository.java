@@ -1,5 +1,6 @@
 package com.gudrhs8304.ticketory.repository;
 
+import com.gudrhs8304.ticketory.domain.Screen;
 import com.gudrhs8304.ticketory.domain.Screening;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -50,4 +51,40 @@ public interface ScreeningRepository extends JpaRepository<Screening, Long> {
 
     @Query("select s.screen.screenId from Screening s where s.screeningId = :screeningId")
     Long findScreenIdByScreeningId(@Param("screeningId") Long screeningId);
+
+    @Query("""
+      select count(s) > 0
+        from Screening s
+       where s.screen.screenId = :screenId
+         and s.startAt < :endAt
+         and s.endAt   > :startAt
+    """)
+    boolean existsOverlap(@Param("screenId") Long screenId,
+                          @Param("startAt") LocalDateTime startAt,
+                          @Param("endAt") LocalDateTime endAt);
+
+    @Query("""
+  select count(s) > 0
+    from Screening s
+   where s.screen = :screen
+     and (
+       (s.startAt < :endAt) and (:startAt < s.endAt)
+     )
+""")
+    boolean existsOverlapping(@Param("screen") Screen screen,
+                              @Param("startAt") LocalDateTime startAt,
+                              @Param("endAt") LocalDateTime endAt);
+
+    @Query("""
+  select count(s) > 0
+    from Screening s
+   where s.screen = :screen
+     and s.startAt = :startAt
+""")
+    boolean existsSameStart(@Param("screen") Screen screen,
+                            @Param("startAt") LocalDateTime startAt);
+
+    boolean existsByScreen_ScreenIdAndStartAt(Long screenId, LocalDateTime startAt);
+
+    long countByStartAtBetween(LocalDateTime from, LocalDateTime to);
 }
