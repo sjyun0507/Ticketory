@@ -2,6 +2,7 @@ package com.gudrhs8304.ticketory.repository;
 
 import com.gudrhs8304.ticketory.domain.PricingRule;
 import com.gudrhs8304.ticketory.domain.enums.PricingKind;
+import com.gudrhs8304.ticketory.domain.enums.PricingOp;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -113,4 +114,35 @@ public interface PricingRuleRepository extends JpaRepository<PricingRule, Long> 
             """)
     List<PricingRule> findByFilter(@Param("screenId") Long screenId,
                                    @Param("kind") PricingKind kind);
+
+    // 전역(0) + 해당 상영관 둘 다 불러오고, kind 일치 또는 ALL 허용, 기간·활성 필터
+    @Query("""
+            select r
+            from PricingRule r
+            where r.enabled = true
+              and (r.screenId = :screenId or r.screenId = 0)
+              and (:kind is null or r.kind = :kind or r.kind = 'ALL')
+              and (r.validFrom is null or r.validFrom <= :at)
+              and (r.validTo   is null or r.validTo   >= :at)
+            order by r.priority asc, r.id asc
+            """)
+    List<PricingRule> findActiveFor(@Param("screenId") Long screenId,
+                                    @Param("kind") PricingKind kind,
+                                    @Param("at") LocalDateTime at);
+
+    // 동일 screen/kind/op 에 대해 기간이 겹치는 enabled 규칙이 있는지
+    @Query("""
+       select (count(r) > 0) from PricingRule r
+       where r.screenId = :sid
+         and r.kind = :kind
+         and r.op = :op
+         and r.enabled = true
+         and r.validFrom <= :to
+         and (r.validTo is null or r.validTo >= :from)
+    """)
+    boolean existsOverlappingEnabled(@Param("sid") Long screenId,
+                                     @Param("kind") PricingKind kind,
+                                     @Param("op") PricingOp op,
+                                     @Param("from") LocalDateTime from,
+                                     @Param("to") LocalDateTime to);
 }

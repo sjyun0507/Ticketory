@@ -28,4 +28,7 @@ public class Screening extends BaseTimeEntity {
 
     @Column(name = "end_at")
     private LocalDateTime endAt;
+
+    @Column(name = "is_booking", nullable = false)
+    private Boolean isBooking = true;
 }

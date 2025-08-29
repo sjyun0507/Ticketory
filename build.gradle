@@ -33,7 +33,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'     // Bean Validation(@Valid, @NotBlank 등)
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'  // OAuth2/OIDC 클라이언트(카카오 로그인 등)
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'     // Redis 연동(세션/캐시/락 등)
-    implementation 'org.springframework.security:spring-security-crypto'         // 비밀번호 해시(BCrypt) 등 암호 유틸
+    implementation 'org.springframework.security:spring-security-crypto'
+    implementation 'org.springframework.boot:spring-boot-starter-batch'
+    testImplementation 'org.springframework.batch:spring-batch-test'// 비밀번호 해시(BCrypt) 등 암호 유틸
 
     // === 개발 편의/롬복/런타임 드라이버 ===
     compileOnly 'org.projectlombok:lombok'               // 롬복(컴파일 전용)
@@ -67,6 +69,11 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-webflux' // WebClient
 
     implementation 'commons-net:commons-net:3.10.0'
+
+    // mail
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+
+
 }
 
 tasks.named('test') {

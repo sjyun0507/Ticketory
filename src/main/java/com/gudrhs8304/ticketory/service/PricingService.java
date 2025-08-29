@@ -7,12 +7,17 @@ import com.gudrhs8304.ticketory.domain.enums.PricingOp;
 import com.gudrhs8304.ticketory.repository.PricingRuleRepository;
 import com.gudrhs8304.ticketory.repository.ScreenRepository;
 import com.gudrhs8304.ticketory.repository.ScreeningRepository;
+import jakarta.annotation.Nullable;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -125,5 +130,70 @@ public class PricingService {
         m.put(PricingKind.ADULT, adult);
         m.put(PricingKind.TEEN,  teen);
         return computeTotal(screenId, m, when);
+    }
+
+    public BigDecimal calcFinalPrice(Long screenId, PricingKind kind, LocalDateTime useAt, BigDecimal base) {
+        BigDecimal price = base;
+        List<PricingRule> rules = pricingRuleRepository.findActiveFor(screenId, kind, useAt);
+        for (var r : rules) {
+            switch (r.getOp()) {
+                case SET      -> price = r.getAmount();
+                case PLUS     -> price = price.add(r.getAmount());
+                case MINUS    -> price = price.subtract(r.getAmount());
+                case PCT_PLUS -> price = price.multiply(BigDecimal.ONE.add(r.getAmount().movePointLeft(2)));
+                case PCT_MINUS-> price = price.multiply(BigDecimal.ONE.subtract(r.getAmount().movePointLeft(2)));
+            }
+        }
+        return price.max(BigDecimal.ZERO);
+    }
+
+    /**
+     * 예: 6개월치 수요일마다 모든 Kind에 대해 전역 20% 할인(PCT_MINUS)
+     * @param from  시작일(포함)
+     * @param to    종료일(포함)
+     * @param percent 할인 퍼센트(예: 20.00)
+     * @param kinds  적용할 Kind (null 또는 빈 배열이면 Enum 전체 사용)
+     * @return 생성된 규칙 개수
+     */
+    @Transactional
+    public int upsertGlobalWednesdayDiscount(LocalDate from, LocalDate to, BigDecimal percent,
+                                             @Nullable List<PricingKind> kinds) {
+        int created = 0;
+
+        // 적용 대상 Kind 목록 구성
+        List<PricingKind> targets = (kinds == null || kinds.isEmpty())
+                ? Arrays.asList(PricingKind.values())
+                : kinds;
+
+        for (LocalDate d = from; !d.isAfter(to); d = d.plusDays(1)) {
+            if (d.getDayOfWeek() != DayOfWeek.WEDNESDAY) continue;
+
+            LocalDateTime vf = d.atStartOfDay();
+            LocalDateTime vt = d.atTime(23, 59, 59);
+
+            for (PricingKind kind : targets) {
+                // 필요시 제외할 Kind가 있으면 필터링 (예: UNKNOWN 제외)
+                if (kind.name().equalsIgnoreCase("UNKNOWN")) continue;
+
+                boolean exists = pricingRuleRepository.existsOverlappingEnabled(
+                        0L, kind, PricingOp.PCT_MINUS, vf, vt
+                );
+                if (exists) continue;
+
+                PricingRule r = new PricingRule();
+                r.setScreenId(0L);                 // 전역
+                r.setKind(kind);                   // ALL 대신 각 Kind 별로 한 줄
+                r.setOp(PricingOp.PCT_MINUS);
+                r.setAmount(percent);              // 예: 20.00
+                r.setPriority(50);                 // 관별 규칙 우선순위와 충돌 없게 조정
+                r.setValidFrom(vf);
+                r.setValidTo(vt);
+                r.setEnabled(true);
+                r.setCurrency("KRW");              // 스키마상 not null이면 기본값 지정
+                pricingRuleRepository.save(r);
+                created++;
+            }
+        }
+        return created;
     }
 }

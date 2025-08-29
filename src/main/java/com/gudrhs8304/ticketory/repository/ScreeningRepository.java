@@ -1,6 +1,7 @@
 package com.gudrhs8304.ticketory.repository;
 
 import com.gudrhs8304.ticketory.domain.Screening;
+import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
@@ -50,4 +51,19 @@ public interface ScreeningRepository extends JpaRepository<Screening, Long> {
 
     @Query("select s.screen.screenId from Screening s where s.screeningId = :screeningId")
     Long findScreenIdByScreeningId(@Param("screeningId") Long screeningId);
+
+    /**
+     * threshold(예: now+30m) 보다 시작 시간이 이른(= 곧 시작/이미 시작) 상영의 예약을 닫는다.
+     * 이미 닫힌(isBooking=false) 건은 제외하고 true -> false 로만 변경.
+     * 반환값은 업데이트된 행 수.
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Transactional
+    @Query("""
+        update Screening s
+           set s.isBooking = false
+         where s.isBooking = true
+           and s.startAt   <= :threshold
+    """)
+    int updateIsBookingEnd(@Param("threshold") LocalDateTime threshold);
 }

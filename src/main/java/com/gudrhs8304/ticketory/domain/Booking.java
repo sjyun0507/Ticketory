@@ -43,6 +43,9 @@ public class Booking extends BaseTimeEntity {
     @Column(name = "qr_code_url", columnDefinition = "TEXT")
     private String qrCodeUrl;
 
+    @Column(name = "is_send_alarm", nullable = false)
+    private boolean isSendAlarm = false; // 기본값 false
+
     @PrePersist
     protected void onPrePersist() {
         if (this.bookingTime == null) {
