@@ -3,6 +3,8 @@ package com.gudrhs8304.ticketory.repository;
 import com.gudrhs8304.ticketory.domain.Booking;
 import com.gudrhs8304.ticketory.domain.enums.BookingPayStatus;
 import com.gudrhs8304.ticketory.dto.booking.BookingSummaryDTO;
+import com.gudrhs8304.ticketory.mail.BookingAlarmDTO;
+import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,6 +12,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -97,6 +100,50 @@ order by b.createdAt desc
             Long memberId,
             BookingPayStatus paymentStatus
     );
+
+    // 알람을 보낸적이 없고, 상영시간이 thisTime보다 작거나 같은 예약을 들고옴.
+    @Query("""
+select new com.gudrhs8304.ticketory.mail.BookingAlarmDTO(
+    b.bookingId,
+    m2.loginId,
+    m.title,
+    s.startAt,
+    b.qrCodeUrl,
+    (
+      select mm.url
+      from MovieMedia mm
+      where mm.movie = m
+        and mm.movieMediaType = com.gudrhs8304.ticketory.domain.enums.MovieMediaType.POSTER
+        and mm.mediaId = (
+          select min(mm2.mediaId)
+          from MovieMedia mm2
+          where mm2.movie = m
+            and mm2.movieMediaType = com.gudrhs8304.ticketory.domain.enums.MovieMediaType.POSTER
+        )
+    )
+)
+from Booking b
+join b.screening s
+join s.movie m
+left join b.member m2
+where (b.isSendAlarm = false or b.isSendAlarm is null)
+  and s.startAt <= :thisTime
+  and m2.loginId is not null
+""")
+    List<BookingAlarmDTO> findBookingAlarmDTO(@Param("thisTime") LocalDateTime thisTime);
+
+    @Modifying(clearAutomatically = true)
+    @Transactional
+    @Query("""
+        update Booking b
+           set b.isSendAlarm = :isSendAlarm
+         where b.bookingId   = :bookingId
+    """)
+    int updateIsSendAlarm(@Param("bookingId") Long bookingId,
+                          @Param("isSendAlarm") boolean isSendAlarm);
+
+
+
 
 
 
