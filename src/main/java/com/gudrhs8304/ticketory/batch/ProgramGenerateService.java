@@ -40,14 +40,20 @@ public class ProgramGenerateService {
         var templates = templateRepository.findByScreenAndEnabledIsTrue(screen);
 
         for (ScreenProgramTemplate tmpl : templates) {
-            // ⚠️ fetch join 사용
             var slots = slotRepository.findByTemplateWithJoinsOrderByStartTimeAscPriorityAsc(tmpl);
 
             for (ScreenProgramSlot slot : slots) {
+                // 요일 마스크 적용
                 if (!matchesWeekdayMask(slot.getWeekdays(), date.getDayOfWeek())) continue;
 
-                Movie mv = slot.getMovie();                 // 이미 fetch 되어 있음
-                Integer runtime = (mv != null) ? mv.getRunningMinutes() : null;
+                Movie mv = slot.getMovie();
+                // 영화 상태/삭제 여부
+                if (mv == null || !Boolean.TRUE.equals(mv.getStatus())) {
+                    log.info("[program] skip slot {}: movie inactive", slot.getSlotId());
+                    continue;
+                }
+
+                Integer runtime = mv.getRunningMinutes();
                 if (runtime == null || runtime <= 0) {
                     log.warn("[program] skip slot {}: movie runtime missing", slot.getSlotId());
                     continue;
@@ -56,12 +62,16 @@ public class ProgramGenerateService {
                 LocalDateTime startAt = LocalDateTime.of(date, slot.getStartTime());
                 LocalDateTime endAt   = startAt.plusMinutes(runtime);
 
+                // 청소 시간까지 고려(일관성)
+                int clean = screen.getCleanMinutes() != null ? screen.getCleanMinutes() : 0;
+                LocalDateTime endWithClean = endAt.plusMinutes(clean);
+
                 if (screeningRepository.existsByScreen_ScreenIdAndStartAt(screen.getScreenId(), startAt)) {
                     log.info("[program] exists same startAt. skip {} (screen {})", startAt, screen.getScreenId());
                     continue;
                 }
-                if (screeningRepository.existsOverlap(screen.getScreenId(), startAt, endAt)) {
-                    log.info("[program] overlap. skip {}~{} (screen {})", startAt, endAt, screen.getScreenId());
+                if (screeningRepository.existsOverlap(screen.getScreenId(), startAt, endWithClean)) {
+                    log.info("[program] overlap. skip {}~{} (screen {})", startAt, endWithClean, screen.getScreenId());
                     continue;
                 }
 
@@ -71,7 +81,7 @@ public class ProgramGenerateService {
                                 .movie(mv)
                                 .startAt(startAt)
                                 .endAt(endAt)
-                                .isBooking(false)
+                                .isBooking(false) // NOT NULL 컬럼 방지
                                 .build()
                 );
                 created++;
@@ -112,11 +122,12 @@ public class ProgramGenerateService {
                 var slots = slotRepository.findByTemplateWithJoinsOrderByStartTimeAscPriorityAsc(t);
 
                 for (ScreenProgramSlot slot : slots) {
+
                     if (!matchesWeekdayMask(slot.getWeekdays(), date.getDayOfWeek())) continue;
 
                     Movie mv = slot.getMovie(); // fetch됨
                     Integer runtime = (mv != null) ? mv.getRunningMinutes() : null;
-                    if (runtime == null || runtime <= 0) continue;
+                    if (mv == null || !Boolean.TRUE.equals(mv.getStatus())) continue;
 
                     LocalDateTime startAt = LocalDateTime.of(date, slot.getStartTime());
                     LocalDateTime endAt   = startAt.plusMinutes(runtime);
