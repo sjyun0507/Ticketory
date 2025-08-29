@@ -13,6 +13,7 @@ public record BoardPostRes(
         String bannerUrl,
         LocalDate startDate,
         LocalDate endDate,
-        Boolean published,
+        LocalDateTime publishAt,
         LocalDateTime createdAt
+        , Boolean published
 ) {}

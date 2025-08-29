@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 public record BoardPostReq(
         @NotNull Type type,
@@ -13,5 +14,6 @@ public record BoardPostReq(
         String bannerUrl,
         LocalDate startDate,
         LocalDate endDate,
-        Boolean published   // null이면 기본 true
+        LocalDateTime publishAt,   // null이면 기본 true
+        Boolean published
 ) {}

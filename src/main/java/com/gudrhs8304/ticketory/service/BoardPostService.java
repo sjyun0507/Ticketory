@@ -29,7 +29,8 @@ public class BoardPostService {
                 .bannerUrl(req.bannerUrl())
                 .startDate(req.startDate())
                 .endDate(req.endDate())
-                .published(req.published() == null ? Boolean.TRUE : req.published())
+                .publishAt(req.publishAt())
+                .published(req.published() == null ? Boolean.TRUE : req.published()) // ★ 중요
                 .build();
         return toRes(repo.save(e));
     }
@@ -42,7 +43,8 @@ public class BoardPostService {
         e.setBannerUrl(req.bannerUrl());
         e.setStartDate(req.startDate());
         e.setEndDate(req.endDate());
-        e.setPublished(req.published() == null ? Boolean.TRUE : req.published());
+        e.setPublishAt(req.publishAt());
+        e.setPublished(req.published() == null ? e.getPublished() : req.published()); // ★ 중요
         return toRes(repo.save(e));
     }
 
@@ -53,7 +55,7 @@ public class BoardPostService {
     private BoardPostRes toRes(BoardPost b) {
         return new BoardPostRes(
                 b.getId(), b.getType(), b.getTitle(), b.getContent(), b.getBannerUrl(),
-                b.getStartDate(), b.getEndDate(), b.getPublished(), b.getCreatedAt()
+                b.getStartDate(), b.getEndDate(), b.getPublishAt(), b.getCreatedAt(), b.getPublished()
         );
     }
 }

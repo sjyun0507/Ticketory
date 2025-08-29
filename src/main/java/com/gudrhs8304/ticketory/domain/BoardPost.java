@@ -42,8 +42,9 @@ public class BoardPost {
     private LocalDate startDate;   // nullable
     private LocalDate endDate;     // nullable
 
-    @Column(nullable=false)
-    private Boolean published = true;
+    @Column(nullable = false, columnDefinition = "tinyint(1) default 1")
+    private Boolean published;
+
 
     @CreationTimestamp
     @Column(nullable=false, updatable=false)
@@ -51,4 +52,19 @@ public class BoardPost {
 
     @UpdateTimestamp
     private LocalDateTime updatedAt;
+
+    @Column(name = "publish_at")
+    private LocalDateTime publishAt;
+
+    @PrePersist
+    void prePersist() {
+        // 예약발행이면 false, 즉시발행이면 true
+        if (published == null) {
+            if (publishAt != null && publishAt.isAfter(java.time.LocalDateTime.now())) {
+                published = false;  // 예약
+            } else {
+                published = true;   // 즉시
+            }
+        }
+    }
 }
