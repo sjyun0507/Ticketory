@@ -82,6 +82,8 @@ public class SecurityConfig {
 
                         // 개발 중 임시 오픈(리다이렉트 방지). 운영 전환 시 권한 체크로 변경
                         .requestMatchers("/api/admin/**").permitAll()
+                        .requestMatchers("/api/board").permitAll()
+                        .requestMatchers("/api/admin/board/**").permitAll()
 
                         .requestMatchers(
                                 "/api/members/signup",
