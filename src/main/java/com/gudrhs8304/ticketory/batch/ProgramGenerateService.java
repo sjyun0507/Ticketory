@@ -71,6 +71,7 @@ public class ProgramGenerateService {
                                 .movie(mv)
                                 .startAt(startAt)
                                 .endAt(endAt)
+                                .isBooking(false)
                                 .build()
                 );
                 created++;
@@ -133,6 +134,7 @@ public class ProgramGenerateService {
                                     .screen(sc)
                                     .startAt(startAt)
                                     .endAt(endAt)
+                                    .isBooking(false)
                                     .build()
                     );
                     created++;

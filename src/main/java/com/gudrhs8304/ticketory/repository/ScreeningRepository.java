@@ -66,4 +66,18 @@ public interface ScreeningRepository extends JpaRepository<Screening, Long> {
            and s.startAt   <= :threshold
     """)
     int updateIsBookingEnd(@Param("threshold") LocalDateTime threshold);
+
+    // 같은 상영관에서 정확히 같은 시작시간 존재 여부
+    boolean existsByScreen_ScreenIdAndStartAt(Long screenId, LocalDateTime startAt);
+
+    // 시간 겹침(청소시간 포함) 검사 — 3파라미터 버전
+    @Query("""
+        select (count(s) > 0) from Screening s
+        where s.screen.screenId = :screenId
+          and s.startAt < :endAt
+          and s.endAt   > :startAt
+    """)
+    boolean existsOverlap(@Param("screenId") Long screenId,
+                          @Param("startAt") LocalDateTime startAt,
+                          @Param("endAt")   LocalDateTime endAt);
 }
