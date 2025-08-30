@@ -1,0 +1,15 @@
+package com.gudrhs8304.ticketory.feature.admin.dto;
+
+import java.time.LocalDateTime;
+
+public record AdminActionLogRes(
+        Long adminActionId,
+        Long adminMemberId,
+        String actionType,
+        String targetTable,
+        Long targetId,
+        String payloadJson,
+        String ipAddress,
+        String userAgent,
+        LocalDateTime createdAt
+) {}

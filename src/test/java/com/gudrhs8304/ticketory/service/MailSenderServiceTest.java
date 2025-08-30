@@ -1,18 +1,11 @@
 package com.gudrhs8304.ticketory.service;
 
-import com.gudrhs8304.ticketory.mail.MailLog;
 import com.gudrhs8304.ticketory.mail.MailLogRepository;
 import com.gudrhs8304.ticketory.mail.MailSenderService;
-import com.gudrhs8304.ticketory.repository.BookingRepository;
-import jakarta.mail.MessagingException;
+import com.gudrhs8304.ticketory.feature.booking.BookingRepository;
 import lombok.extern.log4j.Log4j2;
-import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.io.UnsupportedEncodingException;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

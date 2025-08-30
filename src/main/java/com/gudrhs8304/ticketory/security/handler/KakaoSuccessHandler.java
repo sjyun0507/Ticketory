@@ -1,8 +1,8 @@
 package com.gudrhs8304.ticketory.security.handler;
 
-import com.gudrhs8304.ticketory.config.JwtTokenProvider;
-import com.gudrhs8304.ticketory.domain.Member;
-import com.gudrhs8304.ticketory.repository.MemberRepository;
+import com.gudrhs8304.ticketory.core.jwt.JwtTokenProvider;
+import com.gudrhs8304.ticketory.feature.member.Member;
+import com.gudrhs8304.ticketory.feature.member.MemberRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +16,6 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.Map;
 
 @Component

@@ -1,7 +1,10 @@
 package com.gudrhs8304.ticketory.batch;
 
-import com.gudrhs8304.ticketory.domain.*;
-import com.gudrhs8304.ticketory.repository.*;
+import com.gudrhs8304.ticketory.feature.movie.Movie;
+import com.gudrhs8304.ticketory.feature.screen.ScreenRepository;
+import com.gudrhs8304.ticketory.feature.screen.domain.Screen;
+import com.gudrhs8304.ticketory.feature.screening.ScreeningRepository;
+import com.gudrhs8304.ticketory.feature.screening.domain.Screening;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
