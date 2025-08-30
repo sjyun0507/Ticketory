@@ -12,6 +12,8 @@ import com.gudrhs8304.ticketory.feature.booking.domain.CancelLog;
 import com.gudrhs8304.ticketory.feature.booking.BookingPayStatus;
 import com.gudrhs8304.ticketory.feature.point.PointChangeType;
 import com.gudrhs8304.ticketory.feature.payment.dto.ConfirmPaymentRequestDTO;
+import com.gudrhs8304.ticketory.feature.refund.RefundRecorder;
+import com.gudrhs8304.ticketory.feature.refund.RefundStatus;
 import com.gudrhs8304.ticketory.feature.seat.SeatHold;
 import com.gudrhs8304.ticketory.feature.seat.SeatHoldRepository;
 import com.gudrhs8304.ticketory.feature.seat.SeatRepository;
@@ -45,10 +47,13 @@ public class PaymentService {
     private final BookingSeatRepository bookingSeatRepository;
     private final PointService pointService;
     private final CancelLogRepository cancelLogRepository;
+    private final RefundRecorder refundRecorder;
 
     private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
 
-    /** (시뮬) 간단 승인 API */
+    /**
+     * (시뮬) 간단 승인 API
+     */
     @Transactional
     public Payment approve(Long memberId, ApprovePaymentRequest req) {
         Booking booking = bookingRepository.findById(req.bookingId())
@@ -124,11 +129,30 @@ public class PaymentService {
 
         // === 케이스 B: 결제 승인 후(PAID) 취소/환불 ===
         if (payment.getStatus() == PaymentStatus.PAID) {
+            String pgRefundTid = null;
             // 1) PG 환불 호출(연동 시)
             try {
-                // tossPaymentService.cancel(payment.getPaymentKey(), payment.getAmount(), reason); // 필요 시 구현
+                pgRefundTid = "PG-" + payment.getPaymentId() + "-" + System.currentTimeMillis();
+
+                // 환불 성공 -> refund_log 기록(DONE)
+                refundRecorder.record(
+                        payment.getPaymentId(),
+                        payment.getAmount().intValue(),
+                        reason,
+                        null,
+                        pgRefundTid,
+                        RefundStatus.DONE
+                );
             } catch (Exception e) {
-                // 환불 연동 실패 시 롤백할지/재시도할지 정책 결정
+                // ★ 환불 실패 → refund_log 기록(FAILED)
+                refundRecorder.record(
+                        payment.getPaymentId(),
+                        payment.getAmount().intValue(),
+                        "PG 환불 실패: " + (reason == null ? "" : reason),
+                        null,
+                        null,                              // 실패라면 PG 환불 TID 없음
+                        RefundStatus.FAILED
+                );
                 throw new IllegalStateException("PG 환불 실패: " + e.getMessage(), e);
             }
 
@@ -203,7 +227,9 @@ public class PaymentService {
         throw new IllegalStateException("취소할 수 없는 결제 상태: " + payment.getStatus());
     }
 
-    /** 토스 승인 성공 → 내부 확정 처리(간단 래퍼) */
+    /**
+     * 토스 승인 성공 → 내부 확정 처리(간단 래퍼)
+     */
     @Transactional
     public void confirmAndFinalize(ConfirmPaymentRequestDTO req) {
         tossPaymentService.confirm(
@@ -227,7 +253,9 @@ public class PaymentService {
                 booking.getBookingId(), payment.getPaymentId());
     }
 
-    /** 주문 선생성 + 기존 PENDING 결제행에 orderId 부착 */
+    /**
+     * 주문 선생성 + 기존 PENDING 결제행에 orderId 부착
+     */
     @Transactional
     public void createOrderAndAttach(Long bookingId, String orderId, BigDecimal amount) {
         int updated = paymentRepository.attachOrderIdToPendingByBookingId(bookingId, orderId);
@@ -247,7 +275,9 @@ public class PaymentService {
         log.info("[ORDER] bookingId={}, orderId={}, amount={}", bookingId, orderId, amount);
     }
 
-    /** 결제 최종 확정(좌석확정 + 포인트 사용/적립 + QR 생성) */
+    /**
+     * 결제 최종 확정(좌석확정 + 포인트 사용/적립 + QR 생성)
+     */
     @Transactional
     public void confirm(String paymentKey, String orderId, BigDecimal approvedAmount) {
         Payment payment = paymentRepository.findByOrderIdForUpdate(orderId)
@@ -309,7 +339,10 @@ public class PaymentService {
         }
 
         // 응답/로그 표시용(비영속)
-        try { payment.setPointsUsed(usedPoints); } catch (Exception ignore) {}
+        try {
+            payment.setPointsUsed(usedPoints);
+        } catch (Exception ignore) {
+        }
 
         // QR 생성
         String payload = buildQrPayload(booking);
@@ -320,7 +353,9 @@ public class PaymentService {
                 booking.getBookingId(), usedPoints, earn, payment.getAmount());
     }
 
-    /** QR payload (JWT 사용 시 이 부분에서 생성) */
+    /**
+     * QR payload (JWT 사용 시 이 부분에서 생성)
+     */
     private String buildQrPayload(Booking booking) {
         try {
             Map<String, Object> claims = new HashMap<>();
@@ -334,7 +369,9 @@ public class PaymentService {
         }
     }
 
-    /** ZXing → PNG → data:image/png;base64,... */
+    /**
+     * ZXing → PNG → data:image/png;base64,...
+     */
     private String generateQrPngDataUrl(String text, int width, int height) {
         try {
             var writer = new QRCodeWriter();
