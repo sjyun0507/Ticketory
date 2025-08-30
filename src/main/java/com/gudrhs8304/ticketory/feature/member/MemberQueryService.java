@@ -7,18 +7,20 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class MemberQueryService {
 
     private final MemberRepository memberRepository;
 
-    @Transactional(readOnly = true)
     public MemberProfileRes getMyProfile(Long memberId) {
-        var m = memberRepository.findById(memberId).orElseThrow();
-        return new MemberProfileRes(
-                m.getMemberId(),
-                m.getName(),
-                m.getAvatarUrl(),
-                m.getLastWatchedAt()
-        );
+        Member m = memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("회원이 존재하지 않습니다. id=" + memberId));
+
+        return MemberProfileRes.builder()
+                .memberId(m.getMemberId())
+                .name(m.getName())
+                .avatarUrl(m.getAvatarUrl())
+                .lastWatchedAt(m.getLastWatchedAt())
+                .build();
     }
 }

@@ -54,7 +54,7 @@ public class ScreeningBatchConfig {
             public RepeatStatus execute(StepContribution contribution,
                                         ChunkContext chunkContext) throws Exception {
 
-                screeningRepository.updateIsBookingEnd(LocalDateTime.now().plusMinutes(30L));
+                screeningRepository.updateIsBookingEnd(LocalDateTime.now().plusMinutes(30));
                 return RepeatStatus.FINISHED;
             }
         };

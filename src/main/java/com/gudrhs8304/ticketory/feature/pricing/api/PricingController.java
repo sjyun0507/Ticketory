@@ -11,7 +11,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/pricing")
+@RequestMapping("api/pricing")
 @RequiredArgsConstructor
 @Tag(name = "Pricing", description = "요금/할인 견적 API")
 public class PricingController {

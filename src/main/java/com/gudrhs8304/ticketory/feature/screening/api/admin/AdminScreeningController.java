@@ -3,7 +3,7 @@ package com.gudrhs8304.ticketory.feature.screening.api.admin;
 import com.gudrhs8304.ticketory.feature.screening.dto.ScreeningAdminListItemDTO;
 import com.gudrhs8304.ticketory.feature.screening.dto.ScreeningAdminResponseDTO;
 import com.gudrhs8304.ticketory.feature.screening.dto.ScreeningUpsertRequestDTO;
-import com.gudrhs8304.ticketory.feature.admin.AdminScreeningService;
+import com.gudrhs8304.ticketory.feature.screening.AdminScreeningService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

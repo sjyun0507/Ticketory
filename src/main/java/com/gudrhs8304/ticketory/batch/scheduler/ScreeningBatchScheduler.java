@@ -24,10 +24,8 @@ public class ScreeningBatchScheduler {
         this.screeningJob = screeningJob;
     }
 
-// 1분 마다 실행
 
-    @Scheduled(cron = "0 * * * * *")
-    // @Scheduled(cron = "10 * * * * *")
+     @Scheduled(cron = "0 */10 * * * *")
     public void run() {
         try {
             log.info("예약 배치 작업 시작 - 대상 시간: {}", LocalDateTime.now());

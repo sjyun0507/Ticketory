@@ -1,5 +1,7 @@
 package com.gudrhs8304.ticketory.feature.member.api;
 
+import com.gudrhs8304.ticketory.feature.member.MemberQueryService;
+import com.gudrhs8304.ticketory.feature.member.dto.MemberProfileRes;
 import com.gudrhs8304.ticketory.feature.member.dto.MemberStoryProfileRes;
 import com.gudrhs8304.ticketory.feature.member.MemberStoryProfileService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,11 +14,11 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class MemberStoryProfileController {
 
-    private final MemberStoryProfileService service;
+    private final MemberQueryService memberQueryService;
 
-    @Operation(summary = "스토리 프로필 조회(내 정보)", description = "{ memberId, name, avatarUrl, lastWatchedAt } 반환")
+    @Operation(summary = "스토리 프로필(내 정보)", description = "{ memberId, name, avatarUrl, lastWatchedAt }")
     @GetMapping("/me")
-    public MemberStoryProfileRes me(@AuthenticationPrincipal(expression = "memberId") Long memberId) {
-        return service.getProfile(memberId);
+    public MemberProfileRes me(@AuthenticationPrincipal(expression = "memberId") Long memberId) {
+        return memberQueryService.getMyProfile(memberId);
     }
 }

@@ -1,12 +1,10 @@
-package com.gudrhs8304.ticketory.feature.admin;
+package com.gudrhs8304.ticketory.feature.screening;
 
 import com.gudrhs8304.ticketory.feature.booking.BookingRepository;
 import com.gudrhs8304.ticketory.feature.movie.Movie;
 import com.gudrhs8304.ticketory.feature.screen.ScreenRepository;
 import com.gudrhs8304.ticketory.feature.screen.Screen;
-import com.gudrhs8304.ticketory.feature.screening.ScreeningRepository;
 import com.gudrhs8304.ticketory.feature.seat.SeatHoldRepository;
-import com.gudrhs8304.ticketory.feature.screening.Screening;
 import com.gudrhs8304.ticketory.feature.screening.dto.ScreeningAdminListItemDTO;
 import com.gudrhs8304.ticketory.feature.screening.dto.ScreeningAdminResponseDTO;
 import com.gudrhs8304.ticketory.feature.screening.dto.ScreeningUpsertRequestDTO;
