@@ -10,7 +10,7 @@ import com.gudrhs8304.ticketory.feature.screening.Screening;
 import com.gudrhs8304.ticketory.feature.screening.dto.ScreeningAdminListItemDTO;
 import com.gudrhs8304.ticketory.feature.screening.dto.ScreeningAdminResponseDTO;
 import com.gudrhs8304.ticketory.feature.screening.dto.ScreeningUpsertRequestDTO;
-import com.gudrhs8304.ticketory.feature.movie.dto.MovieRepository;
+import com.gudrhs8304.ticketory.feature.movie.MovieRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;

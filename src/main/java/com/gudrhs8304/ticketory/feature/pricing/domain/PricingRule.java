@@ -41,7 +41,7 @@ public class PricingRule extends BaseTimeEntity {
     @Column(nullable = false)
     private Boolean enabled = true;
 
-    // ✅ 통화/단위: KRW 또는 %
+    // 통화/단위: KRW 또는 %
     @Column(name = "currency", nullable = false, length = 8)
     private String currency = "KRW";
 

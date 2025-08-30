@@ -37,7 +37,7 @@ public class PointController {
         // Authentication에서 memberId 꺼내기
         Long me = null;
         if (auth != null && auth.getPrincipal() instanceof CustomUserPrincipal principal) {
-            me = principal.getMemberId(); // ✅ CustomUserPrincipal에 memberId getter 필요
+            me = principal.getMemberId(); // CustomUserPrincipal에 memberId getter 필요
         }
 
         if (me == null) {

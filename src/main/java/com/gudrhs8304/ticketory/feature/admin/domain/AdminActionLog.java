@@ -24,7 +24,7 @@ public class AdminActionLog extends BaseTimeEntity {
     private Member adminMember;
 
     @Column(name = "action_type", length = 40, nullable = false)
-    private String actionType; // Enum으로 분리 가능
+    private String actionType;
 
     @Column(name = "target_table", length = 100)
     private String targetTable;

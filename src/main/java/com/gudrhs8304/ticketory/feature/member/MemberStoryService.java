@@ -1,9 +1,9 @@
-package com.gudrhs8304.ticketory.feature.story;
+package com.gudrhs8304.ticketory.feature.member;
 
-import com.gudrhs8304.ticketory.feature.member.Member;
-import com.gudrhs8304.ticketory.feature.member.MemberRepository;
+import com.gudrhs8304.ticketory.feature.story.Story;
+import com.gudrhs8304.ticketory.feature.story.StoryRepository;
 import com.gudrhs8304.ticketory.feature.story.dto.BookingSummaryRes;
-import com.gudrhs8304.ticketory.feature.story.dto.MemberProfileRes;
+import com.gudrhs8304.ticketory.feature.member.dto.MemberProfileRes;
 import com.gudrhs8304.ticketory.feature.booking.BookingRepository;
 import com.gudrhs8304.ticketory.feature.story.dto.StoryRes;
 import lombok.RequiredArgsConstructor;

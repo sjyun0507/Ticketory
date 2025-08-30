@@ -1,8 +1,13 @@
-package com.gudrhs8304.ticketory.feature.member;
+package com.gudrhs8304.ticketory.feature.member.api;
 
 import com.gudrhs8304.ticketory.core.auth.CustomUserPrincipal;
+import com.gudrhs8304.ticketory.feature.member.GuestLoginRequestDTO;
+import com.gudrhs8304.ticketory.feature.member.MemberQueryService;
+import com.gudrhs8304.ticketory.feature.member.MemberRepository;
+import com.gudrhs8304.ticketory.feature.member.MemberService;
 import com.gudrhs8304.ticketory.feature.screening.dto.AvailabilityResponse;
 import com.gudrhs8304.ticketory.feature.member.dto.*;
+import com.gudrhs8304.ticketory.feature.member.dto.MemberProfileRes;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -11,6 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -21,7 +27,8 @@ import org.springframework.web.bind.annotation.*;
 public class MemberController {
 
     private final MemberService memberService;
-    private final MemberRepository memberRepository; // (현재 사용 안 하지만 남겨둬도 무방)
+    private final MemberRepository memberRepository;
+    private final MemberQueryService memberQueryService;
 
     /**
      * 인증 주체에서 memberId를 안전하게 추출한다.
@@ -151,4 +158,5 @@ public class MemberController {
         memberService.deleteMember(memberId, null, true);
         return ResponseEntity.noContent().build();
     }
+
 }

@@ -27,8 +27,8 @@ public class ScreeningController {
     public ResponseEntity<ScreeningListResponseDTO> list(
             @RequestParam(required = false) Long movieId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
-            @RequestParam(required = false, name = "screenId") Long screenId,   // ✅ theaterId → screenId
-            @RequestParam(required = false, name = "region") String region,     // ✅ Screen.location 사용
+            @RequestParam(required = false, name = "screenId") Long screenId,   // theaterId → screenId
+            @RequestParam(required = false, name = "region") String region,     // Screen.location 사용
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "200") int size
     ) {

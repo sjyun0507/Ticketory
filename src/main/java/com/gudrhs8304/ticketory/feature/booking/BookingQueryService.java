@@ -7,6 +7,8 @@ import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -69,6 +71,11 @@ public class BookingQueryService {
 
         slice.forEach(dto -> dto.setSeats(seatMap.getOrDefault(dto.getBookingId(), List.of())));
         return slice;
+    }
+
+    public Page<BookingSummaryDTO> findEligible(Long memberId, Pageable pageable) {
+        var now = LocalDateTime.now(ZoneId.of("Asia/Seoul"));
+        return bookingRepository.findEligibleForStory(memberId, now, pageable);
     }
 
 

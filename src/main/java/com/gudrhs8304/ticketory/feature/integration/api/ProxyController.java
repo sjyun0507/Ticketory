@@ -47,7 +47,7 @@ public class ProxyController {
             out.setContentType(contentType);
             out.setCacheControl(CacheControl.maxAge(Duration.ofHours(12)).cachePublic());
 
-            // ✅ HttpStatusCode 사용
+            // HttpStatusCode 사용
             return ResponseEntity.status(upstream.getStatusCode())
                     .headers(out)
                     .body(upstream.getBody());
@@ -83,7 +83,7 @@ public class ProxyController {
                 java.net.URI u = java.net.URI.create(url);
                 String host = (u.getHost() == null ? "" : u.getHost().toLowerCase());
 
-                // ✅ dothome는 프록시 안 거침 (필요하면 배열로 더 추가)
+                // dothome는 프록시 안 거침 (필요하면 배열로 더 추가)
                 if (host.endsWith(".dothome.co.kr")
                         || host.equals("dothome.co.kr")
                         || host.equals("mybusiness.dothome.co.kr")

@@ -1,6 +1,5 @@
-package com.gudrhs8304.ticketory.feature.movie.dto;
+package com.gudrhs8304.ticketory.feature.movie;
 
-import com.gudrhs8304.ticketory.feature.movie.Movie;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

@@ -5,7 +5,7 @@ import com.gudrhs8304.ticketory.feature.movie.dto.MovieDetailResponseDTO;
 import com.gudrhs8304.ticketory.feature.movie.dto.MovieListItemDTO;
 import com.gudrhs8304.ticketory.feature.movie.dto.MovieScrollResponseDTO;
 import com.gudrhs8304.ticketory.feature.movie.dto.MovieSearchResponseDTO;
-import com.gudrhs8304.ticketory.feature.movie.dto.MovieRepository;
+import com.gudrhs8304.ticketory.feature.movie.MovieRepository;
 import com.gudrhs8304.ticketory.feature.movie.dto.MovieQueryService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
@@ -25,13 +25,13 @@ import java.util.List;
 public class MovieController {
 
     private final MovieQueryService movieQueryService;
-    private final MovieRepository movieRepository; // ✅ 페이지네이션용 직접 호출
+    private final MovieRepository movieRepository;
 
     @GetMapping
     public ResponseEntity<?> list(
-            @RequestParam(required = false) Integer page,    // ✅ page가 오면 페이지 방식
+            @RequestParam(required = false) Integer page,    // page가 오면 페이지 방식
             @RequestParam(required = false) Integer size,
-            @RequestParam(required = false) Long cursor,     // ✅ 없으면 스크롤 방식
+            @RequestParam(required = false) Long cursor,     // 없으면 스크롤 방식
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String genre,
             @RequestParam(required = false) String rating,

@@ -89,7 +89,7 @@ public class AlarmBatchConfig {
                                 title,
                                 startAt != null ? startAt.format(MAIL_TIME_FMT) : "-",
                                 bookingId,
-                                qrUrl,      // ← 추가
+                                qrUrl,
                                 posterUrl
                         );
 

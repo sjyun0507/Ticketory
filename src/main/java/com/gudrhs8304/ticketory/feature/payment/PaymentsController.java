@@ -50,7 +50,7 @@ public class PaymentsController {
                     "bookingId 가 없고, 최근 PENDING 예매도 찾지 못했습니다.");
         }
 
-        // ✅ 서버 기준 금액 계산
+        // 서버 기준 금액 계산
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "booking not found"));
         BigDecimal usedPoint = req.getUsedPoint(); // 원시 long: null 아님
@@ -64,7 +64,7 @@ public class PaymentsController {
                 UUID.randomUUID().toString().substring(0, 8).toUpperCase()
                 : req.getOrderId();
 
-        // ✅ 결제행에 orderId 부착 + 금액 저장/갱신
+        // 결제행에 orderId 부착 + 금액 저장/갱신
         paymentService.createOrderAndAttach(bookingId, orderId, serverAmount);
 
         // 프론트는 수정하지 말라 했으니 orderId만 그대로 반환

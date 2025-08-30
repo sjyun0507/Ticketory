@@ -228,13 +228,12 @@ public class MemberService {
         m.setActive(false);
         m.setDeletedAt(LocalDateTime.now());
 
-        // 🔴 NOT NULL 컬럼은 NULL 금지 → placeholder로 대체
+        // NOT NULL 컬럼은 NULL 금지 → placeholder로 대체
         m.setName("탈퇴회원"); // ← name NOT NULL 대비
         m.setEmail(tomb + "@ticketory.local"); // ← UNIQUE 충돌 방지
         m.setLoginId(tomb);                    // ← UNIQUE 충돌 방지
 
-        // 비밀번호 컬럼이 NOT NULL이면 더미 값 세팅 (BCrypt 권장)
-        // 예) m.setPassword(passwordEncoder.encode("deleted:" + tomb));
+
         m.setPassword("{noop}deleted"); // PasswordEncoder 안 쓰면 임시로 이렇게
 
         // nullable 컬럼은 정리

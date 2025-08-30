@@ -1,4 +1,4 @@
-package com.gudrhs8304.ticketory.feature.story.dto;
+package com.gudrhs8304.ticketory.feature.member.dto;
 
 import java.time.LocalDateTime;
 

@@ -1,7 +1,8 @@
-package com.gudrhs8304.ticketory.feature.story;
+package com.gudrhs8304.ticketory.feature.member.api;
 
+import com.gudrhs8304.ticketory.feature.member.MemberStoryService;
 import com.gudrhs8304.ticketory.feature.story.dto.BookingSummaryRes;
-import com.gudrhs8304.ticketory.feature.story.dto.MemberProfileRes;
+import com.gudrhs8304.ticketory.feature.member.dto.MemberProfileRes;
 import com.gudrhs8304.ticketory.feature.story.dto.StoryRes;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,11 +21,6 @@ public class MemberStoryController {
     private final MemberStoryService service;
 
 
-    @Operation(summary = "스토리 프로필", description = "{ memberId, name, avatarUrl, lastWatchedAt }")
-    @GetMapping("/members/me")
-    public MemberProfileRes myProfile(@RequestParam("memberId") Long memberId) {
-        return service.getMyProfile(memberId);
-    }
 
     @Operation(summary = "스토리 작성가능 예매", description = "상영 종료 & 결제 취소 아님(PAID && cancelled_at IS NULL)")
     @GetMapping("/members/{memberId}/eligible-bookings")

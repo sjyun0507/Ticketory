@@ -1,5 +1,9 @@
-package com.gudrhs8304.ticketory.feature.member;
+package com.gudrhs8304.ticketory.feature.member.api;
 
+import com.gudrhs8304.ticketory.feature.member.AdminMemberService;
+import com.gudrhs8304.ticketory.feature.member.Member;
+import com.gudrhs8304.ticketory.feature.member.MemberService;
+import com.gudrhs8304.ticketory.feature.member.RoleType;
 import com.gudrhs8304.ticketory.feature.member.dto.AdminUpdateRoleRequestDTO;
 import com.gudrhs8304.ticketory.feature.member.dto.MemberRoleResponseDTO;
 import com.gudrhs8304.ticketory.core.auth.CustomUserPrincipal;

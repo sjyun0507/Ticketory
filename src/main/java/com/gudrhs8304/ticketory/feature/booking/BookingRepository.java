@@ -175,7 +175,38 @@ where (b.isSendAlarm = false or b.isSendAlarm is null)
     )
     Page<Object[]> findEligibleBookingRows(@Param("memberId") Long memberId, Pageable pageable);
 
+    /**
+     * 스토리 작성 가능: 상영 종료 && 결제취소 아님 (PAID만 허용)
+     */
+    @Query("""
+        select new com.gudrhs8304.ticketory.feature.booking.dto.BookingSummaryDTO(
+            b.bookingId, m.title,
+            sc.startAt, sc.endAt,
+            s.name, s.location,
+            b.totalPrice, b.paymentStatus, m.posterUrl
+        )
+        from Booking b
+        join b.screening sc
+        join sc.movie m
+        join sc.screen s
+        where b.member.memberId = :memberId
+          and sc.endAt < :now
+          and b.paymentStatus = com.gudrhs8304.ticketory.feature.booking.BookingPayStatus.PAID
+        order by sc.endAt desc
+    """)
+    Page<BookingSummaryDTO> findEligibleForStory(@Param("memberId") Long memberId,
+                                                 @Param("now") LocalDateTime now,
+                                                 Pageable pageable);
 
+    // 마지막 관람(가장 최근 endAt)
+    @Query("""
+        select max(sc.endAt)
+          from Booking b
+          join b.screening sc
+         where b.member.memberId = :memberId
+           and b.paymentStatus = com.gudrhs8304.ticketory.feature.booking.BookingPayStatus.PAID
+    """)
+    LocalDateTime findLastWatchedAt(@Param("memberId") Long memberId);
 
 
 }

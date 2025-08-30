@@ -5,6 +5,8 @@ import com.gudrhs8304.ticketory.feature.member.Member;
 import com.gudrhs8304.ticketory.feature.movie.Movie;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -39,7 +41,7 @@ public class Story {
     @JoinColumn(name = "movie_id", nullable = false)
     private Movie movie;
 
-    /** 예매 (Booking) - 선택적 */
+    /** 예매 (Booking) - 선택 */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "booking_id")
     private Booking booking;
@@ -49,40 +51,28 @@ public class Story {
     @Column(nullable = false)
     private String content;
 
-    /** 평점 (예: 4.5) */
-    @Column(precision = 2, scale = 1)
+    /** 평점 (예: 4.5) -> DECIMAL(2,1) */
+    @Column(name = "rating", precision = 2, scale = 1)
     private BigDecimal rating;
 
-    /** 생성일 */
+    /** 생성/수정일 — DB DDL과 호환됨 */
+    @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    /** 수정일 */
+    @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    /** 상태 (ACTIVE, DELETED, HIDDEN 등) */
-    @Column(length = 20, nullable = false)
-    private String status = "ACTIVE";
+    /** 상태 (ACTIVE / DELETED) — VARCHAR(20)로 저장 */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", length = 20, nullable = false)
+    private StoryStatus status = StoryStatus.ACTIVE;
 
-    /** 좋아요 개수 */
+    /** 카운트 */
     @Column(name = "like_count", nullable = false)
     private Integer likeCount = 0;
 
-    /** 댓글 개수 */
     @Column(name = "comment_count", nullable = false)
     private Integer commentCount = 0;
-
-    @PrePersist
-    public void onCreate() {
-        this.createdAt = LocalDateTime.now();
-        if (this.status == null) this.status = "ACTIVE";
-        if (this.likeCount == null) this.likeCount = 0;
-        if (this.commentCount == null) this.commentCount = 0;
-    }
-
-    @PreUpdate
-    public void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
 }

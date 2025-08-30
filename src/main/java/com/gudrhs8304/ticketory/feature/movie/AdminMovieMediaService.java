@@ -1,7 +1,5 @@
 package com.gudrhs8304.ticketory.feature.movie;
 
-import com.gudrhs8304.ticketory.feature.movie.dto.MovieMediaRepository;
-import com.gudrhs8304.ticketory.feature.movie.dto.MovieRepository;
 import com.gudrhs8304.ticketory.feature.storage.FileStorage;
 import jakarta.annotation.Nullable;
 import jakarta.transaction.Transactional;
@@ -56,7 +54,7 @@ public class AdminMovieMediaService {
         String url = storage.save(relPath, filename, file);
 
 
-        // ✅ 포스터일 때 Movie.posterUrl 자동 반영
+        // 포스터일 때 Movie.posterUrl 자동 반영
         if (type == MovieMediaType.POSTER) {
             movie.setPosterUrl(url);
             movieRepository.save(movie);

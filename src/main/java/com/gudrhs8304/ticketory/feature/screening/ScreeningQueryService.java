@@ -22,8 +22,8 @@ public class ScreeningQueryService {
     public ScreeningListResponseDTO getScreenings(
             Long movieId,
             LocalDate date,
-            Long screenId,      // ✅ theaterId → screenId
-            String region,      // ✅ region → Screen.location
+            Long screenId,      // theaterId → screenId
+            String region,      // region → Screen.location
             int page,
             int size
     ) {
@@ -72,7 +72,7 @@ public class ScreeningQueryService {
                 .colCount(screen.getColCount())
                 .startAt(s.getStartAt())
                 .endAt(s.getEndAt())
-                .basePrice(screen.getBasePrice())   // 💰 여기!
+                .basePrice(screen.getBasePrice())
                 .build();
     }
 }

@@ -54,7 +54,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         Member member = found.orElseGet(() -> {
             Member toSave = Member.builder()
                     .loginId(safeLoginId)
-                    .email(email)                 // null 허용
+                    .email(email)
                     .name(safeName)
                     .role(RoleType.USER)
                     .signupType(SignupType.KAKAO)

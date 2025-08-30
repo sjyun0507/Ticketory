@@ -15,7 +15,7 @@ public class SecurityUtil {
         if (p instanceof String s) {
             try { return Long.parseLong(s); } catch (NumberFormatException ignored) {}
         }
-        // 커스텀 Principal을 쓰는 경우: getMemberId()가 있으면 사용
+
         try {
             return (Long) p.getClass().getMethod("getMemberId").invoke(p);
         } catch (Exception ignored) { }

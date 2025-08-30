@@ -4,6 +4,11 @@ import com.gudrhs8304.ticketory.feature.pricing.domain.PricingRule;
 import com.gudrhs8304.ticketory.feature.screen.Screen;
 import com.gudrhs8304.ticketory.feature.point.PricingKind;
 import com.gudrhs8304.ticketory.feature.screen.ScreenRepository;
+import com.gudrhs8304.ticketory.feature.pricing.dto.DiscountLine;
+import com.gudrhs8304.ticketory.feature.pricing.dto.QuoteItemReq;
+import com.gudrhs8304.ticketory.feature.pricing.dto.QuoteLineRes;
+import com.gudrhs8304.ticketory.feature.pricing.dto.QuoteRequest;
+import com.gudrhs8304.ticketory.feature.pricing.dto.QuoteResponse;
 import jakarta.annotation.Nullable;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -14,10 +19,8 @@ import java.math.RoundingMode;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
+import java.time.ZoneId;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +28,11 @@ public class PricingService {
 
     private final PricingRuleRepository pricingRuleRepository;
     private final ScreenRepository screenRepository;
+
+    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
+    private static final String WED_DISCOUNT_CODE = "GLOBAL_WED_DISCOUNT";
+    private static final String WED_DISCOUNT_NAME = "수요일 할인";
+    private static final int WED_DISCOUNT_PERCENT = 20; // 20%
 
     /**
      * 관객군별 단가 계산 (basePrice 원단위, BigDecimal)
@@ -192,5 +200,42 @@ public class PricingService {
             }
         }
         return created;
+    }
+
+    public QuoteResponse quote(QuoteRequest req) {
+        // 1) 방문일 결정 (없으면 KST 현재 날짜)
+        LocalDate visitDate = req.getVisitDate() != null ? req.getVisitDate() : LocalDate.now(KST);
+
+        // 2) 라인별 소계 재계산(신뢰성 위해 서버에서 계산)
+        List<QuoteLineRes> lines = new ArrayList<>();
+        int originalTotal = 0;
+        for (QuoteItemReq item : req.getBreakdown()) {
+            int subtotal = item.getUnitPrice() * item.getQty();
+            originalTotal += subtotal;
+            lines.add(new QuoteLineRes(item.getKind(), item.getUnitPrice(), item.getQty(), subtotal));
+        }
+
+        // 3) 할인 적용
+        List<DiscountLine> discounts = new ArrayList<>();
+        int totalDiscount = 0;
+
+        if (visitDate.getDayOfWeek() == DayOfWeek.WEDNESDAY && originalTotal > 0) {
+            int amount = (int) Math.floor(originalTotal * (WED_DISCOUNT_PERCENT / 100.0));
+            if (amount > 0) {
+                totalDiscount += amount;
+                discounts.add(new DiscountLine(WED_DISCOUNT_CODE, WED_DISCOUNT_NAME, WED_DISCOUNT_PERCENT, amount));
+            }
+        }
+
+        // 4) 최종 합계
+        int finalTotal = Math.max(0, originalTotal - totalDiscount);
+
+        // 5) 응답 구성
+        QuoteResponse res = new QuoteResponse();
+        res.setOriginalTotal(originalTotal);
+        res.setFinalTotal(finalTotal);
+        res.setDiscounts(discounts);
+        res.setBreakdown(lines);
+        return res;
     }
 }

@@ -59,7 +59,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         RoleType role = RoleType.USER;
         String jwt = jwtTokenProvider.createToken(memberId, role);
 
-        // ✅ 프론트 오리진(5173)으로 토큰을 붙여 리다이렉트 (hash fragment 권장)
+        // 프론트 오리진(5173)으로 토큰을 붙여 리다이렉트 (hash fragment 권장)
         // 해시(#)는 서버 로그/프록시에 덜 남고, 브라우저만 읽습니다.
         String redirect = UriComponentsBuilder
                 .fromHttpUrl(frontendOrigin)

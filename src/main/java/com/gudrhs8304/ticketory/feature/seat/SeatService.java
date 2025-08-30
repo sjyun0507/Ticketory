@@ -45,13 +45,13 @@ public class SeatService {
         // 프로젝트의 '예매 확정 좌석' 테이블에 맞게 이 메서드 구현
         Set<Long> bookedSeatIds = findBookedSeatIds(screeningId);
 
-        // ✅ rows 배열 생성 (A, B, C, ...)
+        // rows 배열 생성 (A, B, C, ...)
         List<String> rows = new ArrayList<>();
         for (int i = 0; i < rowCount; i++) {
             rows.add(String.valueOf((char) ('A' + i)));
         }
 
-        // ✅ 프론트 명칭으로 status 매핑
+        // 프론트 명칭으로 status 매핑
         List<SeatMapResponseDTO.SeatItem> items = seats.stream().map(s -> {
             boolean disabled = s.getStatus() == SeatStatus.DISABLED;
             SeatStatusType mapped;

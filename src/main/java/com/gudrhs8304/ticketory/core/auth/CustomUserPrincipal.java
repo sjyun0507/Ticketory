@@ -19,11 +19,11 @@ public class CustomUserPrincipal implements Serializable {
     private final String name;
     private final Collection<? extends GrantedAuthority> authorities;
 
-    // ✅ JWT 용 간편 생성자 (authorities 기본 ROLE_USER)
+    //JWT 용 간편 생성자 (authorities 기본 ROLE_USER)
     public CustomUserPrincipal(Long memberId) {
         this.memberId = memberId;
         this.loginId = "jwtUser-" + memberId;
         this.name = null;
-        this.authorities = List.of(); // 또는 List.of(new SimpleGrantedAuthority("ROLE_USER"))
+        this.authorities = List.of();
     }
 }
