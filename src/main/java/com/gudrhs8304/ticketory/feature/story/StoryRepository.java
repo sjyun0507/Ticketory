@@ -42,4 +42,6 @@ public interface StoryRepository extends JpaRepository<Story, Long> {
         order by s.createdAt desc
     """)
     Page<Object[]> findMyStoryRows(@Param("memberId") Long memberId, Pageable pageable);
+
+
 }
