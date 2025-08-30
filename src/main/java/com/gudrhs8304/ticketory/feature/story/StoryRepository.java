@@ -25,4 +25,21 @@ public interface StoryRepository extends JpaRepository<Story, Long> {
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("update Story s set s.status = :status where s.storyId = :storyId")
     int updateStatus(Long storyId, StoryStatus status);
+
+    @Query("""
+        select
+          s.storyId,
+          mv.movieId,
+          mv.title,
+          mv.posterUrl,
+          s.rating,
+          s.content,
+          s.createdAt
+        from Story s
+          join s.movie mv
+        where s.member.memberId = :memberId
+          and s.status <> 'DELETED'
+        order by s.createdAt desc
+    """)
+    Page<Object[]> findMyStoryRows(@Param("memberId") Long memberId, Pageable pageable);
 }

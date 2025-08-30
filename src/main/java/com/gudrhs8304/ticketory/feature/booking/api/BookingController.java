@@ -207,14 +207,5 @@ public class BookingController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "스토리 작성 가능 예매 목록", description = "상영 종료 && 결제취소 아님 조건의 예매만 페이징으로 반환")
-    @GetMapping("/{memberId}/eligible-bookings")
-    public Page<BookingSummaryDTO> eligible(
-            @PathVariable Long memberId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
-    ) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "screeningStartAt"));
-        return bookingQueryService.findEligible(memberId, pageable);
-    }
+
 }

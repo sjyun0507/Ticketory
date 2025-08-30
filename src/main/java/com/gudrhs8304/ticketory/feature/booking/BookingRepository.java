@@ -2,6 +2,7 @@ package com.gudrhs8304.ticketory.feature.booking;
 
 import com.gudrhs8304.ticketory.feature.booking.domain.Booking;
 import com.gudrhs8304.ticketory.feature.booking.dto.BookingSummaryDTO;
+import com.gudrhs8304.ticketory.feature.story.dto.EligibleBookingRes;
 import com.gudrhs8304.ticketory.mail.dto.BookingAlarmDTO;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
@@ -208,5 +209,61 @@ where (b.isSendAlarm = false or b.isSendAlarm is null)
     """)
     LocalDateTime findLastWatchedAt(@Param("memberId") Long memberId);
 
+    @Query("""
+        select new com.gudrhs8304.ticketory.feature.story.dto.EligibleBookingRes(
+            b.bookingId,
+            m.movieId,
+            m.title,
+            sc.startAt,
+            sc.endAt,
+            s.name,
+            b.paymentStatus,
+            case when exists (
+                 select 1 from com.gudrhs8304.ticketory.feature.story.Story st
+                  where st.booking.bookingId = b.bookingId
+                    and st.status = 'ACTIVE'
+            ) then true else false end
+        )
+        from com.gudrhs8304.ticketory.feature.booking.domain.Booking b
+          join b.screening sc
+          join sc.screen s
+          join sc.movie m
+        where b.member.memberId = :memberId
+          and b.paymentStatus <> com.gudrhs8304.ticketory.feature.booking.BookingPayStatus.CANCELLED
+          and sc.endAt < :now
+        """)
+    Page<EligibleBookingRes> findEligibleBookings(
+            @Param("memberId") Long memberId,
+            @Param("now") LocalDateTime now,
+            Pageable pageable
+    );
 
+    @Query("""
+        select
+            b.bookingId,
+            m.movieId,
+            m.title,
+            s.startAt,
+            s.endAt,
+            sc.name,
+            b.paymentStatus,
+            exists(
+                select 1 from Story st
+                 where st.booking.bookingId = b.bookingId
+                   and st.status <> 'DELETED'
+            ) as hasStory
+        from Booking b
+          join b.screening s
+          join s.screen sc
+          join s.movie m
+        where b.member.memberId = :memberId
+          and s.endAt < :now
+          and b.paymentStatus <> com.gudrhs8304.ticketory.feature.booking.BookingPayStatus.CANCELLED
+        order by s.endAt desc
+    """)
+    Page<Object[]> findEligibleBookingRows(
+            @Param("memberId") Long memberId,
+            @Param("now") LocalDateTime now,
+            Pageable pageable
+    );
 }
