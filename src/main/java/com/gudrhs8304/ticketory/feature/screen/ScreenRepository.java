@@ -1,6 +1,5 @@
 package com.gudrhs8304.ticketory.feature.screen;
 
-import com.gudrhs8304.ticketory.feature.screen.domain.Screen;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

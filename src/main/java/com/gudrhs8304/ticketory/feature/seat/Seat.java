@@ -1,8 +1,9 @@
-package com.gudrhs8304.ticketory.feature.screen.domain;
+package com.gudrhs8304.ticketory.feature.seat;
 
 import com.gudrhs8304.ticketory.core.BaseTimeEntity;
-import com.gudrhs8304.ticketory.feature.member.enums.SeatStatus;
-import com.gudrhs8304.ticketory.feature.member.enums.SeatType;
+import com.gudrhs8304.ticketory.feature.screen.Screen;
+import com.gudrhs8304.ticketory.feature.seat.SeatStatus;
+import com.gudrhs8304.ticketory.feature.seat.SeatType;
 import jakarta.persistence.*;
 import lombok.*;
 

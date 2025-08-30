@@ -1,6 +1,6 @@
 package com.gudrhs8304.ticketory.feature.screening.dto;
 
-import com.gudrhs8304.ticketory.feature.screening.domain.Screening;
+import com.gudrhs8304.ticketory.feature.screening.Screening;
 import lombok.*;
 import java.time.LocalDateTime;
 

@@ -1,7 +1,7 @@
 package com.gudrhs8304.ticketory.feature.pricing.api.admin;
 
 import com.gudrhs8304.ticketory.feature.pricing.domain.PricingRule;
-import com.gudrhs8304.ticketory.feature.member.enums.PricingKind;
+import com.gudrhs8304.ticketory.feature.point.PricingKind;
 import com.gudrhs8304.ticketory.feature.pricing.dto.PricingRuleDTO;
 import com.gudrhs8304.ticketory.feature.pricing.PricingRuleRepository;
 import io.swagger.v3.oas.annotations.Operation;

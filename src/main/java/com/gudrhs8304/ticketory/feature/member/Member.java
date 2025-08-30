@@ -1,7 +1,6 @@
 package com.gudrhs8304.ticketory.feature.member;
 
 import com.gudrhs8304.ticketory.core.BaseTimeEntity;
-import com.gudrhs8304.ticketory.feature.member.enums.SignupType;
 import jakarta.persistence.*;
 import lombok.*;
 

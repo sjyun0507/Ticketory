@@ -1,6 +1,6 @@
 package com.gudrhs8304.ticketory.feature.screen.api.admin;
 
-import com.gudrhs8304.ticketory.feature.screen.domain.Screen;
+import com.gudrhs8304.ticketory.feature.screen.Screen;
 import com.gudrhs8304.ticketory.feature.screen.dto.CreateScreenRequest;
 import com.gudrhs8304.ticketory.feature.screen.dto.UpdateScreenRequest;
 import com.gudrhs8304.ticketory.feature.screen.ScreenRepository;

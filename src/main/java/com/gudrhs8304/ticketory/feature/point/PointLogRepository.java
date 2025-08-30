@@ -1,7 +1,6 @@
 package com.gudrhs8304.ticketory.feature.point;
 
 import com.gudrhs8304.ticketory.feature.point.domain.PointLog;
-import com.gudrhs8304.ticketory.feature.member.enums.PointChangeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

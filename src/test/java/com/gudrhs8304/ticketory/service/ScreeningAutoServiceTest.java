@@ -1,7 +1,7 @@
 package com.gudrhs8304.ticketory.service;
 
 import com.gudrhs8304.ticketory.batch.ProgramGenerateService;
-import com.gudrhs8304.ticketory.feature.screening.domain.Screening;
+import com.gudrhs8304.ticketory.feature.screening.Screening;
 import com.gudrhs8304.ticketory.feature.screening.ScreeningRepository;
 import lombok.extern.log4j.Log4j2;
 import org.junit.jupiter.api.Test;

@@ -1,6 +1,6 @@
 package com.gudrhs8304.ticketory.feature.point.api;
 
-import com.gudrhs8304.ticketory.feature.member.enums.PointChangeType;
+import com.gudrhs8304.ticketory.feature.point.PointChangeType;
 import com.gudrhs8304.ticketory.core.auth.CustomUserPrincipal;
 import com.gudrhs8304.ticketory.feature.point.PointQueryService;
 import com.gudrhs8304.ticketory.feature.point.PointService;

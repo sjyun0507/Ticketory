@@ -2,7 +2,7 @@ package com.gudrhs8304.ticketory.core.oauth;
 
 import com.gudrhs8304.ticketory.feature.member.Member;
 import com.gudrhs8304.ticketory.feature.member.RoleType;
-import com.gudrhs8304.ticketory.feature.member.enums.SignupType;
+import com.gudrhs8304.ticketory.feature.member.SignupType;
 import com.gudrhs8304.ticketory.feature.member.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;

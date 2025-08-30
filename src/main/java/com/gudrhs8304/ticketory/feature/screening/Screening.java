@@ -1,8 +1,8 @@
-package com.gudrhs8304.ticketory.feature.screening.domain;
+package com.gudrhs8304.ticketory.feature.screening;
 
 import com.gudrhs8304.ticketory.core.BaseTimeEntity;
 import com.gudrhs8304.ticketory.feature.movie.Movie;
-import com.gudrhs8304.ticketory.feature.screen.domain.Screen;
+import com.gudrhs8304.ticketory.feature.screen.Screen;
 import jakarta.persistence.*;
 import lombok.*;
 

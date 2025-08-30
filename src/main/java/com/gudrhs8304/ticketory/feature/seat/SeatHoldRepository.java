@@ -1,6 +1,5 @@
-package com.gudrhs8304.ticketory.feature.screening;
+package com.gudrhs8304.ticketory.feature.seat;
 
-import com.gudrhs8304.ticketory.feature.screen.domain.SeatHold;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;

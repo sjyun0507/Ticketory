@@ -1,4 +1,4 @@
-package com.gudrhs8304.ticketory.feature.member.enums;
+package com.gudrhs8304.ticketory.feature.point;
 
 public enum PointChangeType {
     EARN,   // 적립(+)

@@ -12,7 +12,7 @@ public interface CancelLogRepository extends JpaRepository<CancelLog, Long> {
 
 
     @Query("""
-    select new com.gudrhs8304.ticketory.dto.admin.CancelLogRes(
+    select new com.gudrhs8304.ticketory.feature.admin.dto.CancelLogRes(
         c.cancelId,
         b.bookingId,
         p.paymentId,

@@ -1,7 +1,6 @@
 package com.gudrhs8304.ticketory.feature.booking;
 
 import com.gudrhs8304.ticketory.feature.booking.domain.Booking;
-import com.gudrhs8304.ticketory.feature.member.enums.BookingPayStatus;
 import com.gudrhs8304.ticketory.feature.booking.dto.BookingSummaryDTO;
 import com.gudrhs8304.ticketory.mail.dto.BookingAlarmDTO;
 import jakarta.transaction.Transactional;
@@ -20,7 +19,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     // (1) 예매 요약 페이지 (JPQL DTO 프로젝션)
     @Query("""
-select new com.gudrhs8304.ticketory.dto.booking.BookingSummaryDTO(
+select new com.gudrhs8304.ticketory.feature.booking.dto.BookingSummaryDTO(
     b.bookingId, m.title, sc.startAt, sc.endAt,
     s.name, s.location,
     b.totalPrice, b.paymentStatus,
@@ -31,7 +30,7 @@ join b.screening sc
 join sc.movie m
 join sc.screen s
 where b.member.memberId = :memberId
-  and b.paymentStatus = com.gudrhs8304.ticketory.domain.enums.BookingPayStatus.PAID
+  and b.paymentStatus = com.gudrhs8304.ticketory.feature.booking.BookingPayStatus.PAID
 order by b.createdAt desc
 """)
     Page<BookingSummaryDTO> findSummaryPageByMemberId(@Param("memberId") Long memberId,
@@ -39,7 +38,7 @@ order by b.createdAt desc
 
     // (1-A) 예매 요약 페이지 (전체: 상태 제한 없음)
     @Query("""
-select new com.gudrhs8304.ticketory.dto.booking.BookingSummaryDTO(
+select new com.gudrhs8304.ticketory.feature.booking.dto.BookingSummaryDTO(
     b.bookingId, m.title, sc.startAt, sc.endAt,
     s.name, s.location,
     b.totalPrice, b.paymentStatus,
@@ -57,7 +56,7 @@ order by b.createdAt desc
 
     // (1-B) 예매 요약 페이지 (지정 상태만)
     @Query("""
-select new com.gudrhs8304.ticketory.dto.booking.BookingSummaryDTO(
+select new com.gudrhs8304.ticketory.feature.booking.dto.BookingSummaryDTO(
     b.bookingId, m.title, sc.startAt, sc.endAt,
     s.name, s.location,
     b.totalPrice, b.paymentStatus,
@@ -103,7 +102,7 @@ order by b.createdAt desc
 
     // 알람을 보낸적이 없고, 상영시간이 thisTime보다 작거나 같은 예약을 들고옴.
     @Query("""
-select new com.gudrhs8304.ticketory.mail.BookingAlarmDTO(
+select new com.gudrhs8304.ticketory.mail.dto.BookingAlarmDTO(
     b.bookingId,
     m2.loginId,
     m.title,
@@ -113,12 +112,12 @@ select new com.gudrhs8304.ticketory.mail.BookingAlarmDTO(
       select mm.url
       from MovieMedia mm
       where mm.movie = m
-        and mm.movieMediaType = com.gudrhs8304.ticketory.domain.enums.MovieMediaType.POSTER
+        and mm.movieMediaType = com.gudrhs8304.ticketory.feature.movie.MovieMediaType.POSTER
         and mm.mediaId = (
           select min(mm2.mediaId)
           from MovieMedia mm2
           where mm2.movie = m
-            and mm2.movieMediaType = com.gudrhs8304.ticketory.domain.enums.MovieMediaType.POSTER
+            and mm2.movieMediaType = com.gudrhs8304.ticketory.feature.movie.MovieMediaType.POSTER
         )
     )
 )

@@ -1,6 +1,5 @@
 package com.gudrhs8304.ticketory.feature.screening;
 
-import com.gudrhs8304.ticketory.feature.screening.domain.Screening;
 import com.gudrhs8304.ticketory.feature.screening.dto.ScreeningDetailResponseDTO;
 import com.gudrhs8304.ticketory.feature.screening.dto.ScreeningItemDTO;
 import com.gudrhs8304.ticketory.feature.screening.dto.ScreeningListResponseDTO;

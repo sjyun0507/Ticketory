@@ -1,9 +1,9 @@
-package com.gudrhs8304.ticketory.feature.screen.domain;
+package com.gudrhs8304.ticketory.feature.seat;
 
 import com.gudrhs8304.ticketory.core.BaseTimeEntity;
-import com.gudrhs8304.ticketory.feature.screening.domain.Screening;
+import com.gudrhs8304.ticketory.feature.seat.Seat;
+import com.gudrhs8304.ticketory.feature.screening.Screening;
 
-import com.gudrhs8304.ticketory.feature.member.enums.HoldStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;

@@ -3,8 +3,8 @@ package com.gudrhs8304.ticketory.feature.pricing.dto;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.gudrhs8304.ticketory.feature.member.enums.PricingKind;
-import com.gudrhs8304.ticketory.feature.member.enums.PricingOp;
+import com.gudrhs8304.ticketory.feature.point.PricingKind;
+import com.gudrhs8304.ticketory.feature.pricing.PricingOp;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 

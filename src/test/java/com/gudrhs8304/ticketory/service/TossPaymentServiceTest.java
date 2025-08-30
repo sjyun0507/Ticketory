@@ -1,7 +1,7 @@
 package com.gudrhs8304.ticketory.service;
 
 import com.gudrhs8304.ticketory.feature.booking.domain.Booking;
-import com.gudrhs8304.ticketory.feature.screening.domain.Screening;
+import com.gudrhs8304.ticketory.feature.screening.Screening;
 import com.gudrhs8304.ticketory.feature.payment.Payment;
 import com.gudrhs8304.ticketory.feature.payment.PaymentStatus;
 import com.gudrhs8304.ticketory.feature.payment.dto.TossConfirmRequestDTO;

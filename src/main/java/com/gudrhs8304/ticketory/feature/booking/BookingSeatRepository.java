@@ -1,7 +1,6 @@
 package com.gudrhs8304.ticketory.feature.booking;
 
 import com.gudrhs8304.ticketory.feature.booking.domain.BookingSeat;
-import com.gudrhs8304.ticketory.feature.member.enums.BookingPayStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -32,7 +31,7 @@ public interface BookingSeatRepository extends JpaRepository<BookingSeat, Long> 
         from BookingSeat bs
         join bs.booking b
         where bs.screening.screeningId = :screeningId
-          and b.paymentStatus = com.gudrhs8304.ticketory.domain.enums.BookingPayStatus.PAID
+          and b.paymentStatus = com.gudrhs8304.ticketory.feature.booking.BookingPayStatus.PAID
     """)
     Set<Long> findSeatIdsByScreeningPaid(@Param("screeningId") Long screeningId);
 

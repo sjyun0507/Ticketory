@@ -2,7 +2,6 @@ package com.gudrhs8304.ticketory.feature.member;
 
 import com.gudrhs8304.ticketory.core.jwt.JwtTokenProvider;
 import com.gudrhs8304.ticketory.feature.member.dto.*;
-import com.gudrhs8304.ticketory.feature.member.enums.SignupType;
 import com.gudrhs8304.ticketory.core.exception.DuplicateLoginIdException;
 import com.gudrhs8304.ticketory.core.util.PhoneUtil;
 import jakarta.persistence.EntityNotFoundException;

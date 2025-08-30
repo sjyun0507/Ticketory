@@ -1,4 +1,4 @@
-package com.gudrhs8304.ticketory.feature.screen.domain;
+package com.gudrhs8304.ticketory.feature.screen;
 
 import com.gudrhs8304.ticketory.core.BaseTimeEntity;
 import jakarta.persistence.*;

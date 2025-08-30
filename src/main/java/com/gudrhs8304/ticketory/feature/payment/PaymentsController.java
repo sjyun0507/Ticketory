@@ -1,7 +1,7 @@
 package com.gudrhs8304.ticketory.feature.payment;
 
 import com.gudrhs8304.ticketory.feature.booking.domain.Booking;
-import com.gudrhs8304.ticketory.feature.member.enums.BookingPayStatus;
+import com.gudrhs8304.ticketory.feature.booking.BookingPayStatus;
 import com.gudrhs8304.ticketory.feature.payment.dto.ConfirmPaymentRequestDTO;
 import com.gudrhs8304.ticketory.feature.payment.dto.PaymentOrderCreateReqDTO;
 import com.gudrhs8304.ticketory.feature.booking.BookingRepository;

@@ -1,7 +1,9 @@
-package com.gudrhs8304.ticketory.feature.screening;
+package com.gudrhs8304.ticketory.feature.seat;
 
 
-import com.gudrhs8304.ticketory.feature.screen.domain.Seat;
+
+import com.gudrhs8304.ticketory.feature.seat.Seat;
+import com.gudrhs8304.ticketory.feature.seat.SeatStatus;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -13,6 +15,7 @@ import java.util.List;
 
 public interface SeatRepository extends JpaRepository<Seat, Long> {
     List<Seat> findBySeatIdIn(List<Long> seatIds);
+    boolean existsByScreen_ScreenId(Long screenId);
     void deleteByScreen_ScreenId(Long screenId);
     long countByScreen_ScreenId(Long screenId);
 
@@ -34,7 +37,6 @@ public interface SeatRepository extends JpaRepository<Seat, Long> {
 //    @Query("select count(s) > 0 from Seat s where s.seatId in :ids and s.screen.screenId = :screenId")
 //    boolean allSeatsBelongToScreen(@Param("ids") List<Long> ids, @Param("screenId") Long screenId);
 
-    boolean existsByScreen_ScreenId(Long screenId);
 
     @Query("""
       select (count(s) = :#{#ids.size()})
@@ -53,15 +55,20 @@ public interface SeatRepository extends JpaRepository<Seat, Long> {
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
-        UPDATE Seat s
-           SET s.status = com.gudrhs8304.ticketory.domain.enums.SeatStatus.AVAILABLE
-         WHERE s.id IN (
-               SELECT bs.seat.id
-                 FROM BookingSeat bs
-                WHERE bs.booking.id = :bookingId
-           )
-        """)
-    int releaseSeatsByBookingId(@Param("bookingId") Long bookingId);
+        update Seat s
+           set s.status = :available
+         where s.seatId in (
+               select bs.seat.seatId
+                 from BookingSeat bs
+                where bs.booking.bookingId = :bookingId
+         )
+    """)
+    int releaseSeatsByBookingId(@Param("bookingId") Long bookingId,
+                                @Param("available") SeatStatus available);
+
+    default int releaseSeatsByBookingId(Long bookingId) {
+        return releaseSeatsByBookingId(bookingId, SeatStatus.AVAILABLE);
+    }
 
     // 예: 좌석 상태를 BOOKED로(컬럼/값은 프로젝트에 맞게)
     @Modifying(clearAutomatically = true, flushAutomatically = true)

@@ -2,7 +2,6 @@ package com.gudrhs8304.ticketory.feature.point;
 
 import com.gudrhs8304.ticketory.feature.booking.domain.Booking;
 import com.gudrhs8304.ticketory.feature.payment.Payment;
-import com.gudrhs8304.ticketory.feature.member.enums.PointChangeType;
 import com.gudrhs8304.ticketory.feature.point.dto.PointLogDTO;
 import com.gudrhs8304.ticketory.feature.member.Member;
 import com.gudrhs8304.ticketory.feature.member.MemberRepository;

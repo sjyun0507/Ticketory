@@ -1,8 +1,7 @@
 package com.gudrhs8304.ticketory.feature.pricing;
 
 import com.gudrhs8304.ticketory.feature.pricing.domain.PricingRule;
-import com.gudrhs8304.ticketory.feature.member.enums.PricingKind;
-import com.gudrhs8304.ticketory.feature.member.enums.PricingOp;
+import com.gudrhs8304.ticketory.feature.point.PricingKind;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

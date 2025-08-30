@@ -1,15 +1,9 @@
 package com.gudrhs8304.ticketory.feature.seat;
 
 import com.gudrhs8304.ticketory.feature.booking.BookingSeatRepository;
-import com.gudrhs8304.ticketory.feature.member.enums.HoldStatus;
-import com.gudrhs8304.ticketory.feature.member.enums.SeatStatus;
-import com.gudrhs8304.ticketory.feature.member.enums.SeatStatusType;
-import com.gudrhs8304.ticketory.feature.screen.domain.Seat;
-import com.gudrhs8304.ticketory.feature.screen.domain.SeatHold;
+import com.gudrhs8304.ticketory.feature.seat.Seat;
 import com.gudrhs8304.ticketory.feature.screening.ScreeningRepository;
-import com.gudrhs8304.ticketory.feature.screening.SeatHoldRepository;
-import com.gudrhs8304.ticketory.feature.screening.SeatRepository;
-import com.gudrhs8304.ticketory.feature.screening.domain.Screening;
+import com.gudrhs8304.ticketory.feature.screening.Screening;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

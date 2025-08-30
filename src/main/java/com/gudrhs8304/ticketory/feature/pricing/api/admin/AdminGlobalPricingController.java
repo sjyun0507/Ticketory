@@ -1,6 +1,6 @@
 package com.gudrhs8304.ticketory.feature.pricing.api.admin;
 
-import com.gudrhs8304.ticketory.feature.member.enums.PricingKind;
+import com.gudrhs8304.ticketory.feature.point.PricingKind;
 import com.gudrhs8304.ticketory.feature.pricing.PricingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

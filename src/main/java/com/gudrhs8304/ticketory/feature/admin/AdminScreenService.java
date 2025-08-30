@@ -1,14 +1,14 @@
 package com.gudrhs8304.ticketory.feature.admin;
 
-import com.gudrhs8304.ticketory.feature.screen.domain.Screen;
+import com.gudrhs8304.ticketory.feature.screen.Screen;
 
-import com.gudrhs8304.ticketory.feature.member.enums.SeatStatus;
-import com.gudrhs8304.ticketory.feature.member.enums.SeatType;
+import com.gudrhs8304.ticketory.feature.seat.SeatStatus;
+import com.gudrhs8304.ticketory.feature.seat.SeatType;
 import com.gudrhs8304.ticketory.feature.screen.dto.CreateScreenRequest;
 import com.gudrhs8304.ticketory.feature.screen.dto.UpdateScreenRequest;
-import com.gudrhs8304.ticketory.feature.screen.domain.Seat;
+import com.gudrhs8304.ticketory.feature.seat.Seat;
 import com.gudrhs8304.ticketory.feature.screen.ScreenRepository;
-import com.gudrhs8304.ticketory.feature.screening.SeatRepository;
+import com.gudrhs8304.ticketory.feature.seat.SeatRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

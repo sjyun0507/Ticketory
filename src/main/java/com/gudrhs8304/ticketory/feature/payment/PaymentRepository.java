@@ -26,7 +26,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     @Query("""
            select p from Payment p
             where p.booking.bookingId = :bookingId
-              and p.status = com.gudrhs8304.ticketory.domain.enums.PaymentStatus.PENDING
+              and p.status = com.gudrhs8304.ticketory.feature.payment.PaymentStatus.PENDING
               and p.paidAt is null
            """)
     Optional<Payment> findPendingByBookingIdForUpdate(@Param("bookingId") Long bookingId);
@@ -37,7 +37,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
            update Payment p
               set p.orderId = :orderId
             where p.booking.bookingId = :bookingId
-              and p.status = com.gudrhs8304.ticketory.domain.enums.PaymentStatus.PENDING
+              and p.status = com.gudrhs8304.ticketory.feature.payment.PaymentStatus.PENDING
               and p.paidAt is null
            """)
     int attachOrderIdToPendingByBookingId(@Param("bookingId") Long bookingId,

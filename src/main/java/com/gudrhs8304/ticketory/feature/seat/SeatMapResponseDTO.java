@@ -1,6 +1,5 @@
 package com.gudrhs8304.ticketory.feature.seat;
 
-import com.gudrhs8304.ticketory.feature.member.enums.SeatStatusType;
 import lombok.*;
 
 import java.util.List;

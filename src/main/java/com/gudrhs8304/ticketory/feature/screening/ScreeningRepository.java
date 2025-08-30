@@ -1,6 +1,5 @@
 package com.gudrhs8304.ticketory.feature.screening;
 
-import com.gudrhs8304.ticketory.feature.screening.domain.Screening;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
