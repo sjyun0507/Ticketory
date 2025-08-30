@@ -34,4 +34,6 @@ public record MovieCreateRequestDTO(
 
         @Schema(example = "크리스토퍼 놀란")
         String director
+
+
 ) {}

@@ -47,19 +47,17 @@ public class StatsRepository {
     }
 
     /** 환불 합계 */
-    public BigDecimal sumRefundAmount(LocalDate from, LocalDate to) {
+    public BigDecimal sumRefundDoneAmount(LocalDate from, LocalDate to) {
         Query q = em.createNativeQuery("""
             SELECT COALESCE(SUM(r.refund_amount), 0)
-            FROM refund_log r
-            JOIN payment p ON p.payment_id = r.payment_id
-            WHERE r.status = 'SUCCESS'
-              AND r.created_at >= :from
-              AND r.created_at < DATE_ADD(:to, INTERVAL 1 DAY)
+              FROM refund_log r
+             WHERE r.status = 'DONE'
+               AND r.created_at >= :from
+               AND r.created_at < DATE_ADD(:to, INTERVAL 1 DAY)
         """);
         q.setParameter("from", from);
         q.setParameter("to", to);
-        Object v = q.getSingleResult();
-        return toBigDecimal(v);
+        return toBigDecimal(q.getSingleResult());
     }
 
     /** 일자별 승인(PAID) 매출 */

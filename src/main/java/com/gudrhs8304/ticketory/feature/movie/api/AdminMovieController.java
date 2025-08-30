@@ -1,5 +1,6 @@
-package com.gudrhs8304.ticketory.feature.movie;
+package com.gudrhs8304.ticketory.feature.movie.api;
 
+import com.gudrhs8304.ticketory.feature.movie.AdminMovieService;
 import com.gudrhs8304.ticketory.feature.movie.dto.MovieCreateRequestDTO;
 import com.gudrhs8304.ticketory.feature.movie.dto.MoviePatchRequestDTO;
 import com.gudrhs8304.ticketory.feature.movie.dto.MovieResponseDTO;

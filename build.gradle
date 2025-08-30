@@ -73,6 +73,8 @@ dependencies {
     // mail
     implementation 'org.springframework.boot:spring-boot-starter-mail'
 
+    implementation 'io.netty:netty-resolver-dns-native-macos:4.1.123.Final:osx-aarch_64'
+    implementation 'io.netty:netty-resolver-dns-native-macos:4.1.123.Final:osx-x86_64'
 
 }
 

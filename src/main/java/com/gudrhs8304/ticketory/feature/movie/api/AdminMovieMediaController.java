@@ -1,5 +1,8 @@
-package com.gudrhs8304.ticketory.feature.movie;
+package com.gudrhs8304.ticketory.feature.movie.api;
 
+import com.gudrhs8304.ticketory.feature.movie.AdminMovieMediaService;
+import com.gudrhs8304.ticketory.feature.movie.MovieMedia;
+import com.gudrhs8304.ticketory.feature.movie.MovieMediaType;
 import com.gudrhs8304.ticketory.feature.movie.dto.MovieMediaResponseDTO;
 import com.gudrhs8304.ticketory.feature.movie.dto.TrailerCreateRequestDTO;
 import io.swagger.v3.oas.annotations.Operation;

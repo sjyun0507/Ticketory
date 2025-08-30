@@ -21,7 +21,7 @@ public class StatsService {
 
     public SummaryRes getSummary(LocalDate from, LocalDate to) {
         BigDecimal gross = repo.sumApprovedAmount(from, to);
-        BigDecimal refunded = repo.sumRefundAmount(from, to);
+        BigDecimal refunded = repo.sumRefundDoneAmount(from, to);
         long count = repo.countApprovedPayments(from, to);
         BigDecimal net = gross.subtract(refunded);
 

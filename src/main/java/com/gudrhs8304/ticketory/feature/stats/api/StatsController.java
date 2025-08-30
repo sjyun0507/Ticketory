@@ -1,5 +1,6 @@
-package com.gudrhs8304.ticketory.feature.stats;
+package com.gudrhs8304.ticketory.feature.stats.api;
 
+import com.gudrhs8304.ticketory.feature.stats.StatsService;
 import com.gudrhs8304.ticketory.feature.stats.dto.DailyRevenueRes;
 import com.gudrhs8304.ticketory.feature.stats.dto.SummaryRes;
 import com.gudrhs8304.ticketory.feature.stats.dto.TopMovieRes;

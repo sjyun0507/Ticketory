@@ -84,7 +84,7 @@ public class ProgramGenerateService {
                                 .movie(mv)
                                 .startAt(startAt)
                                 .endAt(endAt)
-                                .isBooking(false) // NOT NULL 컬럼 방지
+                                .isBooking(true) // NOT NULL 컬럼 방지
                                 .build()
                 );
                 created++;

@@ -55,6 +55,7 @@ public class AdminScreeningService {
                 .screen(screen)
                 .startAt(req.getStartAt())
                 .endAt(req.getEndAt())
+                .isBooking(true)
                 .build();
 
         return ScreeningAdminResponseDTO.from(screeningRepository.save(s));
