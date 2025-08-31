@@ -89,14 +89,13 @@ public interface PricingRuleRepository extends JpaRepository<PricingRule, Long> 
             @Param("when") LocalDateTime when);
 
     @Query("""
-              select r
-              from PricingRule r
-              where r.screenId = :screenId
-                and r.enabled = true
-                and (r.validFrom is null or r.validFrom <= :when)
-                and (r.validTo   is null or r.validTo   >= :when)
-                and r.kind = :kind
-              order by r.priority asc, r.id asc
+            select r
+            from PricingRule r
+            where r.enabled = true
+              and (:screenId is null or r.screenId is null or r.screenId = :screenId)
+              and (:kind is null or r.kind = :kind)
+              and (r.validFrom is null or r.validFrom <= :when)
+              and (r.validTo is null or r.validTo >= :when)
             """)
     List<PricingRule> findActiveRulesByKind(
             @Param("screenId") Long screenId,
@@ -131,14 +130,14 @@ public interface PricingRuleRepository extends JpaRepository<PricingRule, Long> 
 
     // 동일 screen/kind/op 에 대해 기간이 겹치는 enabled 규칙이 있는지
     @Query("""
-       select (count(r) > 0) from PricingRule r
-       where r.screenId = :sid
-         and r.kind = :kind
-         and r.op = :op
-         and r.enabled = true
-         and r.validFrom <= :to
-         and (r.validTo is null or r.validTo >= :from)
-    """)
+               select (count(r) > 0) from PricingRule r
+               where r.screenId = :sid
+                 and r.kind = :kind
+                 and r.op = :op
+                 and r.enabled = true
+                 and r.validFrom <= :to
+                 and (r.validTo is null or r.validTo >= :from)
+            """)
     boolean existsOverlappingEnabled(@Param("sid") Long screenId,
                                      @Param("kind") PricingKind kind,
                                      @Param("op") PricingOp op,

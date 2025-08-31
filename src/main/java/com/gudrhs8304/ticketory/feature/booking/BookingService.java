@@ -67,11 +67,12 @@ public class BookingService {
 
         // ==== 가격 계산 (pricing_rule 적용) ====
         var now = LocalDateTime.now();
+        var useAt = screening.getStartAt();
         // 카운트(미지정 시 0)
         int cntAdult = req.adult() != null ? req.adult() : req.seatIds().size();
         int cntTeen  = req.teen() != null ? req.teen() : 0;
 
-        BigDecimal total = pricingService.computeTotal(screenId, cntAdult, cntTeen, now);
+        BigDecimal total = pricingService.computeTotal(screenId, cntAdult, cntTeen, useAt);
 
         // 기본 단가(상영관 base_price → 없으면 DEFAULT)
         BigDecimal baseUnit = Optional.ofNullable(screening.getScreen().getBasePrice())

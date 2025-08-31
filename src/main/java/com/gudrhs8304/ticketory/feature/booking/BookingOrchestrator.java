@@ -20,17 +20,22 @@ import com.gudrhs8304.ticketory.feature.payment.PaymentStatus;
 import com.gudrhs8304.ticketory.feature.point.PricingKind;
 import com.gudrhs8304.ticketory.feature.pricing.PricingService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.DayOfWeek;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
 @RequiredArgsConstructor
+@Log4j2
 public class BookingOrchestrator {
 
     private final ScreeningRepository screeningRepo;
@@ -44,9 +49,13 @@ public class BookingOrchestrator {
     private final PricingService pricingService;
 
     private static final int DEFAULT_HOLD_SECONDS = 120;
+    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
+    private static final int WED_DISCOUNT_PERCENT = 20; // 20%
 
     @Transactional
     public InitBookingResponseDTO initBooking(Long memberId, String idemKey, InitBookingRequestDTO req) {
+        long t0 = System.currentTimeMillis();
+        MDC.put("memberId", String.valueOf(memberId));
         if (req.screeningId() == null || req.seatIds() == null || req.seatIds().isEmpty()) {
             throw new IllegalArgumentException("screeningId/seatIds는 필수입니다.");
         }
@@ -96,11 +105,15 @@ public class BookingOrchestrator {
         // 5) 가격 계산
         BigDecimal base = Optional.ofNullable(screening.getScreen().getBasePrice())
                 .map(BigDecimal::valueOf).orElse(BigDecimal.ZERO);
-        BigDecimal unitAdult = calcUnitPrice(base, screenId, PricingKind.ADULT, now);
-        BigDecimal unitTeen  = calcUnitPrice(base, screenId, PricingKind.TEEN,  now);
+        LocalDateTime whenForPricing = screening.getStartAt();
+        log.info("[CHECK] startAt={} dayOfweek={} hour={}", whenForPricing, whenForPricing.getDayOfWeek(), whenForPricing.getHour());
+        BigDecimal unitAdult = calcUnitPrice(base, screenId, PricingKind.ADULT, whenForPricing);
+        BigDecimal unitTeen  = calcUnitPrice(base, screenId, PricingKind.TEEN,  whenForPricing);
 
         BigDecimal total = unitAdult.multiply(BigDecimal.valueOf(adults))
                 .add(unitTeen.multiply(BigDecimal.valueOf(teens)));
+
+
 
         // 5-1) 포인트 사용량 확정 (요청값 → 보유/총액 한도 내로 클램프)
         Member me = memberRepo.getReferenceById(memberId);
@@ -198,6 +211,13 @@ public class BookingOrchestrator {
                 default -> { }
             }
         }
+
+        DayOfWeek dow = when.atZone(ZoneId.systemDefault()).withZoneSameInstant(KST).getDayOfWeek();
+        if (dow == DayOfWeek.WEDNESDAY) {
+            BigDecimal pct = BigDecimal.valueOf(WED_DISCOUNT_PERCENT).movePointLeft(2); // 0.20
+            price = price.multiply(BigDecimal.ONE.subtract(pct));
+        }
+
         return price.max(BigDecimal.ZERO).setScale(0, RoundingMode.HALF_UP);
     }
 }
