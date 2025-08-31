@@ -15,6 +15,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import org.springframework.web.servlet.view.RedirectView;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Map;
@@ -44,31 +46,42 @@ public class PaymentsController {
                     )
                     .map(Booking::getBookingId)
                     .orElse(null);
-        }
-        if (bookingId == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "bookingId 가 없고, 최근 PENDING 예매도 찾지 못했습니다.");
+
+            if (bookingId == null) {
+                var pendingPayOpt = paymentRepository
+                        .findTopByBooking_Member_MemberIdAndStatusOrderByPaymentIdDesc(
+                                req.getMemberId(), PaymentStatus.PENDING
+                        );
+                if (pendingPayOpt.isPresent()) {
+                    bookingId = pendingPayOpt.get().getBooking().getBookingId();
+                }
+            }
         }
 
-        // 서버 기준 금액 계산
+        if (bookingId == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT, // 400 대신 409가 의도 전달에 더 적합
+                    "NO_PENDING_BOOKING: 결제 생성 전 예매 초기화가 필요합니다. /api/bookings/init 호출 후 bookingId를 넘겨주세요."
+            );
+        }
+
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "booking not found"));
-        BigDecimal usedPoint = req.getUsedPoint(); // 원시 long: null 아님
+
+        BigDecimal usedPoint = req.getUsedPoint(); // null 아님
         BigDecimal serverAmount = booking.getTotalPrice()
                 .subtract(usedPoint)
                 .max(BigDecimal.ZERO);
 
-        // orderId 생성
         String orderId = (req.getOrderId() == null || req.getOrderId().isBlank())
-                ? "ORD-" + LocalDate.now() + "-" + bookingId + "-" +
-                UUID.randomUUID().toString().substring(0, 8).toUpperCase()
+                ? "ORD-" + java.time.LocalDate.now() + "-" + bookingId + "-" +
+                java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase()
                 : req.getOrderId();
 
-        // 결제행에 orderId 부착 + 금액 저장/갱신
         paymentService.createOrderAndAttach(bookingId, orderId, serverAmount);
 
-        // 프론트는 수정하지 말라 했으니 orderId만 그대로 반환
-        return ResponseEntity.ok(Map.of("orderId", orderId));
+        // 프론트는 orderId만 사용하므로 그대로 맞춰줌
+        return ResponseEntity.ok(java.util.Map.of("orderId", orderId));
     }
 
 //    /** 토스 결제 승인(프론트 successUrl에서 호출) */
@@ -116,6 +129,38 @@ public class PaymentsController {
             // 이미 있는 PENDING이라면 금액 동기화
             paymentRepository.updateAmountByOrderId(orderId, amount);
         }
+    }
+
+    /** 토스 성공 redirect(백엔드가 confirm 실행 후 프론트로 리다이렉트) */
+    @GetMapping("/redirect/success")
+    public RedirectView successRedirect(
+            @RequestParam("paymentKey") String paymentKey,
+            @RequestParam("orderId") String orderId,
+            @RequestParam("amount") String amountStr
+    ) {
+        BigDecimal amount = new BigDecimal(amountStr);
+        paymentService.confirm(paymentKey, orderId, amount); // 좌석확정/포인트/QR
+
+        // 프론트 성공 페이지로 넘겨주고 싶으면 쿼리 붙여서 리다이렉트
+        RedirectView rv = new RedirectView();
+        rv.setUrl("http://localhost:5173/success?orderId=" + orderId);
+        rv.setExposeModelAttributes(false);
+        return rv;
+    }
+
+    /** 토스 실패 redirect(백엔드가 그냥 프론트로 릴레이) */
+    @GetMapping("/redirect/fail")
+    public RedirectView failRedirect(
+            @RequestParam(value = "code", required = false) String code,
+            @RequestParam(value = "message", required = false) String message,
+            @RequestParam(value = "orderId", required = false) String orderId
+    ) {
+        RedirectView rv = new RedirectView();
+        // 원하는 실패 페이지 경로로 연결
+        rv.setUrl("http://localhost:5173/fail" +
+                (orderId != null ? ("?orderId=" + orderId) : ""));
+        rv.setExposeModelAttributes(false);
+        return rv;
     }
 
 }

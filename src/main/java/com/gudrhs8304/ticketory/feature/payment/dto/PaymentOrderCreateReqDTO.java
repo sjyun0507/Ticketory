@@ -9,27 +9,17 @@ import java.math.BigDecimal;
 import java.util.List;
 @Data
 public class PaymentOrderCreateReqDTO {
-    private Long bookingId;
-    private Long memberId;
-    private String orderId;
-    @NotNull
-    private BigDecimal totalAmount;
-    private BigDecimal usedPoint;
+    private Long bookingId;   // 없으면 memberId 최신 PENDING으로 대체
+    private Long memberId;    // 선택
+
+    private BigDecimal usedPoint; // 프론트가 숫자로 보냄(0 가능)
+
+    private String orderId;   // 비워두면 서버 생성
+
+    // 프론트에서 오긴 하지만 서버 계산에 안씀 (그대로 둬도 됨)
     private String orderMethod;
     private String orderTime;
     private String status;
-    private long earnedPoint;
-    private List<Item> items;
-
-    @Getter
-    @Setter
-    public static class Item {
-        private Long id;
-        private Long movieId;
-        private Long screeningId;
-        private Long seatId;
-        private String name;
-        private long price;
-        private int quantity;
-    }
+    private Integer earnedPoint;
+    private List<Object> items;
 }

@@ -58,4 +58,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<Payment> findTopByBooking_BookingIdOrderByPaymentIdDesc(Long bookingId);
+
+    Optional<Payment> findTopByBooking_Member_MemberIdAndStatusOrderByPaymentIdDesc(
+            Long memberId, PaymentStatus status);
 }
