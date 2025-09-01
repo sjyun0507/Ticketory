@@ -19,7 +19,7 @@ public class AutoProgramScheduler {
     // 매일 KST 03:10에 "내일 기준 + 5일" 날짜만 생성
     // 8/29에 실행 -> (내일 8/30)+5일 = 9/4
     // 8/30에 실행 -> (내일 8/31)+5일 = 9/5
-    @Scheduled(cron = "1 23 13 * * *", zone = "Asia/Seoul")
+    @Scheduled(cron = "1 45 9 * * *", zone = "Asia/Seoul")
     public void generateOnlyOneDayAheadPlus5() {
         LocalDate todayKst = LocalDate.now(ZoneId.of("Asia/Seoul"));
         LocalDate target = todayKst.plusDays(1).plusDays(5); // = today + 6 일, "내일 기준 +5"를 명시
