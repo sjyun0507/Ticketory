@@ -161,6 +161,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         chain.doFilter(request, response);
+        log.info("[JwtAuthFilter] path={}", request.getRequestURI());
+        String path = request.getRequestURI();
+        String authz = request.getHeader("Authorization");
+        log.info("[JwtAuthFilter] path={}, hasAuthz={}, method={}",
+                path, authz != null, request.getMethod());
     }
 
 

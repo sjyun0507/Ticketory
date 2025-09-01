@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -26,6 +27,7 @@ import java.util.*;
 @RequiredArgsConstructor
 @RequestMapping({"/api/payments"})
 @Log4j2
+@PreAuthorize("hasAnyRole('USER', 'ADMIN')")
 public class PaymentsController {
     private final BookingService bookingService;
     private final TossPaymentService tossPaymentService;
@@ -64,10 +66,14 @@ public class PaymentsController {
             );
         }
 
-        Booking booking = bookingRepository.findById(bookingId)
+//        Booking booking = bookingRepository.findById(bookingId)
+//                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "booking not found"));
+
+        Booking booking = bookingRepository.findWithMemberByBookingId(bookingId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "booking not found"));
 
-        // ✅ 포인트 클램프(보유/총액 한도 내)
+
+        // 포인트 클램프(보유/총액 한도 내)
         int have = Optional.ofNullable(booking.getMember().getPointBalance()).orElse(0);
         int want = Optional.ofNullable(req.getUsedPoint()).map(BigDecimal::intValue).orElse(0);
         if (want < 0) want = 0;

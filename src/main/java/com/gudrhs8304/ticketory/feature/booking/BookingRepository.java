@@ -7,6 +7,7 @@ import com.gudrhs8304.ticketory.mail.dto.BookingAlarmDTO;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -266,4 +267,7 @@ where (b.isSendAlarm = false or b.isSendAlarm is null)
             @Param("now") LocalDateTime now,
             Pageable pageable
     );
+
+    @EntityGraph(attributePaths = "member")
+    Optional<Booking> findWithMemberByBookingId(Long bookingId);
 }

@@ -100,6 +100,11 @@ public class SecurityConfig {
                                 "/swagger-ui/**", "/v3/api-docs/**", "/api-docs/**"
                         ).permitAll()
 
+                        // 결제는 인증 필요
+                        .requestMatchers(HttpMethod.POST, "/api/payments/**").permitAll()
+                        // 공개 경로
+                        .requestMatchers("/api/auth/**", "/api/public/**").permitAll()
+
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter(), UsernamePasswordAuthenticationFilter.class);
