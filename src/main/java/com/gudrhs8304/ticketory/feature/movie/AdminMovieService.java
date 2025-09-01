@@ -64,6 +64,8 @@ public class AdminMovieService {
         if (req.status() != null) m.setStatus(req.status());
         if (req.actors() != null) m.setActors(req.actors());
         if (req.director() != null) m.setDirector(req.director());
+
+        m = movieRepository.saveAndFlush(m);
         return toRes(m);
     }
 
