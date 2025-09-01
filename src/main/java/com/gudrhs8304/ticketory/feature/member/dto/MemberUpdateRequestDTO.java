@@ -35,4 +35,6 @@ public class MemberUpdateRequestDTO {
     private String currentPassword;
     @Size(min=8, max=64, message="비밀번호는 8~64자")
     private String newPassword;
+
+    private String avatarUrl;
 }

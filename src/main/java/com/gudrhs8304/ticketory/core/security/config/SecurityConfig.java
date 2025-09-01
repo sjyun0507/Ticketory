@@ -87,6 +87,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").permitAll()
                         .requestMatchers("/api/board").permitAll()
                         .requestMatchers("/api/admin/board/**").permitAll()
+                        .requestMatchers("/api/members/**").permitAll()
+                        .requestMatchers("/api/stories/**").permitAll()
 
                         .requestMatchers(
                                 "/api/members/signup",

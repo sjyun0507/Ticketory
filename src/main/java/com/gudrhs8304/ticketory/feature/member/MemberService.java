@@ -184,6 +184,10 @@ public class MemberService {
                 m.setEmail(newEmail);
             }
         }
+        // 프로필사진 URL
+        if (req.getAvatarUrl() != null && !req.getAvatarUrl().isBlank()) {
+            m.setAvatarUrl(req.getAvatarUrl().trim());
+        }
 
         boolean wantsPwChange = (req.getNewPassword() != null && !req.getNewPassword().isBlank());
         if (wantsPwChange) {
@@ -209,6 +213,7 @@ public class MemberService {
                 .email(saved.getEmail())
                 .phone(PhoneUtil.format(saved.getPhone())) // 응답 시 하이픈 추가
                 .role(saved.getRole().name())
+                .avatarUrl(saved.getAvatarUrl())
                 .build();
     }
 

@@ -43,6 +43,8 @@ public class MemberResponseDTO extends BaseTimeEntity {
 
     private Integer points;
 
+    private String avatarUrl;
+
     public static MemberResponseDTO from(Member m) {
         return MemberResponseDTO.builder()
                 .memberId(m.getMemberId())
@@ -52,6 +54,7 @@ public class MemberResponseDTO extends BaseTimeEntity {
                 .phone(PhoneUtil.format(m.getPhone())) // ← 여기서만 하이픈 붙임
                 .role(m.getRole().name())
                 .points(m.getPointBalance() == null ? 0 : m.getPointBalance())
+                .avatarUrl(m.getAvatarUrl())
                 .build();
     }
 }
