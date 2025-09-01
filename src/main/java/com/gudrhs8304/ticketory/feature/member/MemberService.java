@@ -36,6 +36,8 @@ public class MemberService {
 
 
 
+
+
     public MemberResponseDTO signUp(MemberSignupRequestDTO req) {
 
         final String loginId = req.getLoginId().trim().toLowerCase();
@@ -148,6 +150,7 @@ public class MemberService {
                 .phone(PhoneUtil.format(m.getPhone()))
                 .role(m.getRole().name())
                 .points(m.getPointBalance() == null ? 0 : m.getPointBalance())
+                .avatarUrl(m.getAvatarUrl())
                 .build();
     }
 

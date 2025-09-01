@@ -1,10 +1,7 @@
 package com.gudrhs8304.ticketory.feature.member.api;
 
 import com.gudrhs8304.ticketory.core.auth.CustomUserPrincipal;
-import com.gudrhs8304.ticketory.feature.member.GuestLoginRequestDTO;
-import com.gudrhs8304.ticketory.feature.member.MemberQueryService;
-import com.gudrhs8304.ticketory.feature.member.MemberRepository;
-import com.gudrhs8304.ticketory.feature.member.MemberService;
+import com.gudrhs8304.ticketory.feature.member.*;
 import com.gudrhs8304.ticketory.feature.screening.dto.AvailabilityResponse;
 import com.gudrhs8304.ticketory.feature.member.dto.*;
 import com.gudrhs8304.ticketory.feature.member.dto.MemberProfileRes;
@@ -106,7 +103,8 @@ public class MemberController {
         Long me = extractMemberId(auth);
         boolean isAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         if (!isAdmin && !memberId.equals(me)) throw new AccessDeniedException("본인 또는 관리자만 접근할 수 있습니다.");
-        return ResponseEntity.ok(memberService.getMemberById(memberId));
+        MemberResponseDTO res = memberService.getMemberById(memberId);
+        return ResponseEntity.ok(res);
     }
 
 
