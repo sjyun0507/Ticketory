@@ -43,13 +43,6 @@ public class SecurityConfig {
         return new JwtAuthFilter(jwtTokenProvider);
     }
 
-    @Bean
-    public WebSecurityCustomizer webSecurityCustomizer() {
-        return web -> web.ignoring().requestMatchers(
-                new AntPathRequestMatcher("/api/payments"),
-                new AntPathRequestMatcher("/api/payments/**")
-        );
-    }
 
     @Bean
     public OAuth2AuthorizationRequestResolver kakaoAuthRequestResolver() {

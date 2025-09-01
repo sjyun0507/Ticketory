@@ -49,8 +49,8 @@ public class BookingOrchestrator {
     private final PricingService pricingService;
 
     private static final int DEFAULT_HOLD_SECONDS = 120;
-    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
-    private static final int WED_DISCOUNT_PERCENT = 20; // 20%
+//    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
+//    private static final int WED_DISCOUNT_PERCENT = 20; // 20%
 
     @Transactional
     public InitBookingResponseDTO initBooking(Long memberId, String idemKey, InitBookingRequestDTO req) {
@@ -107,8 +107,15 @@ public class BookingOrchestrator {
                 .map(BigDecimal::valueOf).orElse(BigDecimal.ZERO);
         LocalDateTime whenForPricing = screening.getStartAt();
         log.info("[CHECK] startAt={} dayOfweek={} hour={}", whenForPricing, whenForPricing.getDayOfWeek(), whenForPricing.getHour());
-        BigDecimal unitAdult = calcUnitPrice(base, screenId, PricingKind.ADULT, whenForPricing);
-        BigDecimal unitTeen  = calcUnitPrice(base, screenId, PricingKind.TEEN,  whenForPricing);
+        BigDecimal unitAdult = pricingService.resolveUnit(screenId, PricingKind.ADULT, whenForPricing);
+        BigDecimal unitTeen = pricingService.resolveUnit(screenId, PricingKind.TEEN, whenForPricing);
+
+        var liAdult = com.gudrhs8304.ticketory.feature.booking.dto.LineItemDTO.of("ADULT", unitAdult, adults);
+        var liTeen  = com.gudrhs8304.ticketory.feature.booking.dto.LineItemDTO.of("TEEN",  unitTeen,  teens);
+
+        List<com.gudrhs8304.ticketory.feature.booking.dto.LineItemDTO> lineItems = new ArrayList<>();
+        if (adults > 0) lineItems.add(liAdult);
+        if (teens  > 0) lineItems.add(liTeen);
 
         BigDecimal total = unitAdult.multiply(BigDecimal.valueOf(adults))
                 .add(unitTeen.multiply(BigDecimal.valueOf(teens)));
@@ -169,7 +176,8 @@ public class BookingOrchestrator {
                 pay.getProvider().name(),
                 total,      // 총액
                 wantUse,    // 사용 포인트
-                payable     // 실결제 금액
+                payable,     // 실결제 금액
+                lineItems
         );
     }
 
@@ -196,26 +204,30 @@ public class BookingOrchestrator {
                                      Long screenId,
                                      PricingKind kind,
                                      LocalDateTime when) {
+        // 기본 단가 (basePrice 없으면 12000)
         BigDecimal price = (basePrice != null && basePrice.compareTo(BigDecimal.ZERO) > 0)
                 ? basePrice : new BigDecimal("12000");
 
-        List<PricingRule> rules = pricingRuleRepo.findActiveRulesByKind(screenId, kind, when);
+        // 규칙 조회 (전역 포함)
+        List<PricingRule> rules = pricingRuleRepo.findActiveRulesByKindIncludingGlobal(screenId, kind, when);
+
+        // 정렬: screenId 우선 (관별 > 전역), priority → id
+        rules.sort(Comparator
+                .comparing(PricingRule::getScreenId, Comparator.reverseOrder())
+                .thenComparing(PricingRule::getPriority)
+                .thenComparing(PricingRule::getId));
+
+        // 규칙 적용
         for (PricingRule r : rules) {
-            BigDecimal amt = (r.getAmount() != null) ? r.getAmount() : BigDecimal.ZERO;
+            BigDecimal amt = r.getAmount() != null ? r.getAmount() : BigDecimal.ZERO;
             switch (r.getOp()) {
                 case SET      -> price = amt;
                 case PLUS     -> price = price.add(amt);
                 case MINUS    -> price = price.subtract(amt);
                 case PCT_PLUS -> price = price.multiply(BigDecimal.ONE.add(amt.movePointLeft(2)));
                 case PCT_MINUS-> price = price.multiply(BigDecimal.ONE.subtract(amt.movePointLeft(2)));
-                default -> { }
+                default -> {}
             }
-        }
-
-        DayOfWeek dow = when.atZone(ZoneId.systemDefault()).withZoneSameInstant(KST).getDayOfWeek();
-        if (dow == DayOfWeek.WEDNESDAY) {
-            BigDecimal pct = BigDecimal.valueOf(WED_DISCOUNT_PERCENT).movePointLeft(2); // 0.20
-            price = price.multiply(BigDecimal.ONE.subtract(pct));
         }
 
         return price.max(BigDecimal.ZERO).setScale(0, RoundingMode.HALF_UP);

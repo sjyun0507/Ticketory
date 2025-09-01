@@ -143,4 +143,25 @@ public interface PricingRuleRepository extends JpaRepository<PricingRule, Long> 
                                      @Param("op") PricingOp op,
                                      @Param("from") LocalDateTime from,
                                      @Param("to") LocalDateTime to);
+
+
+    /**
+     * 전역(screen_id=0) + 특정 관(screen_id=:screenId)의
+     * 활성 규칙(시간 창/enable/종류)을 한 번에 가져온다.
+     * validFrom/validTo 가 null 이면 항상 유효로 간주.
+     */
+    @Query("""
+    SELECT r
+      FROM PricingRule r
+     WHERE (r.screenId = :screenId OR r.screenId = 0)
+       AND r.enabled = true
+       AND r.kind = :kind
+       AND (:when >= COALESCE(r.validFrom, :when))
+       AND (:when <= COALESCE(r.validTo, :when))
+    """)
+    List<PricingRule> findActiveRulesByKindIncludingGlobal(
+            @Param("screenId") Long screenId,
+            @Param("kind") PricingKind kind,
+            @Param("when") LocalDateTime when
+    );
 }

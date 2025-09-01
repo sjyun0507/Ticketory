@@ -84,7 +84,7 @@ public class PricingService {
         }
     }
 
-    /** 단가 계산: screen.base_price 를 시작점으로, 해당 kind 의 rule 들을 priority 순서대로 적용 */
+    /** 단가 계산: basePrice → (관별>전역) → priority 오름차순 → OP순서(SET→PCT_MINUS→PCT_PLUS→PLUS→MINUS) */
     public BigDecimal resolveUnit(Long screenId, PricingKind kind, LocalDateTime when) {
         // 1) base price (NULL 이면 0)
         Screen screen = screenRepository.findById(screenId)
@@ -93,27 +93,57 @@ public class PricingService {
                 ? BigDecimal.ZERO
                 : new BigDecimal(screen.getBasePrice());
 
-        // 2) kind 에 해당하는 rule 적용
-        List<PricingRule> rules = pricingRuleRepository.findEnabledByScreenAt(screenId, when)
-                .stream()
-                .filter(r -> r.getKind() == null || r.getKind() == kind)
-                .toList();
+        // 2) 전역+관별 활성 규칙 로드
+        List<PricingRule> rules = pricingRuleRepository.findActiveRulesByKindIncludingGlobal(screenId, kind, when);
 
+        // 3) 정렬: 관별 먼저 → priority 오름차순 → OP 순서
+        rules.sort(Comparator
+                .comparingInt((PricingRule r) -> scopeRank(r.getScreenId(), screenId))
+                .thenComparing(r -> Optional.ofNullable(r.getPriority()).orElse(100))
+                .thenComparing(r -> opRank(r.getOp()))
+                .thenComparing(r -> Optional.ofNullable(r.getValidFrom()).orElse(LocalDateTime.MIN))
+        );
+
+        // 4) 적용
         for (PricingRule r : rules) {
-            BigDecimal amt = r.getAmount();
+            BigDecimal amt = r.getAmount() == null ? BigDecimal.ZERO : r.getAmount();
             PricingOp op = r.getOp();
+            if (op == null) continue;
+
             switch (op) {
-                case SET -> price = amt;
-                case PLUS -> price = price.add(amt);
-                case MINUS -> price = price.subtract(amt);
-                case PCT_PLUS -> price = price.multiply(BigDecimal.ONE.add(amt.movePointLeft(2)));
+                case SET       -> price = amt;
                 case PCT_MINUS -> price = price.multiply(BigDecimal.ONE.subtract(amt.movePointLeft(2)));
+                case PCT_PLUS  -> price = price.multiply(BigDecimal.ONE.add(amt.movePointLeft(2)));
+                case PLUS      -> price = price.add(amt);
+                case MINUS     -> price = price.subtract(amt);
+                default -> { /* no-op */ }
             }
         }
-        // 마이너스 방지 + 반올림
+
         if (price.signum() < 0) price = BigDecimal.ZERO;
-        return price.setScale(0, RoundingMode.HALF_UP); // 원 단위
+        return price.setScale(0, RoundingMode.HALF_UP);
     }
+
+    /** 관별(=요청 screenId) 우선, 전역(0) 그 다음 */
+    private int scopeRank(Long ruleScreenId, Long targetScreenId) {
+        if (Objects.equals(ruleScreenId, targetScreenId)) return 0; // 관별
+        if (ruleScreenId != null && ruleScreenId == 0L) return 1;  // 전역
+        return 2; // 기타 값은 맨 뒤
+    }
+
+    /** OP 적용 순서: SET → PCT_MINUS → PCT_PLUS → PLUS → MINUS */
+    private int opRank(PricingOp op) {
+        return switch (op) {
+            case SET -> 0;
+            case PCT_MINUS -> 1;
+            case PCT_PLUS -> 2;
+            case PLUS -> 3;
+            case MINUS -> 4;
+            default -> 9;
+        };
+    }
+
+
 
     /** 여러 인원 종류 합산 금액 계산 */
     public BigDecimal computeTotal(Long screenId,
@@ -203,34 +233,35 @@ public class PricingService {
     }
 
     public QuoteResponse quote(QuoteRequest req) {
-        // 1) 방문일 결정 (없으면 KST 현재 날짜)
-        LocalDate visitDate = req.getVisitDate() != null ? req.getVisitDate() : LocalDate.now(KST);
+        // 1) 방문일 (없으면 KST 오늘)
+        LocalDate visitDate = (req.getVisitDate() != null) ? req.getVisitDate() : LocalDate.now(KST);
 
-        // 2) 라인별 소계 재계산(신뢰성 위해 서버에서 계산)
+        // 2) 라인별 소계 재계산 (단가에는 이미 규칙이 반영되어 있다고 가정)
         List<QuoteLineRes> lines = new ArrayList<>();
         int originalTotal = 0;
         for (QuoteItemReq item : req.getBreakdown()) {
-            int subtotal = item.getUnitPrice() * item.getQty();
+            int unit = item.getUnitPrice();     // 예: 9,600 / 6,400 (이미 수요일 20% 반영)
+            int qty  = item.getQty();
+            int subtotal = unit * qty;
             originalTotal += subtotal;
-            lines.add(new QuoteLineRes(item.getKind(), item.getUnitPrice(), item.getQty(), subtotal));
+            lines.add(new QuoteLineRes(item.getKind(), unit, qty, subtotal));
         }
 
-        // 3) 할인 적용
+        // 3) 할인 표시 (라벨만, 금액 차감 X → 이중할인 방지)
         List<DiscountLine> discounts = new ArrayList<>();
-        int totalDiscount = 0;
-
         if (visitDate.getDayOfWeek() == DayOfWeek.WEDNESDAY && originalTotal > 0) {
-            int amount = (int) Math.floor(originalTotal * (WED_DISCOUNT_PERCENT / 100.0));
-            if (amount > 0) {
-                totalDiscount += amount;
-                discounts.add(new DiscountLine(WED_DISCOUNT_CODE, WED_DISCOUNT_NAME, WED_DISCOUNT_PERCENT, amount));
-            }
+            discounts.add(new DiscountLine(
+                    WED_DISCOUNT_CODE,     // "GLOBAL_WED_DISCOUNT"
+                    WED_DISCOUNT_NAME,     // "수요일 할인"
+                    WED_DISCOUNT_PERCENT,  // 20
+                    0                      // ★ 금액 0: 이미 단가에 반영됨
+            ));
         }
 
-        // 4) 최종 합계
-        int finalTotal = Math.max(0, originalTotal - totalDiscount);
+        // 4) 최종 합계 = 라인 합계 (추가 차감 없음)
+        int finalTotal = originalTotal;
 
-        // 5) 응답 구성
+        // 5) 응답
         QuoteResponse res = new QuoteResponse();
         res.setOriginalTotal(originalTotal);
         res.setFinalTotal(finalTotal);

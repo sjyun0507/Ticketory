@@ -10,16 +10,15 @@ import com.gudrhs8304.ticketory.feature.booking.domain.Booking;
 import com.gudrhs8304.ticketory.feature.booking.domain.BookingSeat;
 import com.gudrhs8304.ticketory.feature.booking.domain.CancelLog;
 import com.gudrhs8304.ticketory.feature.booking.BookingPayStatus;
+import com.gudrhs8304.ticketory.feature.member.Member;
+import com.gudrhs8304.ticketory.feature.payment.dto.*;
 import com.gudrhs8304.ticketory.feature.point.PointChangeType;
-import com.gudrhs8304.ticketory.feature.payment.dto.ConfirmPaymentRequestDTO;
 import com.gudrhs8304.ticketory.feature.refund.RefundRecorder;
 import com.gudrhs8304.ticketory.feature.refund.RefundStatus;
 import com.gudrhs8304.ticketory.feature.seat.SeatHold;
 import com.gudrhs8304.ticketory.feature.seat.SeatHoldRepository;
 import com.gudrhs8304.ticketory.feature.seat.SeatRepository;
 import com.gudrhs8304.ticketory.feature.screening.Screening;
-import com.gudrhs8304.ticketory.feature.payment.dto.ApprovePaymentRequest;
-import com.gudrhs8304.ticketory.feature.payment.dto.TossConfirmRequestDTO;
 import com.gudrhs8304.ticketory.feature.point.PointService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -384,5 +383,67 @@ public class PaymentService {
         } catch (Exception e) {
             throw new RuntimeException("QR 생성 실패", e);
         }
+    }
+
+    @Transactional
+    public CreateOrderResponse createOrAttachOrder(CreateOrderRequest req) {
+        if (req.bookingId() == null) {
+            throw new IllegalArgumentException("bookingId is required");
+        }
+
+        Booking booking = bookingRepository.findById(req.bookingId())
+                .orElseThrow(() -> new IllegalArgumentException("예매가 없습니다."));
+
+        Member member = booking.getMember();
+        BigDecimal total = Optional.ofNullable(booking.getTotalPrice()).orElse(BigDecimal.ZERO);
+
+        // 프론트 금액은 무시, usedPoint만 신뢰(그마저도 클램프)
+        int have = Optional.ofNullable(member.getPointBalance()).orElse(0);
+        int want = Optional.ofNullable(req.usedPoint()).orElse(0);
+        if (want < 0) want = 0;
+        if (want > have) want = have;
+        if (BigDecimal.valueOf(want).compareTo(total) > 0) want = total.intValue();
+
+        BigDecimal payable = total.subtract(BigDecimal.valueOf(want));
+        if (payable.signum() < 0) payable = BigDecimal.ZERO;
+
+        // 기존 PENDING 결제행 가져오거나 새로 생성
+        Payment payment = paymentRepository
+                .findTopByBooking_BookingIdOrderByPaymentIdDesc(booking.getBookingId())
+                .orElse(null);
+
+        if (payment == null || payment.getStatus() != PaymentStatus.PENDING) {
+            payment = new Payment();
+            payment.setBooking(booking);
+            payment.setStatus(PaymentStatus.PENDING);
+            payment.setProvider(PaymentProvider.TOSS);
+        }
+
+        // 주문번호 부착/생성
+        String orderId = (req.orderId() != null && !req.orderId().isBlank())
+                ? req.orderId()
+                : newOrderId(booking.getBookingId());
+
+        payment.setOrderId(orderId);
+        payment.setAmount(payable);
+        payment.setProvider(PaymentProvider.TOSS);
+        paymentRepository.save(payment);
+
+        return new CreateOrderResponse(
+                orderId,
+                total,
+                want,
+                payable,
+                payment.getPaymentId(),
+                payment.getStatus().name()
+        );
+    }
+
+    private String newOrderId(Long bookingId) {
+        String ymd = java.time.LocalDateTime.now()
+                .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String shortUuid = java.util.UUID.randomUUID().toString()
+                .replace("-", "").substring(0, 8).toUpperCase();
+        return "ORD-" + ymd + "-" + bookingId + "-" + shortUuid;
     }
 }

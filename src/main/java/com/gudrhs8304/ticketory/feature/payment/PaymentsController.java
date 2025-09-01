@@ -19,8 +19,7 @@ import org.springframework.web.servlet.view.RedirectView;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @CrossOrigin(origins = "http://localhost:5173")
 @RestController
@@ -34,11 +33,11 @@ public class PaymentsController {
     private final PaymentRepository paymentRepository;
     private final BookingRepository bookingRepository;
 
-    /** 결제 시작 (주문/임시 결제 생성) */
     @PostMapping
     public ResponseEntity<?> createOrder(@Valid @RequestBody PaymentOrderCreateReqDTO req) {
         Long bookingId = req.getBookingId();
 
+        // bookingId 없으면 멤버의 최신 PENDING 예매/결제에서 보정
         if (bookingId == null && req.getMemberId() != null) {
             bookingId = bookingRepository
                     .findTopByMember_MemberIdAndPaymentStatusOrderByCreatedAtDesc(
@@ -48,19 +47,19 @@ public class PaymentsController {
                     .orElse(null);
 
             if (bookingId == null) {
-                var pendingPayOpt = paymentRepository
+                var pend = paymentRepository
                         .findTopByBooking_Member_MemberIdAndStatusOrderByPaymentIdDesc(
                                 req.getMemberId(), PaymentStatus.PENDING
                         );
-                if (pendingPayOpt.isPresent()) {
-                    bookingId = pendingPayOpt.get().getBooking().getBookingId();
+                if (pend.isPresent()) {
+                    bookingId = pend.get().getBooking().getBookingId();
                 }
             }
         }
 
         if (bookingId == null) {
             throw new ResponseStatusException(
-                    HttpStatus.CONFLICT, // 400 대신 409가 의도 전달에 더 적합
+                    HttpStatus.CONFLICT,
                     "NO_PENDING_BOOKING: 결제 생성 전 예매 초기화가 필요합니다. /api/bookings/init 호출 후 bookingId를 넘겨주세요."
             );
         }
@@ -68,20 +67,34 @@ public class PaymentsController {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "booking not found"));
 
-        BigDecimal usedPoint = req.getUsedPoint(); // null 아님
-        BigDecimal serverAmount = booking.getTotalPrice()
-                .subtract(usedPoint)
-                .max(BigDecimal.ZERO);
+        // ✅ 포인트 클램프(보유/총액 한도 내)
+        int have = Optional.ofNullable(booking.getMember().getPointBalance()).orElse(0);
+        int want = Optional.ofNullable(req.getUsedPoint()).map(BigDecimal::intValue).orElse(0);
+        if (want < 0) want = 0;
+        if (want > have) want = have;
+        if (BigDecimal.valueOf(want).compareTo(booking.getTotalPrice()) > 0) {
+            want = booking.getTotalPrice().intValue();
+        }
+
+        BigDecimal payable = booking.getTotalPrice().subtract(BigDecimal.valueOf(want));
+        if (payable.compareTo(BigDecimal.ZERO) < 0) payable = BigDecimal.ZERO;
 
         String orderId = (req.getOrderId() == null || req.getOrderId().isBlank())
                 ? "ORD-" + java.time.LocalDate.now() + "-" + bookingId + "-" +
                 java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase()
                 : req.getOrderId();
 
-        paymentService.createOrderAndAttach(bookingId, orderId, serverAmount);
+        // 서버 금액으로만 pending 결제 생성/갱신
+        paymentService.createOrderAndAttach(bookingId, orderId, payable);
 
-        // 프론트는 orderId만 사용하므로 그대로 맞춰줌
-        return ResponseEntity.ok(java.util.Map.of("orderId", orderId));
+        // 프론트는 서버 확정 금액만 사용 (lineItems 불필요)
+        return ResponseEntity.ok(java.util.Map.of(
+                "orderId",        orderId,
+                "bookingId",      bookingId,
+                "totalAmount",    booking.getTotalPrice(),
+                "pointsUsed",     want,
+                "payableAmount",  payable
+        ));
     }
 
 //    /** 토스 결제 승인(프론트 successUrl에서 호출) */

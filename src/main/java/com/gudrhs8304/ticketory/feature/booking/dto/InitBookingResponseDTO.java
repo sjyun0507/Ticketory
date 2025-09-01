@@ -12,5 +12,6 @@ public record InitBookingResponseDTO(
         String provider,
         BigDecimal totalAmount,
         Integer pointsUsed,
-        BigDecimal payableAmount
+        BigDecimal payableAmount,
+        List<LineItemDTO> lineItems
 ) {}

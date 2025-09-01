@@ -39,6 +39,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         // 결제 쪽 공개 범위는 필요에 맞게
         if (uri.startsWith("/api/payments")) return true;
 
+
+        if (uri.startsWith("/api/admin")) return true;
+
         // 그 외에는 필터 적용(=인증 시도)
         return false;
     }
