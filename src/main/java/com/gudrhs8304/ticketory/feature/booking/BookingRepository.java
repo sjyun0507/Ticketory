@@ -270,4 +270,7 @@ where (b.isSendAlarm = false or b.isSendAlarm is null)
 
     @EntityGraph(attributePaths = "member")
     Optional<Booking> findWithMemberByBookingId(Long bookingId);
+
+    @EntityGraph(attributePaths = {"screening", "member"})
+    Optional<Booking> findWithScreeningAndMemberByBookingId(Long bookingId);
 }

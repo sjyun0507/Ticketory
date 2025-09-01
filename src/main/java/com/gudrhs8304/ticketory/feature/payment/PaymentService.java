@@ -11,6 +11,7 @@ import com.gudrhs8304.ticketory.feature.booking.domain.BookingSeat;
 import com.gudrhs8304.ticketory.feature.booking.domain.CancelLog;
 import com.gudrhs8304.ticketory.feature.booking.BookingPayStatus;
 import com.gudrhs8304.ticketory.feature.member.Member;
+import com.gudrhs8304.ticketory.feature.member.MemberRepository;
 import com.gudrhs8304.ticketory.feature.payment.dto.*;
 import com.gudrhs8304.ticketory.feature.point.PointChangeType;
 import com.gudrhs8304.ticketory.feature.refund.RefundRecorder;
@@ -49,6 +50,7 @@ public class PaymentService {
     private final RefundRecorder refundRecorder;
 
     private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
+    private final MemberRepository memberRepository;
 
     /**
      * (시뮬) 간단 승인 API
@@ -311,6 +313,13 @@ public class PaymentService {
         payment.setPaymentKey(paymentKey);
         payment.setPaidAt(now);
         booking.setPaymentStatus(BookingPayStatus.PAID);
+
+        LocalDateTime endAt = screening.getEndAt();
+        if (endAt != null && !endAt.isAfter(now)) {
+            memberRepository.updateLastWatchedIfNewer(
+                    booking.getMember().getMemberId(), endAt
+            );
+        }
 
         // === 포인트 계산 ===
         int usedPoints = booking.getTotalPrice()
