@@ -5,8 +5,10 @@ import com.gudrhs8304.ticketory.feature.member.MemberRepository;
 import com.gudrhs8304.ticketory.feature.member.dto.MemberStoryProfileRes;
 import com.gudrhs8304.ticketory.feature.booking.BookingRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cglib.core.Local;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Service
@@ -26,7 +28,7 @@ public class MemberStoryProfileService {
         Member m = memberRepository.findById(memberId).orElseThrow();
 
         // member.lastWatchedAt 없으면, Booking에서 계산해 보완
-        LocalDateTime lastWatched = m.getLastWatchedAt();
+        LocalDate lastWatched = m.getLastWatchedAt();
         if (lastWatched == null) {
             lastWatched = bookingRepository.findLastWatchedAt(memberId);
         }

@@ -17,6 +17,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Service
@@ -40,8 +41,8 @@ public class StoryService {
         }
 
         // 3) 상영 종료 검증
-        LocalDateTime endAt = booking.getScreening().getEndAt();
-        if (endAt == null || endAt.isAfter(LocalDateTime.now())) {
+        LocalDate endAt = LocalDate.from(booking.getScreening().getEndAt());
+        if (endAt == null || endAt.isAfter(LocalDate.now())) {
             throw new IllegalStateException("상영 종료 후에만 스토리를 작성할 수 있습니다.");
         }
 

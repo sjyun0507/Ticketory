@@ -4,6 +4,7 @@ import com.gudrhs8304.ticketory.core.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -43,7 +44,7 @@ public class Member extends BaseTimeEntity {
 
     /** 마지막 관람(완료) 시각 */
     @Column(name = "last_watched_at")
-    private LocalDateTime lastWatchedAt;
+    private LocalDate lastWatchedAt;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "signup_type", nullable = false)

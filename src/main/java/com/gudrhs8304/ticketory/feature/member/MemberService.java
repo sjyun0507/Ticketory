@@ -1,6 +1,8 @@
 package com.gudrhs8304.ticketory.feature.member;
 
 import com.gudrhs8304.ticketory.core.jwt.JwtTokenProvider;
+import com.gudrhs8304.ticketory.feature.booking.BookingRepository;
+import com.gudrhs8304.ticketory.feature.booking.domain.Booking;
 import com.gudrhs8304.ticketory.feature.member.dto.*;
 import com.gudrhs8304.ticketory.core.exception.DuplicateLoginIdException;
 import com.gudrhs8304.ticketory.core.util.PhoneUtil;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -25,16 +28,13 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final BookingRepository bookingRepository;
 
     @Transactional(readOnly = true)
     public boolean isLoginIdAvailable(String loginId) {
         if (loginId == null || loginId.isBlank()) return false;
         return !memberRepository.existsByLoginId(loginId.trim());
     }
-
-
-
-
 
 
 
@@ -254,6 +254,31 @@ public class MemberService {
 
     public Optional<MemberResponseDTO> findOptionalById(Long memberId) {
         return memberRepository.findById(memberId).map(MemberResponseDTO::from);
+    }
+
+    /** 결제 완료 시점에 호출: 상영이 이미 끝났다면 '날짜' 기준으로 즉시 갱신 */
+    @Transactional
+    public void onPaymentPaid(Long bookingId) {
+        Booking b = bookingRepository.findWithScreeningAndMemberByBookingId(bookingId)
+                .orElseThrow(() -> new IllegalArgumentException("booking not found: " + bookingId));
+
+        var s = b.getScreening();
+        var m = b.getMember();
+
+        if (s != null && s.getEndAt() != null && s.getEndAt().isBefore(LocalDateTime.now())) {
+            LocalDate endDate = s.getEndAt().toLocalDate();               // ← 날짜만
+            memberRepository.updateLastWatchedIfNewer(m.getMemberId(), endDate);
+        }
+    }
+
+    @Transactional
+    public void recomputeForMember(Long memberId) {
+        memberRepository.recomputeLastWatchedForMember(memberId);
+    }
+
+    @Transactional
+    public void recomputeAll() {
+        memberRepository.recomputeLastWatchedForAll();
     }
 
 

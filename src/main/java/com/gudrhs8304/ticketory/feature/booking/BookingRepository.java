@@ -13,6 +13,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -202,13 +203,14 @@ where (b.isSendAlarm = false or b.isSendAlarm is null)
 
     // 마지막 관람(가장 최근 endAt)
     @Query("""
-        select max(sc.endAt)
-          from Booking b
-          join b.screening sc
-         where b.member.memberId = :memberId
-           and b.paymentStatus = com.gudrhs8304.ticketory.feature.booking.BookingPayStatus.PAID
+        SELECT MAX(DATE(s.endAt))
+          FROM Booking b
+          JOIN b.screening s
+         WHERE b.member.memberId = :memberId
+           AND b.paymentStatus = 'PAID'
+           AND s.endAt <= CURRENT_TIMESTAMP
     """)
-    LocalDateTime findLastWatchedAt(@Param("memberId") Long memberId);
+    LocalDate findLastWatchedAt(@Param("memberId") Long memberId);
 
     @Query("""
         select new com.gudrhs8304.ticketory.feature.story.dto.EligibleBookingRes(
@@ -240,28 +242,36 @@ where (b.isSendAlarm = false or b.isSendAlarm is null)
     );
 
     @Query("""
-        select
-            b.bookingId,
-            m.movieId,
-            m.title,
-            s.startAt,
-            s.endAt,
-            sc.name,
-            b.paymentStatus,
-            exists(
-                select 1 from Story st
-                 where st.booking.bookingId = b.bookingId
-                   and st.status <> 'DELETED'
-            ) as hasStory
-        from Booking b
-          join b.screening s
-          join s.screen sc
-          join s.movie m
-        where b.member.memberId = :memberId
-          and s.endAt < :now
-          and b.paymentStatus <> com.gudrhs8304.ticketory.feature.booking.BookingPayStatus.CANCELLED
-        order by s.endAt desc
-    """)
+    select
+        b.bookingId,
+        m.movieId,
+        m.title,
+        s.startAt,
+        s.endAt,
+        sc.name,
+        b.paymentStatus,
+        exists (
+            select 1
+              from Story st
+             where st.booking.bookingId = b.bookingId
+               and st.status <> com.gudrhs8304.ticketory.feature.story.StoryStatus.DELETED
+        ) as hasStory
+    from Booking b
+      join b.screening s
+      join s.screen sc
+      join s.movie m
+    where b.member.memberId = :memberId
+      and s.endAt < :now
+      and b.paymentStatus = com.gudrhs8304.ticketory.feature.booking.BookingPayStatus.PAID
+      and b.bookingId = (
+            select max(b2.bookingId)
+              from Booking b2
+              join b2.screening s2
+             where b2.member.memberId = b.member.memberId
+               and s2.startAt = s.startAt
+      )
+    order by s.endAt desc
+""")
     Page<Object[]> findEligibleBookingRows(
             @Param("memberId") Long memberId,
             @Param("now") LocalDateTime now,

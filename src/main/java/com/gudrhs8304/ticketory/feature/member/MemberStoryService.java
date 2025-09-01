@@ -37,7 +37,7 @@ public class MemberStoryService {
                 m.getMemberId(),
                 m.getName(),
                 m.getAvatarUrl(),
-                m.getLastWatchedAt()
+                m.getLastWatchedAt().atStartOfDay()
         );
     }
 

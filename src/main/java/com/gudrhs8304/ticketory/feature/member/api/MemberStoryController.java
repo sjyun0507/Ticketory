@@ -30,12 +30,9 @@ public class MemberStoryController {
     public Page<EligibleBookingRes> eligibleBookings(
             @PathVariable Long memberId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "screeningEndAt,desc") String sort
+            @RequestParam(defaultValue = "10") int size
     ) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by(
-                Sort.Order.desc("screeningEndAt") // 컨트롤러 레벨 정렬 힌트(실제 정렬은 JPQL order by가 적용)
-        ));
+        Pageable pageable = PageRequest.of(page, size);
         return service.getEligibleBookings(memberId, pageable);
     }
 

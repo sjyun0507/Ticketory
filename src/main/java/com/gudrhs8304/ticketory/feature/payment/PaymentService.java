@@ -30,6 +30,7 @@ import org.springframework.stereotype.Service;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -314,10 +315,12 @@ public class PaymentService {
         payment.setPaidAt(now);
         booking.setPaymentStatus(BookingPayStatus.PAID);
 
+        // === last_watched_at (DATE) 즉시 갱신 시도 ===
         LocalDateTime endAt = screening.getEndAt();
-        if (endAt != null && !endAt.isAfter(now)) {
+        if (endAt != null && !endAt.isAfter(now)) { // end_at <= now
             memberRepository.updateLastWatchedIfNewer(
-                    booking.getMember().getMemberId(), endAt
+                    booking.getMember().getMemberId(),
+                    endAt.toLocalDate()  // ← 날짜만
             );
         }
 

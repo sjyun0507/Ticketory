@@ -20,7 +20,7 @@ public class MemberQueryService {
                 .memberId(m.getMemberId())
                 .name(m.getName())
                 .avatarUrl(m.getAvatarUrl())
-                .lastWatchedAt(m.getLastWatchedAt())
+                .lastWatchedAt(m.getLastWatchedAt().atStartOfDay())
                 .build();
     }
 }

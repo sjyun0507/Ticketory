@@ -24,7 +24,7 @@ public class StoryController {
     private final StoryService storyService;
 
     @Operation(summary = "스토리 작성")
-    @PostMapping
+    @PostMapping(consumes = "application/json", produces = "application/json")
     public ResponseEntity<Story> createStory(
             @AuthenticationPrincipal(expression = "memberId") Long memberId,
             @Valid @RequestBody StoryCreateRequest req

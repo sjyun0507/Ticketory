@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -22,38 +23,41 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
 
     boolean existsByEmailAndMemberIdNot(String email, Long memberId);
 
+    /** last_watched_at < endDate 일 때만 갱신 (DATE 비교) */
     @Modifying
     @Query("""
        UPDATE Member m
-          SET m.lastWatchedAt = :endAt
+          SET m.lastWatchedAt = :endDate
         WHERE m.memberId = :memberId
-          AND (m.lastWatchedAt IS NULL OR m.lastWatchedAt < :endAt)
+          AND (m.lastWatchedAt IS NULL OR m.lastWatchedAt < :endDate)
     """)
     int updateLastWatchedIfNewer(@Param("memberId") Long memberId,
-                                 @Param("endAt") LocalDateTime endAt);
+                                 @Param("endDate") LocalDate endDate);
 
+    /** 전체 재계산 (native, DATE로 집계) */
     @Modifying
     @Query(value = """
         UPDATE member m
         JOIN (
-          SELECT b.member_id   AS member_id,
-                 MAX(s.end_at) AS last_time
+          SELECT b.member_id          AS member_id,
+                 MAX(DATE(s.end_at))  AS last_date
             FROM booking b
             JOIN screening s ON s.screening_id = b.screening_id
            WHERE b.payment_status = 'PAID'
              AND s.end_at <= NOW(6)
            GROUP BY b.member_id
         ) x ON x.member_id = m.member_id
-        SET m.last_watched_at = x.last_time
+        SET m.last_watched_at = x.last_date
     """, nativeQuery = true)
     int recomputeLastWatchedForAll();
 
+    /** 특정 회원만 재계산 (native, DATE) */
     @Modifying
     @Query(value = """
         UPDATE member m
         JOIN (
-          SELECT b.member_id   AS member_id,
-                 MAX(s.end_at) AS last_time
+          SELECT b.member_id          AS member_id,
+                 MAX(DATE(s.end_at))  AS last_date
             FROM booking b
             JOIN screening s ON s.screening_id = b.screening_id
            WHERE b.payment_status = 'PAID'
@@ -61,7 +65,8 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
              AND b.member_id = :memberId
            GROUP BY b.member_id
         ) x ON x.member_id = m.member_id
-        SET m.last_watched_at = x.last_time
+        SET m.last_watched_at = x.last_date
     """, nativeQuery = true)
     int recomputeLastWatchedForMember(@Param("memberId") Long memberId);
 }
+

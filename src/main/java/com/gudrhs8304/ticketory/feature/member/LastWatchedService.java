@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Service
@@ -26,7 +27,8 @@ public class LastWatchedService {
         var m = b.getMember();
 
         if (s != null && s.getEndAt() != null && s.getEndAt().isBefore(LocalDateTime.now())) {
-            memberRepository.updateLastWatchedIfNewer(m.getMemberId(), s.getEndAt());
+            LocalDate endDate = s.getEndAt().toLocalDate();
+            memberRepository.updateLastWatchedIfNewer(m.getMemberId(), endDate);
         }
     }
 
