@@ -5,11 +5,15 @@ import com.gudrhs8304.ticketory.feature.booking.BookingPayStatus;
 import com.gudrhs8304.ticketory.feature.booking.domain.Booking;
 import com.gudrhs8304.ticketory.feature.member.MemberRepository;
 import com.gudrhs8304.ticketory.feature.story.dto.StoryCreateRequest;
+import com.gudrhs8304.ticketory.feature.story.dto.StoryFeedItemDTO;
 import com.gudrhs8304.ticketory.feature.story.dto.StoryUpdateRequest;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -97,5 +101,27 @@ public class StoryService {
     public Page<Story> getMyStories(Long memberId, Pageable pageable) {
         return storyRepository.findByMember_MemberIdAndStatusOrderByCreatedAtDesc(
                 memberId, StoryStatus.ACTIVE, pageable);
+    }
+
+    public Page<StoryFeedItemDTO> getStories(
+            Integer page, Integer size, StorySort sort,
+            Long movieId, Long memberId
+    ) {
+        Sort order = switch (sort == null ? StorySort.RECENT : sort) {
+            case POPULAR -> Sort.by(Sort.Order.desc("likeCount"), Sort.Order.desc("createdAt"));
+            case RECENT -> Sort.by(Sort.Order.desc("createdAt"));
+        };
+
+        Pageable pageable = PageRequest.of(
+                page == null ? 0 : page,
+                size == null ? 20 : size,
+                order
+        );
+
+        Specification<Story> spec = Specification.where(StorySpecs.statusActive())
+                .and(StorySpecs.movieIdEq(movieId))
+                .and(StorySpecs.memberIdEq(memberId));
+
+        return storyRepository.findAll(spec, pageable).map(StoryFeedItemDTO::from);
     }
 }

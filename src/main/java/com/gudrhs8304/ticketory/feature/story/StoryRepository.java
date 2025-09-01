@@ -4,6 +4,7 @@ package com.gudrhs8304.ticketory.feature.story;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -11,7 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
-public interface StoryRepository extends JpaRepository<Story, Long> {
+public interface StoryRepository extends JpaRepository<Story, Long>, JpaSpecificationExecutor<Story> {
     Page<Story> findByMember_MemberIdOrderByCreatedAtDesc(Long memberId, Pageable pageable);
 
     Page<Story> findByMember_MemberIdAndStatusOrderByCreatedAtDesc(

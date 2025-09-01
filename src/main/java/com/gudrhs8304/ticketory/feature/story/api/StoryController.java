@@ -2,7 +2,9 @@ package com.gudrhs8304.ticketory.feature.story.api;
 
 import com.gudrhs8304.ticketory.feature.story.Story;
 import com.gudrhs8304.ticketory.feature.story.StoryService;
+import com.gudrhs8304.ticketory.feature.story.StorySort;
 import com.gudrhs8304.ticketory.feature.story.dto.StoryCreateRequest;
+import com.gudrhs8304.ticketory.feature.story.dto.StoryFeedItemDTO;
 import com.gudrhs8304.ticketory.feature.story.dto.StoryUpdateRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
@@ -59,5 +61,19 @@ public class StoryController {
     ) {
         Pageable pageable = PageRequest.of(page, size);
         return storyService.getMyStories(memberId, pageable);
+    }
+
+    @Operation(summary = "스토리 피드 조회")
+    @GetMapping
+    public ResponseEntity<Page<StoryFeedItemDTO>> getStories(
+            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(defaultValue = "20") Integer size,
+            @RequestParam(defaultValue = "RECENT") StorySort sort,
+            @RequestParam(required = false) Long movieId,
+            @RequestParam(required = false) Long memberId
+    ) {
+        return ResponseEntity.ok(
+                storyService.getStories(page, size, sort, movieId, memberId)
+        );
     }
 }
