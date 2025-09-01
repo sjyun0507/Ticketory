@@ -105,12 +105,12 @@ public class PaymentService {
         if (payment == null || payment.getStatus() == PaymentStatus.PENDING) {
             // 1) PAYMENT 상태
             if (payment != null) {
-                payment.setStatus(PaymentStatus.CANCELLED);
+                payment.setStatus(PaymentStatus.FAILED);
                 payment.setCancelledAt(LocalDateTime.now());
                 paymentRepository.save(payment);
             }
             // 2) BOOKING 상태
-            booking.setPaymentStatus(BookingPayStatus.CANCELLED);
+            booking.setPaymentStatus(BookingPayStatus.FAILED);
             cancelLogRepository.save(CancelLog.ofMemberCancel(booking, memberId, reason));
             bookingRepository.save(booking);
 
@@ -445,5 +445,19 @@ public class PaymentService {
         String shortUuid = java.util.UUID.randomUUID().toString()
                 .replace("-", "").substring(0, 8).toUpperCase();
         return "ORD-" + ymd + "-" + bookingId + "-" + shortUuid;
+    }
+
+    @Transactional
+    public int markPendingAsFailedByBookingId(Long bookingId, String reason) {
+        return paymentRepository
+                .findTopByBooking_BookingIdAndStatusOrderByPaymentIdDesc(bookingId, PaymentStatus.PENDING)
+                .map(p -> {
+                    p.setStatus(PaymentStatus.FAILED);
+                    paymentRepository.save(p);
+                    log.info("[PAYMENT][FAILED] bookingId={}, paymentId={}, reason={}",
+                            bookingId, p.getPaymentId(), reason);
+                    return 1;
+                })
+                .orElse(0);
     }
 }

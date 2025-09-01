@@ -61,4 +61,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     Optional<Payment> findTopByBooking_Member_MemberIdAndStatusOrderByPaymentIdDesc(
             Long memberId, PaymentStatus status);
+
+    Optional<Payment> findTopByBooking_BookingIdAndStatusOrderByPaymentIdDesc(
+            Long bookingId, PaymentStatus status);
 }

@@ -4,6 +4,8 @@ package com.gudrhs8304.ticketory.feature.booking;
 import com.gudrhs8304.ticketory.core.jwt.JwtTokenProvider;
 import com.gudrhs8304.ticketory.feature.booking.domain.Booking;
 import com.gudrhs8304.ticketory.feature.booking.domain.BookingSeat;
+import com.gudrhs8304.ticketory.feature.payment.PaymentRepository;
+import com.gudrhs8304.ticketory.feature.payment.PaymentStatus;
 import com.gudrhs8304.ticketory.feature.point.PricingKind;
 import com.gudrhs8304.ticketory.feature.pricing.PricingOp;
 import com.gudrhs8304.ticketory.feature.booking.dto.CreateBookingRequest;
@@ -37,6 +39,7 @@ public class BookingService {
     private final JwtTokenProvider jwtTokenProvider;
     private final SeatHoldRepository seatHoldRepository;
     private final PricingRuleRepository pricingRuleRepository;
+    private final PaymentRepository paymentRepository;
 
     private static final BigDecimal DEFAULT_UNIT_PRICE = new BigDecimal("12000");
 
@@ -170,6 +173,17 @@ public class BookingService {
 
         // 2) seat_hold 삭제
         seatHoldRepository.deleteByBookingId(bookingId);
+
+        // 3) 최신 PENDING 결제를 FAILED로 전환  ← 추가
+        paymentRepository.findTopByBooking_BookingIdOrderByPaymentIdDesc(bookingId)
+                .ifPresent(p -> {
+                    if (p.getStatus() == PaymentStatus.PENDING) {
+                        p.setStatus(PaymentStatus.FAILED);
+                        paymentRepository.save(p);
+                        booking.setPaymentStatus(BookingPayStatus.FAILED);
+                        bookingRepository.save(booking);
+                    }
+                });
     }
 
     @Transactional

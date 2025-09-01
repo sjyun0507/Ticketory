@@ -23,4 +23,15 @@ public class ProgramTestRunner implements CommandLineRunner {
         int created = programGenerateService.generateForAllActiveOn(target);
         log.info("[TEST] generated {} screenings for {}", created, target);
     }
+
+//    @Override
+//    public void run(String... args) throws Exception {
+//        // 오늘 기준 +6일 날짜로 생성 (스케줄러와 동일한 로직)
+//        for(int i = -30; i < 0; i++) {
+//            LocalDate target = LocalDate.now().plusDays(i);
+//
+//            int created = programGenerateService.generateForAllActiveOn(target);
+//            log.info("[TEST] generated {} screenings for {}", created, target);
+//        }
+//    }
 }

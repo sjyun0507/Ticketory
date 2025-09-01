@@ -1,6 +1,8 @@
 package com.gudrhs8304.ticketory.mail;
 
+import com.gudrhs8304.ticketory.feature.booking.BookingPayStatus;
 import com.gudrhs8304.ticketory.feature.booking.BookingRepository;
+import com.gudrhs8304.ticketory.feature.booking.domain.Booking;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
@@ -109,6 +111,17 @@ public class MailSenderService {
                                  String qrUrl,
                                  String posterUrl)
             throws MessagingException, UnsupportedEncodingException {
+
+        Booking booking = bookingRepository.findById(bookingId).orElse(null);
+        if (booking == null) {
+            log.warn("[MAIL][SKIP] booking not found. bookingId={}", bookingId);
+            return; // 또는 필요하면 MailLog 에 FAIL 로 남겨도 됨
+        }
+        if (booking.getPaymentStatus() != BookingPayStatus.PAID) {
+            log.info("[MAIL][SKIP] payment_status is not PAID. bookingId={}, status={}",
+                    bookingId, booking.getPaymentStatus());
+            return; // 메일 발송하지 않음
+        }
 
         List<Object[]> seatRows = bookingRepository.findSeatLabelsByBookingIds(List.of(bookingId));
         List<String> seatLabels = seatRows.stream()
