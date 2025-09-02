@@ -110,7 +110,7 @@ public class SecurityConfig {
                         // 스토리: 피드/상세/댓글 조회는 공개, 나머진 인증
                         .requestMatchers(HttpMethod.GET,
                                 "/api/stories", "/api/stories/",
-                                "/api/stories/*",
+                                "/api/stories/**",
                                 "/api/stories/*/comments"
                         ).permitAll()
                         .requestMatchers(HttpMethod.POST,   "/api/stories/**").authenticated()

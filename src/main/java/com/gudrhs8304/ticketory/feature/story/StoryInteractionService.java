@@ -70,32 +70,28 @@ public class StoryInteractionService {
     /** 북마크 추가 */
     @Transactional
     public BookmarkRes bookmark(Long storyId, Long memberId) {
-        Story story = getStoryOrThrow(storyId);
-        Member me = refMember(memberId);
-        if (!bookmarkRepository.existsByStory_StoryIdAndMember_MemberId(storyId, me)) {
+        Story  story = getStoryOrThrow(storyId);
+        Member me    = refMember(memberId);
+
+        if (!bookmarkRepository.existsByStory_StoryIdAndMember_MemberId(storyId, memberId)) {
             bookmarkRepository.save(
                     StoryBookmark.builder()
-                            .story(story)   // ← storyId 아님!
-                            .member(me)
+                            .story(story)   // Story 엔티티!
+                            .member(me)     // Member 엔티티!
                             .build()
             );
         }
         return new BookmarkRes(true);
     }
 
-    /** 북마크 취소 */
     @Transactional
     public BookmarkRes unbookmark(Long storyId, Long memberId) {
-        Story story = getStoryOrThrow(storyId);
-        Member me   = refMember(memberId);
-
-        bookmarkRepository.findByStory_StoryIdAndMember(storyId, me)
-                .ifPresent(bookmarkRepository::delete);
-
+        bookmarkRepository.deleteByStory_StoryIdAndMember_MemberId(storyId, memberId);
         return new BookmarkRes(false);
     }
 
     /** 댓글 목록 */
+    @Transactional
     public Page<CommentRes> listComments(Long storyId, Pageable pageable) {
         Page<StoryComment> page = commentRepository.findByStoryIdOrderByCreatedAtAsc(storyId, pageable);
         return page.map(c -> new CommentRes(
