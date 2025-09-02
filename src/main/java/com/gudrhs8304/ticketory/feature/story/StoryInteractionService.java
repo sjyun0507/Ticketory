@@ -44,14 +44,14 @@ public class StoryInteractionService {
     public LikeRes like(Long storyId, Long memberId) {
         Story story = getStoryOrThrow(storyId);
         Member me = refMember(memberId);
-        if (likeRepository.existsByStoryIdAndMember(storyId, me)) {
+        if (likeRepository.existsByStory_StoryIdAndMember(storyId, me)) {
             // 이미 좋아요 → 멱등 처리
-            long c = likeRepository.countByStoryId(storyId);
+            long c = likeRepository.countByStory_StoryId(storyId);
             story.setLikeCount((int)c);
             return new LikeRes(c, true);
         }
-        likeRepository.save(StoryLike.builder().storyId(storyId).member(me).build());
-        long cnt = likeRepository.countByStoryId(storyId);
+        likeRepository.save(StoryLike.builder().story(story).member(me).build());
+        long cnt = likeRepository.countByStory_StoryId(storyId);
         story.setLikeCount((int)cnt);
         return new LikeRes(cnt, true);
     }
@@ -61,8 +61,8 @@ public class StoryInteractionService {
     public LikeRes unlike(Long storyId, Long memberId) {
         Story story = getStoryOrThrow(storyId);
         Member me = refMember(memberId);
-        likeRepository.findByStoryIdAndMember(storyId, me).ifPresent(likeRepository::delete);
-        long cnt = likeRepository.countByStoryId(storyId);
+        likeRepository.findByStory_StoryIdAndMember(storyId, me).ifPresent(likeRepository::delete);
+        long cnt = likeRepository.countByStory_StoryId(storyId);
         story.setLikeCount((int)cnt);
         return new LikeRes(cnt, false);
     }
@@ -72,8 +72,13 @@ public class StoryInteractionService {
     public BookmarkRes bookmark(Long storyId, Long memberId) {
         Story story = getStoryOrThrow(storyId);
         Member me = refMember(memberId);
-        if (!bookmarkRepository.existsByStoryIdAndMember(storyId, me)) {
-            bookmarkRepository.save(StoryBookmark.builder().storyId(storyId).member(me).build());
+        if (!bookmarkRepository.existsByStory_StoryIdAndMember_MemberId(storyId, me)) {
+            bookmarkRepository.save(
+                    StoryBookmark.builder()
+                            .story(story)   // ← storyId 아님!
+                            .member(me)
+                            .build()
+            );
         }
         return new BookmarkRes(true);
     }
@@ -82,8 +87,11 @@ public class StoryInteractionService {
     @Transactional
     public BookmarkRes unbookmark(Long storyId, Long memberId) {
         Story story = getStoryOrThrow(storyId);
-        Member me = refMember(memberId);
-        bookmarkRepository.findByStoryIdAndMember(storyId, me).ifPresent(bookmarkRepository::delete);
+        Member me   = refMember(memberId);
+
+        bookmarkRepository.findByStory_StoryIdAndMember(storyId, me)
+                .ifPresent(bookmarkRepository::delete);
+
         return new BookmarkRes(false);
     }
 

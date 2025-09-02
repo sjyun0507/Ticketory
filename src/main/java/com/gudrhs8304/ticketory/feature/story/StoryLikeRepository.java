@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 public interface StoryLikeRepository extends JpaRepository<StoryLike, Long> {
-    boolean existsByStoryIdAndMember(Long storyId, Member member);
-    Optional<StoryLike> findByStoryIdAndMember(Long storyId, Member member);
-    long countByStoryId(Long storyId);
+    boolean existsByStory_StoryIdAndMember(Long storyId, Member member);
+    long countByStory_StoryId(Long storyId);
+    Optional<StoryLike> findByStory_StoryIdAndMember(Long storyId, Member member);
 }

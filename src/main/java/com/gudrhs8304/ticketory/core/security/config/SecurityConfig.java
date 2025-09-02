@@ -83,29 +83,50 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // 개발 중 임시 오픈(리다이렉트 방지). 운영 전환 시 권한 체크로 변경
-                        .requestMatchers("/api/admin/**").permitAll()
-                        .requestMatchers("/api/board").permitAll()
-                        .requestMatchers("/api/admin/board/**").permitAll()
-                        .requestMatchers("/api/members/**").permitAll()
-                        .requestMatchers("/api/stories/**").permitAll()
-
+                        // 공개 API
                         .requestMatchers(
-                                "/api/members/signup",
-                                "/api/members/login",
-                                "/api/members/guest-login",
-                                "/api/members/logout",
-                                "/api/members/exists",
+                                "/api/auth/**",
+                                "/api/public/**",
                                 "/api/movies/**",
                                 "/api/screenings/**",
                                 "/proxy/**",
                                 "/swagger-ui/**", "/v3/api-docs/**", "/api-docs/**"
                         ).permitAll()
 
-                        // 결제는 인증 필요
+                        // 멤버: 인증 불필요한 엔드포인트만 공개
+                        .requestMatchers(
+                                "/api/members/signup",
+                                "/api/members/login",
+                                "/api/members/guest-login",
+                                "/api/members/exists"
+                        ).permitAll()
+                        // 그 외 멤버 관련은 인증 필요
+                        .requestMatchers(
+                                "/api/members/me",
+                                "/api/members/logout",
+                                "/api/members/**"
+                        ).authenticated()
+
+                        // 스토리: 피드/상세/댓글 조회는 공개, 나머진 인증
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/stories", "/api/stories/",
+                                "/api/stories/*",
+                                "/api/stories/*/comments"
+                        ).permitAll()
+                        .requestMatchers(HttpMethod.POST,   "/api/stories/**").authenticated()
+                        .requestMatchers(HttpMethod.PUT,    "/api/stories/**").authenticated()
+                        .requestMatchers(HttpMethod.DELETE, "/api/stories/**").authenticated()
+                        // 좋아요/북마크 등 액션성 엔드포인트 보호(실제 경로에 맞춰 추가/수정)
+                        .requestMatchers(
+                                "/api/stories/*/like",
+                                "/api/stories/*/unlike",
+                                "/api/stories/*/bookmark",
+                                "/api/stories/*/unbookmark",
+                                "/api/stories/*/comments/**"
+                        ).authenticated()
+
+                        // 결제 (현 상태 유지: 필요 시 인증 전환)
                         .requestMatchers(HttpMethod.POST, "/api/payments/**").permitAll()
-                        // 공개 경로
-                        .requestMatchers("/api/auth/**", "/api/public/**").permitAll()
 
                         .anyRequest().authenticated()
                 )

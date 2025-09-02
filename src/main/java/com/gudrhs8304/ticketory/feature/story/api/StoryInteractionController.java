@@ -36,21 +36,6 @@ public class StoryInteractionController {
         return service.unlike(storyId, me);
     }
 
-    // 북마크 생성
-    @Operation(summary="북마크 생성")
-    @PostMapping("/{storyId}/bookmark")
-    public BookmarkRes bookmark(@PathVariable Long storyId,
-                                @AuthenticationPrincipal(expression = "memberId") Long me) {
-        return service.bookmark(storyId, me);
-    }
-
-    // 북마크 취소
-    @Operation(summary="북마크 취소")
-    @DeleteMapping("/{storyId}/bookmark")
-    public BookmarkRes unbookmark(@PathVariable Long storyId,
-                                  @AuthenticationPrincipal(expression = "memberId") Long me) {
-        return service.unbookmark(storyId, me);
-    }
 
     // 댓글 목록
     @Operation(summary="댓글 목록")

@@ -1,23 +1,16 @@
 package com.gudrhs8304.ticketory.feature.story;
 
-import com.gudrhs8304.ticketory.feature.booking.BookingRepository;
 import com.gudrhs8304.ticketory.feature.booking.BookingPayStatus;
+import com.gudrhs8304.ticketory.feature.booking.BookingRepository;
 import com.gudrhs8304.ticketory.feature.booking.domain.Booking;
-import com.gudrhs8304.ticketory.feature.member.MemberRepository;
-import com.gudrhs8304.ticketory.feature.story.dto.StoryCreateRequest;
-import com.gudrhs8304.ticketory.feature.story.dto.StoryFeedItemDTO;
-import com.gudrhs8304.ticketory.feature.story.dto.StoryUpdateRequest;
+import com.gudrhs8304.ticketory.feature.story.dto.*;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.domain.*;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Service
@@ -25,49 +18,40 @@ import java.time.LocalDateTime;
 public class StoryService {
 
     private final StoryRepository storyRepository;
-    private final MemberRepository memberRepository;
     private final BookingRepository bookingRepository;
 
     /** 스토리 작성: bookingId 필수 */
     @Transactional
-    public Story createStory(Long memberId, StoryCreateRequest req) {
-        // 1) 예매 존재
-        Booking booking = bookingRepository.findById(req.getBookingId())
-                .orElseThrow(() -> new EntityNotFoundException("예매를 찾을 수 없습니다."));
-
-        // 2) 소유자 검증
-        if (!booking.getMember().getMemberId().equals(memberId)) {
-            throw new IllegalStateException("본인 예매에 대해서만 스토리를 작성할 수 있습니다.");
+    public StoryRes createStory(Long memberId, StoryCreateRequest req) {
+        Booking b = bookingRepository.findById(req.getBookingId())
+                .orElseThrow(() -> new IllegalArgumentException("예약을 찾을 수 없습니다."));
+        if (!b.getMember().getMemberId().equals(memberId)) {
+            throw new AccessDeniedException("본인 예약만 작성할 수 있습니다.");
+        }
+        if (b.getPaymentStatus() != BookingPayStatus.PAID) {
+            throw new IllegalStateException("결제 완료 예매만 작성할 수 있습니다.");
+        }
+        if (b.getScreening().getEndAt().isAfter(LocalDateTime.now())) {
+            throw new IllegalStateException("상영 종료 후에만 작성할 수 있습니다.");
         }
 
-        // 3) 상영 종료 검증
-        LocalDate endAt = LocalDate.from(booking.getScreening().getEndAt());
-        if (endAt == null || endAt.isAfter(LocalDate.now())) {
-            throw new IllegalStateException("상영 종료 후에만 스토리를 작성할 수 있습니다.");
-        }
+        // 같은 예매로 이미 작성(삭제 제외) 방지
+        boolean exists = storyRepository.existsByBooking_BookingIdAndStatusNot(
+                b.getBookingId(), StoryStatus.DELETED
+        );
+        if (exists) throw new IllegalStateException("이미 관람평을 작성한 예매입니다.");
 
-        // 4) 결제 취소 아님
-        if (booking.getPaymentStatus() == BookingPayStatus.CANCELLED) {
-            throw new IllegalStateException("결제 취소된 예매는 스토리 작성이 불가합니다.");
-        }
-
-        // 5) 중복 작성 방지(활성 스토리 기준)
-        boolean exists = storyRepository.existsByMember_MemberIdAndBooking_BookingIdAndStatus(
-                memberId, booking.getBookingId(), StoryStatus.ACTIVE);
-        if (exists) {
-            throw new IllegalStateException("해당 예매로 이미 스토리를 작성했습니다.");
-        }
-
-        // 6) 스토리 생성 (movie은 booking → screening → movie에서 얻음)
-        Story story = Story.builder()
-                .member(memberRepository.getReferenceById(memberId))
-                .movie(booking.getScreening().getMovie())
-                .booking(booking)
-                .content(req.getContent())
-                .status(StoryStatus.ACTIVE)
-                .build();
-
-        return storyRepository.save(story);
+        Story story = storyRepository.save(
+                Story.builder()
+                        .member(b.getMember())
+                        .movie(b.getScreening().getMovie())
+                        .booking(b)
+                        .content(req.getContent().trim())
+                        .rating(req.getRating())
+                        .status(StoryStatus.ACTIVE)
+                        .build()
+        );
+        return StoryRes.from(story);
     }
 
     /** 스토리 수정 (본인만 가능) */
@@ -75,13 +59,11 @@ public class StoryService {
     public Story updateStory(Long memberId, Long storyId, StoryUpdateRequest req) {
         Story story = storyRepository.findByStoryIdAndStatus(storyId, StoryStatus.ACTIVE)
                 .orElseThrow(() -> new EntityNotFoundException("스토리를 찾을 수 없습니다."));
-
         if (!story.getMember().getMemberId().equals(memberId)) {
             throw new IllegalStateException("본인 스토리만 수정할 수 있습니다.");
         }
-
         story.setContent(req.getContent());
-        return story; // dirty checking으로 업데이트
+        return story; // dirty checking
     }
 
     /** 스토리 삭제 (soft-delete) */
@@ -89,40 +71,58 @@ public class StoryService {
     public void deleteStory(Long memberId, Long storyId) {
         Story story = storyRepository.findById(storyId)
                 .orElseThrow(() -> new EntityNotFoundException("스토리를 찾을 수 없습니다."));
-
         if (!story.getMember().getMemberId().equals(memberId)) {
             throw new IllegalStateException("본인 스토리만 삭제할 수 있습니다.");
         }
-
         storyRepository.updateStatus(storyId, StoryStatus.DELETED);
     }
 
-    /** 내 스토리 목록 조회 */
+    /** 마이페이지 원본 엔티티 페이지 (기존 용도 유지 시) */
     @Transactional(readOnly = true)
     public Page<Story> getMyStories(Long memberId, Pageable pageable) {
         return storyRepository.findByMember_MemberIdAndStatusOrderByCreatedAtDesc(
                 memberId, StoryStatus.ACTIVE, pageable);
     }
 
-    public Page<StoryFeedItemDTO> getStories(
-            Integer page, Integer size, StorySort sort,
-            Long movieId, Long memberId
-    ) {
-        Sort order = switch (sort == null ? StorySort.RECENT : sort) {
-            case POPULAR -> Sort.by(Sort.Order.desc("likeCount"), Sort.Order.desc("createdAt"));
-            case RECENT -> Sort.by(Sort.Order.desc("createdAt"));
-        };
-
+    /** 전체 스토리 피드 (DTO 프로젝션) */
+    @Transactional(readOnly = true)
+    public Page<StoryFeedItemView> getStories(Integer page, Integer size, StorySort sort,
+                                             Long movieId, Long memberId, Long viewerId) {
         Pageable pageable = PageRequest.of(
-                page == null ? 0 : page,
-                size == null ? 20 : size,
-                order
+                page, size,
+                sort == StorySort.POPULAR
+                        ? Sort.by(Sort.Order.desc("likeCount"), Sort.Order.desc("createdAt"))
+                        : Sort.by(Sort.Order.desc("createdAt"))
         );
 
-        Specification<Story> spec = Specification.where(StorySpecs.statusActive())
-                .and(StorySpecs.movieIdEq(movieId))
-                .and(StorySpecs.memberIdEq(memberId));
+        if (movieId != null) {
+            return storyRepository.findFeedByMovie(movieId, viewerId, pageable);
+        }
+        if (memberId != null) {
+            return storyRepository.findMyFeed(memberId, viewerId, pageable);
+        }
+        return storyRepository.findFeed(viewerId, pageable);
+    }
 
-        return storyRepository.findAll(spec, pageable).map(StoryFeedItemDTO::from);
+    /** 생성 직후 피드용 View로 재조회 */
+    @Transactional
+    public StoryFeedItemView createAndFetchAsFeedItem(Long memberId, StoryCreateRequest req) {
+        StoryRes saved = createStory(memberId, req);
+        return storyRepository.findOneAsFeedItem(saved.storyId(), memberId)
+                .orElseThrow(() -> new IllegalStateException("created story not found"));
+    }
+
+    /** 수정 직후 피드용 View로 재조회 */
+    @Transactional
+    public StoryFeedItemView updateAndFetchAsFeedItem(Long memberId, Long storyId, StoryUpdateRequest req) {
+        updateStory(memberId, storyId, req);
+        return storyRepository.findOneAsFeedItem(storyId, memberId)
+                .orElseThrow(() -> new IllegalArgumentException("story not found: " + storyId));
+    }
+
+    /** 마이페이지도 View로 제공 (우측 레일 등에서 사용) */
+    @Transactional(readOnly = true)
+    public Page<StoryFeedItemView> getMyStoriesAsFeedItems(Long memberId, Pageable pageable) {
+        return storyRepository.findMyFeed(memberId, memberId, pageable);
     }
 }

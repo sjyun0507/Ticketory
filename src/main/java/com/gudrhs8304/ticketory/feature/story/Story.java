@@ -65,14 +65,25 @@ public class Story {
     private LocalDateTime updatedAt;
 
     /** 상태 (ACTIVE / DELETED) — VARCHAR(20)로 저장 */
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 20, nullable = false)
     private StoryStatus status = StoryStatus.ACTIVE;
 
     /** 카운트 */
+    @Builder.Default
     @Column(name = "like_count", nullable = false)
     private Integer likeCount = 0;
 
+    @Builder.Default
     @Column(name = "comment_count", nullable = false)
     private Integer commentCount = 0;
+
+    /** 빌더/세터 경로에서 NULL 들어오는 것에 대한 최종 안전망 */
+    @PrePersist
+    protected void onPrePersist() {
+        if (status == null) status = StoryStatus.ACTIVE;
+        if (likeCount == null) likeCount = 0;
+        if (commentCount == null) commentCount = 0;
+    }
 }
