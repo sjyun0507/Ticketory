@@ -54,7 +54,7 @@ public class SecurityConfig {
         return delegate;
     }
 
-    /** 1) API 전용 체인 (/api/** 만 처리) */
+    /** 1) API 전용 체인 (/controller/** 만 처리) */
     // API 체인
     @Bean
     @Order(0)
@@ -83,50 +83,29 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // 공개 API
+                        // 개발 중 임시 오픈(리다이렉트 방지). 운영 전환 시 권한 체크로 변경
+                        .requestMatchers("/api/admin/**").permitAll()
+                        .requestMatchers("/api/board").permitAll()
+                        .requestMatchers("/api/admin/board/**").permitAll()
+                        .requestMatchers("/api/members/**").permitAll()
+                        .requestMatchers("/api/stories/**").permitAll()
+
                         .requestMatchers(
-                                "/api/auth/**",
-                                "/api/public/**",
+                                "/api/members/signup",
+                                "/api/members/login",
+                                "/api/members/guest-login",
+                                "/api/members/logout",
+                                "/api/members/exists",
                                 "/api/movies/**",
                                 "/api/screenings/**",
                                 "/proxy/**",
                                 "/swagger-ui/**", "/v3/api-docs/**", "/api-docs/**"
                         ).permitAll()
 
-                        // 멤버: 인증 불필요한 엔드포인트만 공개
-                        .requestMatchers(
-                                "/api/members/signup",
-                                "/api/members/login",
-                                "/api/members/guest-login",
-                                "/api/members/exists"
-                        ).permitAll()
-                        // 그 외 멤버 관련은 인증 필요
-                        .requestMatchers(
-                                "/api/members/me",
-                                "/api/members/logout",
-                                "/api/members/**"
-                        ).authenticated()
-
-                        // 스토리: 피드/상세/댓글 조회는 공개, 나머진 인증
-                        .requestMatchers(HttpMethod.GET,
-                                "/api/stories", "/api/stories/",
-                                "/api/stories/**",
-                                "/api/stories/*/comments"
-                        ).permitAll()
-                        .requestMatchers(HttpMethod.POST,   "/api/stories/**").authenticated()
-                        .requestMatchers(HttpMethod.PUT,    "/api/stories/**").authenticated()
-                        .requestMatchers(HttpMethod.DELETE, "/api/stories/**").authenticated()
-                        // 좋아요/북마크 등 액션성 엔드포인트 보호(실제 경로에 맞춰 추가/수정)
-                        .requestMatchers(
-                                "/api/stories/*/like",
-                                "/api/stories/*/unlike",
-                                "/api/stories/*/bookmark",
-                                "/api/stories/*/unbookmark",
-                                "/api/stories/*/comments/**"
-                        ).authenticated()
-
-                        // 결제 (현 상태 유지: 필요 시 인증 전환)
+                        // 결제는 인증 필요
                         .requestMatchers(HttpMethod.POST, "/api/payments/**").permitAll()
+                        // 공개 경로
+                        .requestMatchers("/api/auth/**", "/api/public/**").permitAll()
 
                         .anyRequest().authenticated()
                 )
@@ -135,7 +114,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    /** 2) 웹(페이지) 체인 — 절대 /api/** 를 다루지 않음 */
+    /** 2) 웹(페이지) 체인 — 절대 /controller/** 를 다루지 않음 */
     // 웹 체인
     @Bean
     @Order(1)
@@ -148,7 +127,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // 세이프티넷: 혹시 웹 체인이 /api/** 를 잡아도 무조건 통과
+                        // 세이프티넷: 혹시 웹 체인이 /controller/** 를 잡아도 무조건 통과
                         .requestMatchers("/api/**").permitAll()
 
                         .requestMatchers(

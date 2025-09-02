@@ -1,9 +1,9 @@
 package com.gudrhs8304.ticketory.feature.point.domain;
 
 import com.gudrhs8304.ticketory.feature.booking.domain.Booking;
-import com.gudrhs8304.ticketory.feature.payment.Payment;
-import com.gudrhs8304.ticketory.feature.point.PointChangeType;
-import com.gudrhs8304.ticketory.feature.member.Member;
+import com.gudrhs8304.ticketory.feature.payment.domain.Payment;
+import com.gudrhs8304.ticketory.feature.point.enums.PointChangeType;
+import com.gudrhs8304.ticketory.feature.member.domain.Member;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;

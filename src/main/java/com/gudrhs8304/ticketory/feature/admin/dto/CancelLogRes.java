@@ -1,6 +1,6 @@
 package com.gudrhs8304.ticketory.feature.admin.dto;
 
-import com.gudrhs8304.ticketory.feature.payment.PaymentStatus; // <- 실제 패키지 맞춰주세요
+import com.gudrhs8304.ticketory.feature.payment.enums.PaymentStatus; // <- 실제 패키지 맞춰주세요
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 

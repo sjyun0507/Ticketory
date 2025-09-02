@@ -1,6 +1,6 @@
 package com.gudrhs8304.ticketory.batch;
 
-import com.gudrhs8304.ticketory.feature.screen.Screen;
+import com.gudrhs8304.ticketory.feature.screen.domain.Screen;
 import jakarta.persistence.*;
 import lombok.*;
 

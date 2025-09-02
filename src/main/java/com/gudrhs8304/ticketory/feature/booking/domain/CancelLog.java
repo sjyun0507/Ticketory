@@ -1,7 +1,7 @@
 package com.gudrhs8304.ticketory.feature.booking.domain;
 
 import com.gudrhs8304.ticketory.core.BaseTimeEntity;
-import com.gudrhs8304.ticketory.feature.member.Member;
+import com.gudrhs8304.ticketory.feature.member.domain.Member;
 import jakarta.persistence.*;
 import lombok.*;
 

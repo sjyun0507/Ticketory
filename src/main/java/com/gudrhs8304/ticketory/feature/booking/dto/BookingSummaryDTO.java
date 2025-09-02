@@ -1,6 +1,6 @@
 package com.gudrhs8304.ticketory.feature.booking.dto;
 
-import com.gudrhs8304.ticketory.feature.booking.BookingPayStatus;
+import com.gudrhs8304.ticketory.feature.booking.enums.BookingPayStatus;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 

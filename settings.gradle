@@ -7,7 +7,7 @@ pluginManagement {
 
 dependencyResolutionManagement {
     // 프로젝트의 repositories 블록을 허용 (기존에 FAIL_ON_PROJECT_REPOS였다면 막혀서 못 받는 상황이 생김)
-    repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         mavenCentral()
     }

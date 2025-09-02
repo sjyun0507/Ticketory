@@ -1,6 +1,6 @@
 package com.gudrhs8304.ticketory.core.oauth;
 
-import com.gudrhs8304.ticketory.feature.member.RoleType;
+import com.gudrhs8304.ticketory.feature.member.enums.RoleType;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;

@@ -1,16 +1,16 @@
 package com.gudrhs8304.ticketory.service;
 
 import com.gudrhs8304.ticketory.feature.booking.domain.Booking;
-import com.gudrhs8304.ticketory.feature.screening.Screening;
-import com.gudrhs8304.ticketory.feature.payment.Payment;
-import com.gudrhs8304.ticketory.feature.payment.PaymentStatus;
+import com.gudrhs8304.ticketory.feature.screening.domain.Screening;
+import com.gudrhs8304.ticketory.feature.payment.domain.Payment;
+import com.gudrhs8304.ticketory.feature.payment.enums.PaymentStatus;
 import com.gudrhs8304.ticketory.feature.payment.dto.TossConfirmRequestDTO;
 import com.gudrhs8304.ticketory.feature.payment.dto.TossInitiateRequestDTO;
-import com.gudrhs8304.ticketory.feature.member.Member;
-import com.gudrhs8304.ticketory.feature.payment.TossPaymentService;
-import com.gudrhs8304.ticketory.feature.booking.BookingRepository;
-import com.gudrhs8304.ticketory.feature.member.MemberRepository;
-import com.gudrhs8304.ticketory.feature.screening.ScreeningRepository;
+import com.gudrhs8304.ticketory.feature.member.domain.Member;
+import com.gudrhs8304.ticketory.feature.payment.service.TossPaymentService;
+import com.gudrhs8304.ticketory.feature.booking.repository.BookingRepository;
+import com.gudrhs8304.ticketory.feature.member.repository.MemberRepository;
+import com.gudrhs8304.ticketory.feature.screening.repository.ScreeningRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
