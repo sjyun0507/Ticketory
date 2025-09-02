@@ -8,4 +8,6 @@ public record CommentItemView(
         String authorName,
         String authorAvatarUrl,
         Boolean mine
-) {}
+) {
+    public CommentItemView {}
+}

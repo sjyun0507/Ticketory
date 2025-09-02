@@ -12,20 +12,20 @@ import org.springframework.data.repository.query.Param;
 public interface StoryCommentRepository extends JpaRepository<StoryComment, Long> {
 
     @Query("""
-    select new com.gudrhs8304.ticketory.feature.story.dto.response.CommentItemView(
-      c.commentId,
-      c.content,
-      c.createdAt,
-      m.memberId,
-      m.name,
-      m.avatarUrl,
-      case when :viewerId is not null and m.memberId = :viewerId then true else false end
-    )
-    from StoryComment c
-    join c.member m
-    where c.storyId = :storyId
-    order by c.createdAt desc
-  """)
+  select new com.gudrhs8304.ticketory.feature.story.dto.response.CommentItemView(
+    c.commentId,
+    c.content,
+    c.createdAt,
+    m.memberId,
+    coalesce(m.name, '익명'),
+    m.avatarUrl,
+    case when :viewerId is not null and m.memberId = :viewerId then true else false end
+  )
+  from StoryComment c
+  join c.member m
+  where c.storyId = :storyId
+  order by c.createdAt asc
+""")
     Page<CommentItemView> findComments(@Param("storyId") Long storyId,
                                        @Param("viewerId") Long viewerId,
                                        Pageable pageable);

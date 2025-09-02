@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 
-@Component
+//@Component
 @RequiredArgsConstructor
 @Slf4j
 public class ProgramTestRunner implements CommandLineRunner {
@@ -18,7 +18,7 @@ public class ProgramTestRunner implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         // 오늘 기준 +6일 날짜로 생성 (스케줄러와 동일한 로직)
-        LocalDate target = LocalDate.now().plusDays(6);
+        LocalDate target = LocalDate.now().plusDays(11);
 
         int created = programGenerateService.generateForAllActiveOn(target);
         log.info("[TEST] generated {} screenings for {}", created, target);

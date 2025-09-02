@@ -107,7 +107,11 @@ public class SecurityConfig {
                         // 공개 경로
                         .requestMatchers("/api/auth/**", "/api/public/**").permitAll()
 
+                        .requestMatchers("/error").permitAll()
+
                         .anyRequest().authenticated()
+
+
                 )
                 .addFilterBefore(jwtAuthFilter(), UsernamePasswordAuthenticationFilter.class);
 

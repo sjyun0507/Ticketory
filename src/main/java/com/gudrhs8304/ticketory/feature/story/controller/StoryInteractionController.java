@@ -1,4 +1,4 @@
-package com.gudrhs8304.ticketory.feature.story.controller;
+package com.gudrhs8304.ticketory.feature.story.api;
 
 import com.gudrhs8304.ticketory.feature.story.service.StoryInteractionService;
 import com.gudrhs8304.ticketory.feature.story.dto.request.CommentCreateReq;
@@ -45,9 +45,10 @@ public class StoryInteractionController {
     @GetMapping("/{storyId}/comments")
     public Page<CommentRes> listComments(@PathVariable Long storyId,
                                          @RequestParam(defaultValue="0") int page,
-                                         @RequestParam(defaultValue="20") int size) {
+                                         @RequestParam(defaultValue="20") int size,
+                                         @AuthenticationPrincipal(expression = "memberId") Long me) {
         Pageable pageable = PageRequest.of(page, size);
-        return service.listComments(storyId, pageable);
+        return service.listComments(storyId, pageable, me);
     }
 
     // 댓글 추가

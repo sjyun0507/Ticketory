@@ -35,7 +35,7 @@ public class StoryInteractionService {
     }
 
     @Transactional(readOnly = true)
-    private Story getStoryOrThrow(Long storyId) {
+    public Story getStoryOrThrow(Long storyId) {
         return storyRepository.findById(storyId)
                 .orElseThrow(() -> new IllegalArgumentException("스토리를 찾을 수 없습니다."));
     }
@@ -103,19 +103,15 @@ public class StoryInteractionService {
 
     /** 댓글 목록 (※ Repository는 storyId 기반 메서드 사용) */
     @Transactional(readOnly = true)
-    public Page<CommentRes> listComments(Long storyId, Pageable pageable) {
-        Page<StoryComment> page = commentRepository.findByStoryIdOrderByCommentIdAsc(storyId, pageable);
-        return page.map(c -> new CommentRes(
-                c.getCommentId(),
-                new CommentRes.MemberMini(
-                        c.getMember().getMemberId(),
-                        nullSafe(c.getMember().getName(), "익명"),
-                        c.getMember().getAvatarUrl()
-                ),
-                c.getContent(),
-                c.getCreatedAt(),
-                c.getUpdatedAt() != null
-        ));
+    public Page<CommentRes> listComments(Long storyId, Pageable pageable, Long viewerId) {
+        return commentRepository.findComments(storyId, viewerId, pageable)
+                .map(v -> new CommentRes(
+                        v.commentId(),
+                        new CommentRes.MemberMini(v.authorId(), v.authorName(), v.authorAvatarUrl()),
+                        v.content(),
+                        v.createdAt(),
+                        Boolean.TRUE.equals(v.mine())
+                ));
     }
 
     /** 댓글 추가 */
