@@ -62,8 +62,7 @@ public class MemberStoryService {
 
     /** 내 스토리 최근 N개 (또는 페이지네이션) */
     public Page<StorySimpleRes> getMyStories(Long memberId, Pageable pageable) {
-        var page = storyRepository.findMyStoryRows(memberId, pageable);
-        return page.map(this::toStorySimpleRes);
+        return storyRepository.findMyStoryRows(memberId, pageable);
     }
 
     private StorySimpleRes toStorySimpleRes(Object[] r) {

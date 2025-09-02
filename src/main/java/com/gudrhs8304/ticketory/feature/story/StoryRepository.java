@@ -3,6 +3,7 @@ package com.gudrhs8304.ticketory.feature.story;
 
 import com.gudrhs8304.ticketory.feature.story.dto.StoryFeedItemDTO;
 import com.gudrhs8304.ticketory.feature.story.dto.StoryFeedItemView;
+import com.gudrhs8304.ticketory.feature.story.dto.StorySimpleRes;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -25,22 +26,29 @@ public interface StoryRepository extends JpaRepository<Story, Long>, JpaSpecific
     @Query("update Story s set s.status = :status where s.storyId = :storyId")
     int updateStatus(Long storyId, StoryStatus status);
 
-    @Query("""
-                select
-                  s.storyId,
-                  mv.movieId,
-                  mv.title,
-                  mv.posterUrl,
-                  s.rating,
-                  s.content,
-                  s.createdAt
-                from Story s
-                  join s.movie mv
-                where s.member.memberId = :memberId
-                  and s.status <> 'DELETED'
-                order by s.createdAt desc
-            """)
-    Page<Object[]> findMyStoryRows(@Param("memberId") Long memberId, Pageable pageable);
+    @Query(value = """
+    select new com.gudrhs8304.ticketory.feature.story.dto.StorySimpleRes(
+        s.storyId,
+        mv.movieId,
+        mv.title,
+        mv.posterUrl,
+        s.rating,
+        s.content,
+        s.createdAt
+    )
+    from Story s
+      join s.movie mv
+    where s.member.memberId = :memberId
+      and s.status <> com.gudrhs8304.ticketory.feature.story.StoryStatus.DELETED
+    order by s.createdAt desc
+    """,
+            countQuery = """
+    select count(s)
+    from Story s
+    where s.member.memberId = :memberId
+      and s.status <> com.gudrhs8304.ticketory.feature.story.StoryStatus.DELETED
+    """)
+    Page<StorySimpleRes> findMyStoryRows(@Param("memberId") Long memberId, Pageable pageable);
 
 
     Page<Story> findByStatusOrderByCreatedAtDesc(StoryStatus status, Pageable pageable);

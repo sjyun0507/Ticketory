@@ -20,40 +20,40 @@ public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
      * StoryLike 엔티티 이름이 다르면 아래 서브쿼리 부분만 네 프로젝트에 맞춰 바꿔줘.
      */
     @Query("""
-            select new com.gudrhs8304.ticketory.feature.story.dto.BookmarkedStoryItemDTO(
-               s.storyId,
-               mv.movieId,
-               mv.title,
-               coalesce(
-                  (
-                     select mm.url
-                       from com.gudrhs8304.ticketory.feature.movie.MovieMedia mm
-                      where mm.movie = mv
-                        and mm.movieMediaType = com.gudrhs8304.ticketory.feature.movie.MovieMediaType.POSTER
-                        and mm.mediaId = (
-                            select min(mm2.mediaId)
-                              from com.gudrhs8304.ticketory.feature.movie.MovieMedia mm2
-                             where mm2.movie = mv
-                               and mm2.movieMediaType = com.gudrhs8304.ticketory.feature.movie.MovieMediaType.POSTER
-                        )
-                  ),
-                  mv.posterUrl
-               ),
-               s.createdAt,
-               s.likeCount,
-               s.commentCount,
-               (case when sl2.id is not null then true else false end),
-               true
+select new com.gudrhs8304.ticketory.feature.story.dto.BookmarkedStoryItemDTO(
+   s.storyId,
+   mv.movieId,
+   mv.title,
+   coalesce(
+      (
+         select mm.url
+           from com.gudrhs8304.ticketory.feature.movie.MovieMedia mm
+          where mm.movie = mv
+            and mm.movieMediaType = com.gudrhs8304.ticketory.feature.movie.MovieMediaType.POSTER
+            and mm.mediaId = (
+                select min(mm2.mediaId)
+                  from com.gudrhs8304.ticketory.feature.movie.MovieMedia mm2
+                 where mm2.movie = mv
+                   and mm2.movieMediaType = com.gudrhs8304.ticketory.feature.movie.MovieMediaType.POSTER
             )
-            from com.gudrhs8304.ticketory.feature.story.Bookmark b
-              join b.story s
-              join s.movie mv
-              left join com.gudrhs8304.ticketory.feature.story.StoryLike sl2
-                     on sl2.story = s and sl2.member.memberId = :viewerId
-            where b.member.memberId = :ownerId
-              and s.status = com.gudrhs8304.ticketory.feature.story.StoryStatus.ACTIVE
-            order by b.createdAt desc
-            """)
+      ),
+      mv.posterUrl
+   ),
+   s.createdAt,
+   s.likeCount,
+   s.commentCount,
+   (case when sl2.id is not null then true else false end),
+   true
+)
+from com.gudrhs8304.ticketory.feature.story.StoryBookmark b
+  join b.story s
+  join s.movie mv
+  left join com.gudrhs8304.ticketory.feature.story.StoryLike sl2
+         on sl2.story = s and sl2.member.memberId = :viewerId
+where b.member.memberId = :ownerId
+  and s.status = com.gudrhs8304.ticketory.feature.story.StoryStatus.ACTIVE
+order by b.createdAt desc
+""")
     Page<BookmarkedStoryItemDTO> findBookmarkedFeed(
             @Param("ownerId") Long ownerId,
             @Param("viewerId") Long viewerId,

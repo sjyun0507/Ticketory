@@ -1,7 +1,9 @@
 package com.gudrhs8304.ticketory.feature.story.api;
 
 import com.gudrhs8304.ticketory.core.auth.CustomUserPrincipal;
+import com.gudrhs8304.ticketory.feature.story.BookmarkRepository;
 import com.gudrhs8304.ticketory.feature.story.BookmarkService;
+import com.gudrhs8304.ticketory.feature.story.StoryInteractionService;
 import com.gudrhs8304.ticketory.feature.story.dto.BookmarkedStoryItemDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -17,27 +19,29 @@ import org.springframework.web.bind.annotation.*;
 public class BookmarkController {
 
     private final BookmarkService bookmarkService;
+    private final BookmarkRepository bookmarkRepository;
+    private final StoryInteractionService storyInteractionService;
 
     /** 북마크 생성 */
     @Operation(summary = "스토리 북마크")
     @SecurityRequirement(name = "bearerAuth")
     @PostMapping("/stories/{storyId}/bookmark")
-    public ResponseEntity<Void> bookmark(@AuthenticationPrincipal CustomUserPrincipal principal,
-                                         @PathVariable Long storyId) {
-        if (principal == null) return ResponseEntity.status(401).build();
-        bookmarkService.addBookmark(principal.getMemberId(), storyId);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<?> bookmark(@AuthenticationPrincipal CustomUserPrincipal p,
+                                      @PathVariable Long storyId) {
+        if (p == null) return ResponseEntity.status(401).build();
+        var res = storyInteractionService.bookmark(storyId, p.getMemberId());
+        return ResponseEntity.ok(res);
     }
 
     /** 북마크 취소 */
     @Operation(summary = "스토리 북마크 취소")
     @SecurityRequirement(name = "bearerAuth")
-    @DeleteMapping("/stories/{storyId}/bookmark")
-    public ResponseEntity<Void> unbookmark(@AuthenticationPrincipal CustomUserPrincipal principal,
-                                           @PathVariable Long storyId) {
-        if (principal == null) return ResponseEntity.status(401).build();
-        bookmarkService.removeBookmark(principal.getMemberId(), storyId);
-        return ResponseEntity.noContent().build();
+    @DeleteMapping("stories/{storyId}/bookmark")
+    public ResponseEntity<?> unbookmark(@AuthenticationPrincipal CustomUserPrincipal p,
+                                        @PathVariable Long storyId) {
+        if (p == null) return ResponseEntity.status(401).build();
+        var res = storyInteractionService.unbookmark(storyId, p.getMemberId());
+        return ResponseEntity.ok(res);
     }
 
     /** 내 북마크 목록 (요청하신 스펙) */
