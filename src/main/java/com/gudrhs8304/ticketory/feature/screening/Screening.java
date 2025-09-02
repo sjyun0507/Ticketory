@@ -34,4 +34,5 @@ public class Screening extends BaseTimeEntity {
 
     @Column(name = "is_booking", nullable = false)
     private Boolean isBooking = true;
+
 }
