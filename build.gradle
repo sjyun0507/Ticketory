@@ -19,9 +19,6 @@ configurations {
     }
 }
 
-repositories {
-    mavenCentral()
-}
 
 tasks.named('bootJar') {
     archiveFileName = 'app.jar'
@@ -55,12 +52,12 @@ dependencies {
     testAnnotationProcessor 'org.projectlombok:lombok'                       // 테스트 소스용 롬복 애너테이션 처리기
 
     // === JWT (JJWT) ===
-    implementation 'io.jsonwebtoken:jjwt-api:0.12.5'     // JWT 생성/검증 API
-    runtimeOnly    'io.jsonwebtoken:jjwt-impl:0.12.5'    // JWT 구현체(런타임 필요)
-    runtimeOnly    'io.jsonwebtoken:jjwt-jackson:0.12.5' // Jackson 기반 직렬화/역직렬화(런타임 필요)
+    implementation "io.jsonwebtoken:jjwt-api:0.12.5"
+    runtimeOnly   "io.jsonwebtoken:jjwt-impl:0.12.5"
+    runtimeOnly   "io.jsonwebtoken:jjwt-jackson:0.12.5"
 
     // === OpenAPI/Swagger UI ===
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0' // /swagger-ui, /v3/api-docs 제공
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0' // /swagger-ui, /v3/controller-docs 제공
 
     // === QR 코드 ===
     implementation 'com.google.zxing:core:3.5.3'    // ZXing 핵심 라이브러리(바코드/QR 인코딩)

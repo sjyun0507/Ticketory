@@ -1,8 +1,8 @@
 package com.gudrhs8304.ticketory.feature.movie.dto;
 
-import com.gudrhs8304.ticketory.feature.movie.Movie;
-import com.gudrhs8304.ticketory.feature.movie.MovieMedia;
-import com.gudrhs8304.ticketory.feature.movie.MovieMediaType;
+import com.gudrhs8304.ticketory.feature.movie.domain.Movie;
+import com.gudrhs8304.ticketory.feature.movie.domain.MovieMedia;
+import com.gudrhs8304.ticketory.feature.movie.enums.MovieMediaType;
 import lombok.Builder;
 import lombok.Value;
 

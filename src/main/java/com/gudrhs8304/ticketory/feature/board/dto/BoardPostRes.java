@@ -1,6 +1,6 @@
 package com.gudrhs8304.ticketory.feature.board.dto;
 
-import com.gudrhs8304.ticketory.feature.board.Type;
+import com.gudrhs8304.ticketory.feature.board.enums.Type;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;

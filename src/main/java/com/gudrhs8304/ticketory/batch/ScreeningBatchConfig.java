@@ -1,6 +1,6 @@
 package com.gudrhs8304.ticketory.batch;
 
-import com.gudrhs8304.ticketory.feature.screening.ScreeningRepository;
+import com.gudrhs8304.ticketory.feature.screening.repository.ScreeningRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.batch.core.Job;

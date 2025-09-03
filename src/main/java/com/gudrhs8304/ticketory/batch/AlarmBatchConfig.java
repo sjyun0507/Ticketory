@@ -1,8 +1,8 @@
 package com.gudrhs8304.ticketory.batch;
 
-import com.gudrhs8304.ticketory.mail.MailSenderService;
+import com.gudrhs8304.ticketory.mail.service.MailSenderService;
 import com.gudrhs8304.ticketory.mail.dto.BookingAlarmDTO;
-import com.gudrhs8304.ticketory.feature.booking.BookingRepository;
+import com.gudrhs8304.ticketory.feature.booking.repository.BookingRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.batch.core.Job;

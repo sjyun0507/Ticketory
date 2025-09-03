@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 
-import static com.gudrhs8304.ticketory.feature.integration.api.ProxyController.proxify;
+import static com.gudrhs8304.ticketory.feature.integration.controller.ProxyController.proxify;
 
 @Value
 @Builder

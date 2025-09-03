@@ -1,8 +1,8 @@
 package com.gudrhs8304.ticketory.feature.pricing.domain;
 
 import com.gudrhs8304.ticketory.core.BaseTimeEntity;
-import com.gudrhs8304.ticketory.feature.point.PricingKind;
-import com.gudrhs8304.ticketory.feature.pricing.PricingOp;
+import com.gudrhs8304.ticketory.feature.point.enums.PricingKind;
+import com.gudrhs8304.ticketory.feature.pricing.enums.PricingOp;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;

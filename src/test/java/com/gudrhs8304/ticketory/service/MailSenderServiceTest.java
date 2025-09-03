@@ -1,8 +1,8 @@
 package com.gudrhs8304.ticketory.service;
 
-import com.gudrhs8304.ticketory.mail.MailLogRepository;
-import com.gudrhs8304.ticketory.mail.MailSenderService;
-import com.gudrhs8304.ticketory.feature.booking.BookingRepository;
+import com.gudrhs8304.ticketory.mail.repository.MailLogRepository;
+import com.gudrhs8304.ticketory.mail.service.MailSenderService;
+import com.gudrhs8304.ticketory.feature.booking.repository.BookingRepository;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

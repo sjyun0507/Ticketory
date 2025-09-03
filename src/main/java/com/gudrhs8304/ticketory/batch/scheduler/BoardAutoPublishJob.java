@@ -1,6 +1,6 @@
 package com.gudrhs8304.ticketory.batch.scheduler;
 
-import com.gudrhs8304.ticketory.feature.board.BoardPostRepository;
+import com.gudrhs8304.ticketory.feature.board.repository.BoardPostRepository;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;

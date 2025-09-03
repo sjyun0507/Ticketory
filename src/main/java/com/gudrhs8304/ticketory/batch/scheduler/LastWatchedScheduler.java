@@ -1,6 +1,6 @@
 package com.gudrhs8304.ticketory.batch.scheduler;
 
-import com.gudrhs8304.ticketory.feature.member.LastWatchedService;
+import com.gudrhs8304.ticketory.feature.member.service.LastWatchedService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;

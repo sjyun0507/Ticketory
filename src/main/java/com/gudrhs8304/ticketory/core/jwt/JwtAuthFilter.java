@@ -31,16 +31,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if ("OPTIONS".equalsIgnoreCase(m)) return true;
 
         // 공개: 결제 성공/주문 생성 등 필요한 것들만
-        if (uri.equals("/api/members/login")) return true;
-        if (uri.equals("/api/members/guest-login")) return true;
-        if (uri.equals("/api/members/signup")) return true;
-        if (uri.equals("/api/members/exists")) return true;
+        if (uri.equals("/controller/members/login")) return true;
+        if (uri.equals("/controller/members/guest-login")) return true;
+        if (uri.equals("/controller/members/signup")) return true;
+        if (uri.equals("/controller/members/exists")) return true;
 
         // 결제 쪽 공개 범위는 필요에 맞게
-        if (uri.startsWith("/api/payments")) return true;
+        if (uri.startsWith("/controller/payments")) return true;
 
 
-        if (uri.startsWith("/api/admin")) return true;
+        if (uri.startsWith("/controller/admin")) return true;
 
         // 그 외에는 필터 적용(=인증 시도)
         return false;

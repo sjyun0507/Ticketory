@@ -1,6 +1,6 @@
 package com.gudrhs8304.ticketory.feature.member.dto;
 
-import com.gudrhs8304.ticketory.feature.member.RoleType;
+import com.gudrhs8304.ticketory.feature.member.enums.RoleType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

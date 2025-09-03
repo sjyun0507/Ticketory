@@ -1,7 +1,7 @@
 package com.gudrhs8304.ticketory.feature.point.dto;
 
 import com.gudrhs8304.ticketory.feature.point.domain.PointLog;
-import com.gudrhs8304.ticketory.feature.point.PointChangeType;
+import com.gudrhs8304.ticketory.feature.point.enums.PointChangeType;
 import lombok.Builder;
 import lombok.Data;
 

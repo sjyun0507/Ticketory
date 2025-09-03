@@ -2,7 +2,7 @@ package com.gudrhs8304.ticketory.feature.member.dto;
 
 import com.gudrhs8304.ticketory.core.BaseTimeEntity;
 import com.gudrhs8304.ticketory.core.util.PhoneUtil;
-import com.gudrhs8304.ticketory.feature.member.Member;
+import com.gudrhs8304.ticketory.feature.member.domain.Member;
 import lombok.*;
 /**
  * DTO는 데이터 전송을 위한 객체입니다.

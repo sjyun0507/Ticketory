@@ -1,6 +1,6 @@
 package com.gudrhs8304.ticketory.core.jwt;
 
-import com.gudrhs8304.ticketory.feature.member.RoleType;
+import com.gudrhs8304.ticketory.feature.member.enums.RoleType;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;

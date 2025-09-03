@@ -1,8 +1,8 @@
 package com.gudrhs8304.ticketory.feature.movie.dto;
 
-import com.gudrhs8304.ticketory.feature.movie.MovieMediaRepository;
-import com.gudrhs8304.ticketory.feature.movie.MovieMediaType;
-import com.gudrhs8304.ticketory.feature.movie.MovieRepository;
+import com.gudrhs8304.ticketory.feature.movie.repository.MovieMediaRepository;
+import com.gudrhs8304.ticketory.feature.movie.enums.MovieMediaType;
+import com.gudrhs8304.ticketory.feature.movie.repository.MovieRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;

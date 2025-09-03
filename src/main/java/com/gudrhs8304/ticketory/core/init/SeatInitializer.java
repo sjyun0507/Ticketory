@@ -1,11 +1,11 @@
 package com.gudrhs8304.ticketory.core.init;
 
-import com.gudrhs8304.ticketory.feature.screen.Screen;
-import com.gudrhs8304.ticketory.feature.seat.SeatStatus;
-import com.gudrhs8304.ticketory.feature.seat.SeatType;
-import com.gudrhs8304.ticketory.feature.seat.Seat;
-import com.gudrhs8304.ticketory.feature.screen.ScreenRepository;
-import com.gudrhs8304.ticketory.feature.seat.SeatRepository;
+import com.gudrhs8304.ticketory.feature.screen.domain.Screen;
+import com.gudrhs8304.ticketory.feature.seat.enums.SeatStatus;
+import com.gudrhs8304.ticketory.feature.seat.enums.SeatType;
+import com.gudrhs8304.ticketory.feature.seat.domain.Seat;
+import com.gudrhs8304.ticketory.feature.screen.repository.ScreenRepository;
+import com.gudrhs8304.ticketory.feature.seat.repository.SeatRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;

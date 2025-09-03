@@ -36,7 +36,7 @@ public class SwaggerConfig {
     public GroupedOpenApi restApi() {
         return GroupedOpenApi.builder()
                 .group("REST API")
-                .pathsToMatch("/api/**")
+                .pathsToMatch("/controller/**")
                 .build();
     }
 
@@ -45,7 +45,7 @@ public class SwaggerConfig {
         return GroupedOpenApi.builder()
                 .group("COMMON API")
                 .pathsToMatch("/**")
-                .pathsToExclude("/api/**")
+                .pathsToExclude("/controller/**")
                 .build();
     }
 }

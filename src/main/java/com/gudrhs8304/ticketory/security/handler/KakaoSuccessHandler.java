@@ -1,8 +1,8 @@
 package com.gudrhs8304.ticketory.security.handler;
 
 import com.gudrhs8304.ticketory.core.jwt.JwtTokenProvider;
-import com.gudrhs8304.ticketory.feature.member.Member;
-import com.gudrhs8304.ticketory.feature.member.MemberRepository;
+import com.gudrhs8304.ticketory.feature.member.domain.Member;
+import com.gudrhs8304.ticketory.feature.member.repository.MemberRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
