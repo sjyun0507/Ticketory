@@ -7,13 +7,21 @@ import java.time.LocalDateTime;
 public record CancelLogRes(
         Long cancelId,
         Long bookingId,
-        Long paymentId,              // 결제 ID
-        BigDecimal refundAmount,     // 결제 금액(환불금액으로 사용)
-        PaymentStatus status,        // PAID/PENDING/REFUNDED/CANCELLED/FAILED
-        String reason,               // 취소 사유
-        String pgRefundTid,          // 스키마에 없음 → 일단 null
+        Long paymentId,
+        Integer refundAmount,
+        PaymentStatus status,
+        String reason,
+
+        // RefundLog
+        String pgRefundTid,
+        LocalDateTime refundedAt,     // RefundLog.createdAt (최근 1건)
+
+        // 시간 정보
+        LocalDateTime bookingTime,    // Booking.bookingTime
+        LocalDateTime canceledAt,     // CancelLog.createdAt
+
+        // 처리자/요청자
         Long canceledByMemberId,
         Long canceledByAdminId,
-        String canceledByAdminName,  // 관리자 email/이름 중 하나
-        LocalDateTime createdAt
+        String canceledByAdminName
 ) {}

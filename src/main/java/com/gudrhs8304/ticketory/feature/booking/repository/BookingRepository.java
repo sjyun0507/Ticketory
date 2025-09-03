@@ -21,24 +21,6 @@ import java.util.Optional;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
 
-    // (1) 예매 요약 페이지 (JPQL DTO 프로젝션)
-    @Query("""
-select new com.gudrhs8304.ticketory.feature.booking.dto.BookingSummaryDTO(
-    b.bookingId, m.title, sc.startAt, sc.endAt,
-    s.name, s.location,
-    b.totalPrice, b.paymentStatus,
-    m.posterUrl
-)
-from Booking b
-join b.screening sc
-join sc.movie m
-join sc.screen s
-where b.member.memberId = :memberId
-  and b.paymentStatus = com.gudrhs8304.ticketory.feature.booking.enums.BookingPayStatus.PAID
-order by b.createdAt desc
-""")
-    Page<BookingSummaryDTO> findSummaryPageByMemberId(@Param("memberId") Long memberId,
-                                                      Pageable pageable);
 
     // (1-A) 예매 요약 페이지 (전체: 상태 제한 없음)
     @Query("""
@@ -58,25 +40,6 @@ order by b.createdAt desc
     Page<BookingSummaryDTO> findSummaryPageByMemberIdAll(@Param("memberId") Long memberId,
                                                          Pageable pageable);
 
-    // (1-B) 예매 요약 페이지 (지정 상태만)
-    @Query("""
-select new com.gudrhs8304.ticketory.feature.booking.dto.BookingSummaryDTO(
-    b.bookingId, m.title, sc.startAt, sc.endAt,
-    s.name, s.location,
-    b.totalPrice, b.paymentStatus,
-    m.posterUrl
-)
-from Booking b
-join b.screening sc
-join sc.movie m
-join sc.screen s
-where b.member.memberId = :memberId
-  and b.paymentStatus = :status
-order by b.createdAt desc
-""")
-    Page<BookingSummaryDTO> findSummaryPageByMemberIdAndPaymentStatus(@Param("memberId") Long memberId,
-                                                                      @Param("status") BookingPayStatus status,
-                                                                      Pageable pageable);
 
 
     // (2) 좌석 라벨 일괄 조회
@@ -145,39 +108,6 @@ where (b.isSendAlarm = false or b.isSendAlarm is null)
     int updateIsSendAlarm(@Param("bookingId") Long bookingId,
                           @Param("isSendAlarm") boolean isSendAlarm);
 
-    @Query(
-            value = """
-        SELECT 
-          b.booking_id           AS bookingId,
-          s.screening_id         AS screeningId,
-          m.movie_id             AS movieId,
-          m.title                AS movieTitle,
-          s.start_at             AS startAt,
-          s.end_at               AS endAt,
-          p.amount               AS paidAmount
-        FROM booking b
-        JOIN screening s ON s.screening_id = b.screening_id
-        JOIN payment   p ON p.booking_id   = b.booking_id
-        JOIN movie     m ON m.movie_id     = s.movie_id
-        WHERE b.member_id = :memberId
-          AND s.end_at < NOW(6)
-          AND p.status = 'PAID'
-          AND p.cancelled_at IS NULL
-        ORDER BY s.end_at DESC
-      """,
-            countQuery = """
-        SELECT COUNT(*)
-        FROM booking b
-        JOIN screening s ON s.screening_id = b.screening_id
-        JOIN payment   p ON p.booking_id   = b.booking_id
-        WHERE b.member_id = :memberId
-          AND s.end_at < NOW(6)
-          AND p.status = 'PAID'
-          AND p.cancelled_at IS NULL
-      """,
-            nativeQuery = true
-    )
-    Page<Object[]> findEligibleBookingRows(@Param("memberId") Long memberId, Pageable pageable);
 
     /**
      * 스토리 작성 가능: 상영 종료 && 결제취소 아님 (PAID만 허용)
@@ -213,34 +143,6 @@ where (b.isSendAlarm = false or b.isSendAlarm is null)
     """)
     LocalDate findLastWatchedAt(@Param("memberId") Long memberId);
 
-    @Query("""
-        select new com.gudrhs8304.ticketory.feature.story.dto.response.EligibleBookingRes(
-            b.bookingId,
-            m.movieId,
-            m.title,
-            sc.startAt,
-            sc.endAt,
-            s.name,
-            b.paymentStatus,
-            case when exists (
-                 select 1 from com.gudrhs8304.ticketory.feature.story.domain.Story st
-                  where st.booking.bookingId = b.bookingId
-                    and st.status = 'ACTIVE'
-            ) then true else false end
-        )
-        from com.gudrhs8304.ticketory.feature.booking.domain.Booking b
-          join b.screening sc
-          join sc.screen s
-          join sc.movie m
-        where b.member.memberId = :memberId
-          and b.paymentStatus <> com.gudrhs8304.ticketory.feature.booking.enums.BookingPayStatus.CANCELLED
-          and sc.endAt < :now
-        """)
-    Page<EligibleBookingRes> findEligibleBookings(
-            @Param("memberId") Long memberId,
-            @Param("now") LocalDateTime now,
-            Pageable pageable
-    );
 
     @Query("""
     select
@@ -284,4 +186,5 @@ where (b.isSendAlarm = false or b.isSendAlarm is null)
 
     @EntityGraph(attributePaths = {"screening", "member"})
     Optional<Booking> findWithScreeningAndMemberByBookingId(Long bookingId);
+
 }

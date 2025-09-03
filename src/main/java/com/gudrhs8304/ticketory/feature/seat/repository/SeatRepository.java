@@ -29,12 +29,6 @@ public interface SeatRepository extends JpaRepository<Seat, Long> {
     @Query("select s from Seat s where s.screen.screenId = :screenId order by s.rowLabel asc, s.colNumber asc")
     List<Seat> findAllByScreenId(@Param("screenId") Long screenId);
 
-//    @Lock(LockModeType.PESSIMISTIC_WRITE)
-//    @Query("select s from Seat s where s.seatId in :ids")
-//    List<Seat> lockSeatsForUpdate(@Param("ids") List<Long> ids);
-
-//    @Query("select count(s) > 0 from Seat s where s.seatId in :ids and s.screen.screenId = :screenId")
-//    boolean allSeatsBelongToScreen(@Param("ids") List<Long> ids, @Param("screenId") Long screenId);
 
 
     @Query("""
@@ -69,16 +63,4 @@ public interface SeatRepository extends JpaRepository<Seat, Long> {
         return releaseSeatsByBookingId(bookingId, SeatStatus.AVAILABLE);
     }
 
-    // 예: 좌석 상태를 BOOKED로(컬럼/값은 프로젝트에 맞게)
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("""
-        update Seat s
-           set s.status = 'BOOKED'
-         where s.seatId in (
-             select bs.seat.seatId
-               from BookingSeat bs
-              where bs.booking.bookingId = :bookingId
-         )
-    """)
-    int confirmSeatsByBookingId(@Param("bookingId") Long bookingId);
 }

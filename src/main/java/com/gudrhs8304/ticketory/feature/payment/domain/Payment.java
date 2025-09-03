@@ -55,6 +55,9 @@ public class Payment extends BaseTimeEntity {
     @Column(unique = true, nullable = false)
     private String orderId;
 
+    @Column(name = "provider_tx_id", length = 64)
+    private String providerTxId;
+
 
     // ▼ 포인트 관련은 DB 컬럼 X → 계산/DTO에서만 사용
     @Transient

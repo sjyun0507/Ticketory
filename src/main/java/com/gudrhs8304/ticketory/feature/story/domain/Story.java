@@ -49,7 +49,7 @@ public class Story {
 
     /** 스토리 본문 */
     @Lob
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
     /** 평점 (예: 4.5) -> DECIMAL(2,1) */

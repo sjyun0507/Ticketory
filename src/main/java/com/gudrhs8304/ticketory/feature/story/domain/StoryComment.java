@@ -26,7 +26,7 @@ public class StoryComment {
     @JoinColumn(name="member_id", nullable=false)
     private Member member;
 
-    @Column(nullable = false, length = 2000)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
     @Column(name = "created_at", nullable = false)

@@ -36,18 +36,6 @@ public interface BookingSeatRepository extends JpaRepository<BookingSeat, Long> 
     """)
     Set<Long> findSeatIdsByScreeningPaid(@Param("screeningId") Long screeningId);
 
-    // 여러 상태를 한 번에 보고 싶다면 이렇게 '하나의 파라미터'로 IN 절을 쓰세요.
-    @Query("""
-        select bs.seat.seatId
-        from BookingSeat bs
-        join bs.booking b
-        where bs.screening.screeningId = :screeningId
-          and b.paymentStatus in :statuses
-    """)
-    Set<Long> findSeatIdsByScreeningAndStatuses(
-            @Param("screeningId") Long screeningId,
-            @Param("statuses") Collection<BookingPayStatus> statuses
-    );
 
     // booking_id로 모든 BookingSeat 행 삭제
     void deleteByBooking_BookingId(Long bookingId);

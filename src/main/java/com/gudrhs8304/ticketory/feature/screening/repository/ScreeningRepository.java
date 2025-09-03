@@ -10,7 +10,6 @@ import org.springframework.data.repository.query.Param;
 import java.time.LocalDateTime;
 
 public interface ScreeningRepository extends JpaRepository<Screening, Long> {
-    long countByScreen_ScreenId(Long screenId);
 
     @Query("""
         select s
@@ -49,8 +48,6 @@ public interface ScreeningRepository extends JpaRepository<Screening, Long> {
       """)
     boolean existsOverlap(Long screenId, LocalDateTime startAt, LocalDateTime endAt, Long excludeId);
 
-    @Query("select s.screen.screenId from Screening s where s.screeningId = :screeningId")
-    Long findScreenIdByScreeningId(@Param("screeningId") Long screeningId);
 
     /**
      * threshold(예: now+30m) 보다 시작 시간이 이른(= 곧 시작/이미 시작) 상영의 예약을 닫는다.
