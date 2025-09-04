@@ -52,7 +52,7 @@
 - 예매 흐름 (영화 → 상영시간 → 좌석 → 결제 → QR 티켓)
 - 관리자 영화 추가 흐름 (관리자 → 영화관리 → 새 영화 추가 → 미디어 추가 → 홈)
 
-👉 [프로젝트 발표자료 (PDF)]([Project_Presentation.pdf](https://github.com/user-attachments/files/22130307/Project_Presentation.pdf))
+👉 [프로젝트 발표자료 (PDF)](https://github.com/user-attachments/files/22130307/Project_Presentation.pdf)
 
 ---
 
