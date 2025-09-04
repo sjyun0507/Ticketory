@@ -1,4 +1,3 @@
-// src/main/java/com/gudrhs8304/ticketory/config/SecurityConfig.java
 package com.gudrhs8304.ticketory.core.security.config;
 
 import com.gudrhs8304.ticketory.core.jwt.JwtTokenProvider;
@@ -109,7 +108,7 @@ public class SecurityConfig {
 
                         .requestMatchers("/error").permitAll()
 
-                        .anyRequest().authenticated()
+                        .anyRequest().permitAll()
 
 
                 )
@@ -131,8 +130,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // 세이프티넷: 혹시 웹 체인이 /controller/** 를 잡아도 무조건 통과
-                        .requestMatchers("/api/**").permitAll()
+                        // 웹 체인은 절대 /api/** 를 다루지 않는다 (apiChain에서 처리)
 
                         .requestMatchers(
                                 "/swagger-ui/**", "/v3/api-docs/**", "/api-docs/**",
@@ -145,7 +143,8 @@ public class SecurityConfig {
                                 "/images/**", "/webjars/**", "/favicon.ico",
                                 "/payments-test.html", "/success.html", "/fail.html"
                         ).permitAll()
-                        .anyRequest().authenticated()
+                        // SPA(React) 라우팅은 인증없이 접근 가능해야 카카오로 리다이렉트되지 않음
+                        .anyRequest().permitAll()
                 )
                 .oauth2Login(o -> o
                         .authorizationEndpoint(a -> a.baseUri("/oauth2/authorization"))

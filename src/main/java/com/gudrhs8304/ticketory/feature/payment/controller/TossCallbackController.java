@@ -32,7 +32,7 @@ public class TossCallbackController {
         log.info("[TOSS] success callback: paymentKey={}, orderId={}, amount={}", paymentKey, orderId, amount);
         paymentService.confirmAndFinalize(new ConfirmPaymentRequestDTO(paymentKey, orderId, BigDecimal.valueOf(amount)));
         // 완료 후 프론트 성공 페이지로 리다이렉트(필요 시 주문번호 전달)
-        resp.sendRedirect("http://localhost:5173/success?orderId=" + URLEncoder.encode(orderId, StandardCharsets.UTF_8));
+        resp.sendRedirect("/success?orderId=" + URLEncoder.encode(orderId, StandardCharsets.UTF_8));
         return null;
     }
 
@@ -42,7 +42,7 @@ public class TossCallbackController {
                      @RequestParam String orderId,
                      HttpServletResponse resp) throws IOException {
         // 실패 처리 로깅/정리
-        resp.sendRedirect("http://localhost:5173/fail?code=" + code +
+        resp.sendRedirect("/fail?code=" + code +
                 "&message=" + URLEncoder.encode(message, StandardCharsets.UTF_8) +
                 "&orderId=" + URLEncoder.encode(orderId, StandardCharsets.UTF_8));
     }

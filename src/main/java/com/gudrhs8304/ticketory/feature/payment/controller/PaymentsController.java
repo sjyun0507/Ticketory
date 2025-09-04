@@ -167,7 +167,7 @@ public class PaymentsController {
 
         // 프론트 성공 페이지로 넘겨주고 싶으면 쿼리 붙여서 리다이렉트
         RedirectView rv = new RedirectView();
-        rv.setUrl("http://localhost:5173/success?orderId=" + orderId);
+        rv.setUrl("/success?orderId=" + orderId);
         rv.setExposeModelAttributes(false);
         return rv;
     }
@@ -181,7 +181,7 @@ public class PaymentsController {
     ) {
         RedirectView rv = new RedirectView();
         // 원하는 실패 페이지 경로로 연결
-        rv.setUrl("http://localhost:5173/fail" +
+        rv.setUrl("/fail" +
                 (orderId != null ? ("?orderId=" + orderId) : ""));
         rv.setExposeModelAttributes(false);
         return rv;
