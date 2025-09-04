@@ -33,15 +33,15 @@
 ---
 
 ## 최종 화면 (Final Screens)
-# 메인 페이지 <img width="1502" height="913" alt="Image" src="https://github.com/user-attachments/assets/4c69e2ba-f6c2-404b-8217-c8f42dcfdb2b" />
-# 영화 상세보기 <img width="1225" height="945" alt="Image" src="https://github.com/user-attachments/assets/3b059e38-9587-4339-8273-68e41e18d32a" />
-# 영화 예매 <img width="1222" height="888" alt="Image" src="https://github.com/user-attachments/assets/3baff37f-8b1a-43ac-b9a9-8dc519498ccd" />
-# 좌석예매 <img width="1125" height="965" alt="Image" src="https://github.com/user-attachments/assets/d17b63db-b3da-47d9-9d96-7dbb9408d530" />
-# 이벤트/공지 게시판 <img width="1108" height="951" alt="Image" src="https://github.com/user-attachments/assets/4237168c-5b2d-4368-9289-d366e018dc47" />
-# 스토리 피드 <img width="1139" height="944" alt="Image" src="https://github.com/user-attachments/assets/19bdba85-5d19-4228-9096-d550a06195a3" />
-# 마이페이지 <img width="1081" height="809" alt="Image" src="https://github.com/user-attachments/assets/5b04fc87-e762-446a-935e-34b5b45bf2ca" />
-# 관리자 대시보드 <img width="1499" height="957" alt="Image" src="https://github.com/user-attachments/assets/1f757295-1cb7-41ab-8aad-5478be12cffe" />
-# 관리자 영화관리 <img width="1321" height="895" alt="Image" src="https://github.com/user-attachments/assets/32700272-4717-45ab-a5fa-1cc49710229d" />
+### 메인 페이지 <img width="1502" height="913" alt="Image" src="https://github.com/user-attachments/assets/4c69e2ba-f6c2-404b-8217-c8f42dcfdb2b" />
+### 영화 상세보기 <img width="1225" height="945" alt="Image" src="https://github.com/user-attachments/assets/3b059e38-9587-4339-8273-68e41e18d32a" />
+### 영화 예매 <img width="1222" height="888" alt="Image" src="https://github.com/user-attachments/assets/3baff37f-8b1a-43ac-b9a9-8dc519498ccd" />
+### 좌석예매 <img width="1125" height="965" alt="Image" src="https://github.com/user-attachments/assets/d17b63db-b3da-47d9-9d96-7dbb9408d530" />
+### 이벤트/공지 게시판 <img width="1108" height="951" alt="Image" src="https://github.com/user-attachments/assets/4237168c-5b2d-4368-9289-d366e018dc47" />
+### 스토리 피드 <img width="1139" height="944" alt="Image" src="https://github.com/user-attachments/assets/19bdba85-5d19-4228-9096-d550a06195a3" />
+### 마이페이지 <img width="1081" height="809" alt="Image" src="https://github.com/user-attachments/assets/5b04fc87-e762-446a-935e-34b5b45bf2ca" />
+### 관리자 대시보드 <img width="1499" height="957" alt="Image" src="https://github.com/user-attachments/assets/1f757295-1cb7-41ab-8aad-5478be12cffe" />
+### 관리자 영화관리 <img width="1321" height="895" alt="Image" src="https://github.com/user-attachments/assets/32700272-4717-45ab-a5fa-1cc49710229d" />
 
 
 ---
