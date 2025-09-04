@@ -50,11 +50,12 @@
 
 ## 🎥 시연 영상 (Demo Video)
 - 예매 흐름 (영화 → 상영시간 → 좌석 → 결제 → QR 티켓)
-https://github.com/user-attachments/assets/099c75e4-6254-4c2b-84b9-2d4b7cf5523c
+👉 [예매흐름 시연영상(mp4)](https://github.com/user-attachments/assets/099c75e4-6254-4c2b-84b9-2d4b7cf5523c)
 
 - 관리자 영화 추가 흐름 (관리자 → 영화관리 → 새 영화 추가 → 미디어 추가 → 홈)
-https://github.com/user-attachments/assets/b60a7af4-1f1d-457d-9535-ce3da64a18c4
+👉 [관리자흐름 시연영상(mp4)](https://github.com/user-attachments/assets/b60a7af4-1f1d-457d-9535-ce3da64a18c4)
 
+#  발표 자료 (Presentation)
 👉 [프로젝트 발표자료 (PDF)](https://github.com/user-attachments/files/22130307/Project_Presentation.pdf)
 
 ---
