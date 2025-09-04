@@ -53,7 +53,7 @@
 - 관리자 영화 추가 흐름 (관리자 → 영화관리 → 새 영화 추가 → 미디어 추가 → 홈)
 👉 [관리자흐름 시연영상(mp4)](https://github.com/user-attachments/assets/b60a7af4-1f1d-457d-9535-ce3da64a18c4)
 
-#  발표 자료 (Presentation)
+### 발표 자료 (Presentation)
 👉 [프로젝트 발표자료 (PDF)](https://github.com/user-attachments/files/22130307/Project_Presentation.pdf)
 
 ---
