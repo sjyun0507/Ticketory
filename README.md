@@ -56,7 +56,7 @@
 ---
 
 ### 발표 자료 (Presentation) 
-👉 [프로젝트 발표자료 (PDF)](https://github.com/user-attachments/files/22130307/Project_Presentation.pdf)
+👉 [프로젝트 발표자료 (PDF)](https://github.com/user-attachments/files/22184627/presentation_final.pdf)
 
 ---
 
