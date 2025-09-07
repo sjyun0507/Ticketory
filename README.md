@@ -53,6 +53,11 @@
 - 관리자 영화 추가 흐름 (관리자 → 영화관리 → 새 영화 추가 → 미디어 추가 → 홈)
 👉 [관리자흐름 시연영상(mp4)](https://github.com/user-attachments/assets/b60a7af4-1f1d-457d-9535-ce3da64a18c4)
 
+--
+
+## 데모 (Live Demo)
+👉 [Live Demo][(https://github.com/user-attachments/files/22184627/presentation_final.pdf](http://211.188.58.155:8080/))
+
 ---
 
 ### 발표 자료 (Presentation) 
