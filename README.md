@@ -56,7 +56,7 @@
 --
 
 ## 데모 (Live Demo)
-👉 [Live Demo][(https://github.com/user-attachments/files/22184627/presentation_final.pdf](http://211.188.58.155:8080/))
+👉 [Live Demo](http://211.188.58.155:8080/)
 
 ---
 
