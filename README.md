@@ -61,7 +61,7 @@
 ---
 
 ### 발표 자료 (Presentation) 
-👉 [프로젝트 발표자료 (PDF)](https://github.com/user-attachments/files/22184627/presentation_final.pdf)
+👉 [프로젝트 발표자료 (PDF)](https://github.com/user-attachments/files/22200062/ticketory_presentation.pdf)
 
 ---
 
