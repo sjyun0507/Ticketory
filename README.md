@@ -7,6 +7,13 @@
 
 ---
 
+## 데모 (Live Demo)
+👉 [Live Demo](http://211.188.58.155:8080/)
+ID : admin@ticketory.com
+PW : Admin!2345
+
+---
+
 ## 주요 기능
 
 ### 사용자 (User)
@@ -53,12 +60,8 @@
 - 관리자 영화 추가 흐름 (관리자 → 영화관리 → 새 영화 추가 → 미디어 추가 → 홈)
 👉 [관리자흐름 시연영상(mp4)](https://github.com/user-attachments/assets/b60a7af4-1f1d-457d-9535-ce3da64a18c4)
 
---
-
-## 데모 (Live Demo)
-👉 [Live Demo](http://211.188.58.155:8080/)
-
 ---
+
 
 ### 발표 자료 (Presentation) 
 👉 [프로젝트 발표자료 (PDF)](https://github.com/user-attachments/files/22225340/ticketory_presentation_final.pdf)
