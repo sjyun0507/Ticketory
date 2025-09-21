@@ -8,7 +8,7 @@
 ---
 
 ## 데모 (Live Demo)
-👉 [Live Demo](http://211.188.58.155:8080/)  
+👉 [Ticketory 바로가기](http://211.188.58.155:8080/)  
 
 ID : admin@ticketory.com  
 PW : Admin!2345  
