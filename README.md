@@ -10,9 +10,6 @@
 ## 데모 (Live Demo)
 👉 [Ticketory 바로가기](http://211.188.58.155:8080/)  
 
-ID : admin@ticketory.com  
-PW : Admin!2345  
-
 ---
 
 ## 주요 기능
